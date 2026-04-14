@@ -9,7 +9,7 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --color-brand: #174413;
     --color-brand-soft: #bcf0ae;
-}
+} 
 
 @layer base {
     html {
