@@ -94,6 +94,8 @@ class ShareMealController extends Controller
             return back()->with('error', 'Email, password, atau tipe pengguna tidak sesuai.');
         }
 
+        // Verification Guard for Mitra and Lembaga
+        if (in_array($user->role, ['mitra', 'lembaga']) && !$user->is_verified) {
         // Verification Guard for Mitra Only
         if ($user->role === 'mitra' && !$user->is_verified) {
             return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
@@ -125,6 +127,14 @@ class ShareMealController extends Controller
             $rules['document_siup_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_nib_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_halal_mitra'] = ['nullable', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+        } elseif ($request->user_type === 'lembaga') {
+            $rules['document_legalitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_izin_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_identitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+        }
+
+        $data = $request->validate($rules);
+
         }
 
         $data = $request->validate($rules);

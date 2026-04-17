@@ -13,7 +13,7 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body>
+<body class="antialiased">
     @if (session('success') || session('error'))
         <div class="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
             @if (session('success'))
@@ -26,5 +26,9 @@
     @endif
 
     {{ $slot }}
+
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>
