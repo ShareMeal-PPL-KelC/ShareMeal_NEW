@@ -94,12 +94,16 @@ class ShareMealController extends Controller
             return back()->with('error', 'Email, password, atau tipe pengguna tidak sesuai.');
         }
 
+        // We allow login even if unverified so users can see rejection reasons 
+        // and re-upload documents from their dashboard.
+
         // Verification Guard for Mitra and Lembaga
         if (in_array($user->role, ['mitra', 'lembaga']) && !$user->is_verified) {
         // Verification Guard for Mitra Only
         if ($user->role === 'mitra' && !$user->is_verified) {
             return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
         }
+
 
         ShareMealState::login($data['user_type'], $user->name);
 
@@ -475,17 +479,17 @@ class ShareMealController extends Controller
         ]);
     }
 
-    public function adminApproveApplication(int $applicationId): RedirectResponse
+    public function adminApproveApplication(int $userId): RedirectResponse
     {
-        ShareMealState::approveApplication($applicationId);
-        return back()->with('success', 'Aplikasi disetujui.');
+        ShareMealState::approveApplication($userId);
+        return back()->with('success', 'Aplikasi verifikasi disetujui.');
     }
 
-    public function adminRejectApplication(Request $request, int $applicationId): RedirectResponse
+    public function adminRejectApplication(Request $request, int $userId): RedirectResponse
     {
         $data = $request->validate(['reason' => ['required']]);
-        ShareMealState::rejectApplication($applicationId, $data['reason']);
-        return back()->with('success', 'Aplikasi ditolak.');
+        ShareMealState::rejectApplication($userId, $data['reason']);
+        return back()->with('success', 'Aplikasi verifikasi ditolak.');
     }
 
     public function adminUsers(Request $request): View

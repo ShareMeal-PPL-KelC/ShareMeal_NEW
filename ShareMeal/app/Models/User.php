@@ -22,6 +22,7 @@ class User extends Authenticatable
         'transactions_count',
         'warnings_count',
         'is_verified',
+        'verification_rejection_reason',
         'document_ktp',
         'document_siup',
         'document_nib',
