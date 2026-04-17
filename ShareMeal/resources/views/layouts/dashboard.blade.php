@@ -55,7 +55,7 @@
             <aside class="hidden md:block w-64 flex-shrink-0">
                 <div class="bg-white rounded-lg shadow-sm p-4 sticky top-24 border border-gray-100">
                     <nav class="space-y-2">
-                        @if($currentUser['type'] === 'admin')
+                        @if(request()->is('admin*'))
                             <a href="{{ route('admin.dashboard') }}" 
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
@@ -76,7 +76,7 @@
                                 <i data-lucide="book-open" class="w-5 h-5"></i>
                                 <span>Edukasi</span>
                             </a>
-                        @elseif($currentUser['type'] === 'lembaga')
+                        @elseif(request()->is('lembaga*'))
                             <a href="{{ route('lembaga.dashboard') }}" 
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('lembaga.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
@@ -86,7 +86,7 @@
                                 <i data-lucide="heart" class="w-5 h-5"></i>
                                 <span>Donasi</span>
                             </a>
-                        @elseif($currentUser['type'] === 'mitra')
+                        @elseif(request()->is('mitra*'))
                             <a href="{{ route('mitra.dashboard') }}" 
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
@@ -136,8 +136,21 @@
                         </button>
                     </div>
                     <nav class="space-y-2">
-                        <!-- Same links as desktop but simplified for mobile -->
-                        @if($currentUser['type'] === 'mitra')
+                        @if(request()->is('admin*'))
+                            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
+                            </a>
+                            <a href="{{ route('admin.verification') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.verification') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="shield" class="w-5 h-5"></i><span>Verifikasi</span>
+                            </a>
+                        @elseif(request()->is('lembaga*'))
+                            <a href="{{ route('lembaga.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('lembaga.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
+                            </a>
+                            <a href="{{ route('lembaga.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('lembaga.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="heart" class="w-5 h-5"></i><span>Donasi</span>
+                            </a>
+                        @elseif(request()->is('mitra*'))
                            <a href="{{ route('mitra.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
                            </a>
@@ -147,8 +160,20 @@
                            <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Pesanan</span>
                            </a>
+                        @else
+                            <a href="{{ route('consumer.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
+                            </a>
+                            <a href="{{ route('consumer.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.search') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="search" class="w-5 h-5"></i><span>Cari Makanan</span>
+                            </a>
+                            <a href="{{ route('consumer.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="history" class="w-5 h-5"></i><span>Riwayat</span>
+                            </a>
+                            <a href="{{ route('consumer.education') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="book-open" class="w-5 h-5"></i><span>Edukasi</span>
+                            </a>
                         @endif
-                        <!-- ... (Add other roles as needed similarly) -->
                     </nav>
                     <div class="mt-6 pt-6 border-t border-gray-100">
                         <form method="POST" action="{{ route('logout') }}" id="logout-form-mobile">
