@@ -50,20 +50,72 @@
                     </div>
                 @endif
 
-                <form method="post" action="{{ route('register.submit') }}" class="space-y-6">
+                <form method="post" action="{{ route('register.submit') }}" enctype="multipart/form-data" class="space-y-6" x-data="{ userType: '{{ old('user_type', 'mitra') }}' }">
                     @csrf
                     <div>
                         <label class="mb-3 block text-sm font-semibold uppercase tracking-[0.2em] text-[#174413]">Pilih Peran Anda</label>
                         <div class="grid gap-3 md:grid-cols-3">
                             @foreach ([['mitra', 'Mitra', 'Toko atau Restoran'], ['consumer', 'Konsumen', 'Pahlawan Makanan'], ['lembaga', 'Lembaga', 'Organisasi Sosial']] as $role)
-                                <label class="card cursor-pointer p-4 hover:border-[#174413] transition-colors relative has-[:checked]:border-[#174413] has-[:checked]:ring-1 has-[:checked]:ring-[#174413] has-[:checked]:bg-green-50/50">
-                                    <input type="radio" name="user_type" value="{{ $role[0] }}" class="mb-3 text-[#174413] focus:ring-[#174413]" {{ old('user_type', $loop->first ? $role[0] : '') == $role[0] ? 'checked' : '' }}>
+                                <label class="card cursor-pointer p-4 hover:border-[#174413] transition-colors relative" 
+                                       :class="userType === '{{ $role[0] }}' ? 'border-[#174413] ring-1 ring-[#174413] bg-green-50/50' : ''">
+                                    <input type="radio" name="user_type" value="{{ $role[0] }}" x-model="userType" class="mb-3 text-[#174413] focus:ring-[#174413]">
                                     <div class="text-base font-semibold text-[#174413]">{{ $role[1] }}</div>
                                     <div class="text-xs text-slate-500">{{ $role[2] }}</div>
                                 </label>
                             @endforeach
                         </div>
                         @error('user_type') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Dokumen Legalitas (Hanya untuk Mitra) -->
+                    <div x-show="userType === 'mitra'" x-cloak class="space-y-6 border-y border-slate-100 py-6">
+                        <h3 class="font-bold text-[#174413] flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                            Dokumen Legalitas Usaha
+                        </h3>
+                        <div class="grid gap-5 md:grid-cols-2">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Foto KTP Pemilik <span class="text-red-500">*</span></label>
+                                <input type="file" name="document_ktp_mitra" :required="userType === 'mitra'" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#174413] file:text-white">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">SIUP / TDP <span class="text-red-500">*</span></label>
+                                <input type="file" name="document_siup_mitra" :required="userType === 'mitra'" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#174413] file:text-white">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Nomor Induk Berusaha (NIB) <span class="text-red-500">*</span></label>
+                                <input type="file" name="document_nib_mitra" :required="userType === 'mitra'" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#174413] file:text-white">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Sertifikat Halal <span class="text-xs font-normal text-slate-400">(Opsional)</span></label>
+                                <input type="file" name="document_halal_mitra" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#174413] file:text-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dokumen Legalitas (Hanya untuk Lembaga) -->
+                    <div x-show="userType === 'lembaga'" x-cloak class="space-y-6 border-y border-slate-100 py-6">
+                        <h3 class="font-bold text-[#174413] flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                            Dokumen Legalitas Lembaga
+                        </h3>
+                        <div class="grid gap-5">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Dokumen Legalitas Dasar <span class="text-red-500">*</span></label>
+                                <p class="text-[10px] text-slate-500 -mt-1">(Akta Pendirian, SK Menkumham, dll)</p>
+                                <input type="file" name="document_legalitas_lembaga" :required="userType === 'lembaga'" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#174413] file:text-white">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Dokumen Izin Operasional & Registrasi Sosial <span class="text-red-500">*</span></label>
+                                <p class="text-[10px] text-slate-500 -mt-1">(Izin LKS, Tanda Daftar Yayasan, dll)</p>
+                                <input type="file" name="document_izin_lembaga" :required="userType === 'lembaga'" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#174413] file:text-white">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-slate-700">Dokumen Identitas & Lokasi <span class="text-red-500">*</span></label>
+                                <p class="text-[10px] text-slate-500 -mt-1">(KTP Pengurus, Domisili, Foto Lokasi)</p>
+                                <input type="file" name="document_identitas_lembaga" :required="userType === 'lembaga'" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-[#174413] file:text-white">
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="grid gap-5">

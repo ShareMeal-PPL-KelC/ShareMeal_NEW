@@ -94,9 +94,14 @@ class ShareMealController extends Controller
             return back()->with('error', 'Email, password, atau tipe pengguna tidak sesuai.');
         }
 
+        // Verification Guard for Mitra and Lembaga
+        if (in_array($user->role, ['mitra', 'lembaga']) && !$user->is_verified) {
+            return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
+        }
+
         ShareMealState::login($data['user_type'], $user->name);
 
-        return redirect()->route('home')->with('success', 'Login berhasil.');
+        return redirect()->route($data['user_type'] . '.dashboard')->with('success', 'Login berhasil.');
     }
 
     public function register(): View
@@ -106,18 +111,32 @@ class ShareMealController extends Controller
 
     public function doRegister(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $rules = [
             'name' => ['required'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'min:6', 'confirmed'],
             'user_type' => ['required', 'in:consumer,mitra,lembaga'],
             'terms' => ['accepted'],
-        ]);
+        ];
 
-        User::query()->create([
+        // Conditional validation for documents
+        if ($request->user_type === 'mitra') {
+            $rules['document_ktp_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_siup_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_nib_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_halal_mitra'] = ['nullable', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+        } elseif ($request->user_type === 'lembaga') {
+            $rules['document_legalitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_izin_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_identitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+        }
+
+        $data = $request->validate($rules);
+
+        $userData = [
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
+            'password' => Hash::make($data['password']),
             'role' => $data['user_type'],
             'status' => 'active',
             'phone' => null,
@@ -126,9 +145,39 @@ class ShareMealController extends Controller
             'transactions_count' => 0,
             'warnings_count' => 0,
             'is_verified' => false,
-        ]);
+        ];
 
-        return redirect()->route('login')->with('success', 'Registrasi berhasil. Silakan login.');
+        // Process file uploads for Mitra
+        if ($data['user_type'] === 'mitra') {
+            if ($request->hasFile('document_ktp_mitra')) {
+                $userData['document_ktp'] = $request->file('document_ktp_mitra')->store('documents', 'public');
+            }
+            if ($request->hasFile('document_siup_mitra')) {
+                $userData['document_siup'] = $request->file('document_siup_mitra')->store('documents', 'public');
+            }
+            if ($request->hasFile('document_nib_mitra')) {
+                $userData['document_nib'] = $request->file('document_nib_mitra')->store('documents', 'public');
+            }
+            if ($request->hasFile('document_halal_mitra')) {
+                $userData['document_halal'] = $request->file('document_halal_mitra')->store('documents', 'public');
+            }
+        } 
+        // Process file uploads for Lembaga
+        elseif ($data['user_type'] === 'lembaga') {
+            if ($request->hasFile('document_legalitas_lembaga')) {
+                $userData['document_ktp'] = $request->file('document_legalitas_lembaga')->store('documents', 'public');
+            }
+            if ($request->hasFile('document_izin_lembaga')) {
+                $userData['document_siup'] = $request->file('document_izin_lembaga')->store('documents', 'public');
+            }
+            if ($request->hasFile('document_identitas_lembaga')) {
+                $userData['document_nib'] = $request->file('document_identitas_lembaga')->store('documents', 'public');
+            }
+        }
+
+        User::query()->create($userData);
+
+        return redirect()->route('login')->with('success', 'Registrasi berhasil. Akun Anda sedang dalam proses verifikasi oleh admin.');
     }
 
     public function logout(): RedirectResponse
