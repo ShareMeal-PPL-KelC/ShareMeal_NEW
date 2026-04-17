@@ -5,15 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'ShareMeal' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 </head>
-<body class="antialiased">
+<body>
     @if (session('success') || session('error'))
         <div class="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
             @if (session('success'))
@@ -26,7 +20,6 @@
     @endif
 
     {{ $slot }}
-
     <script>
         lucide.createIcons();
     </script>
