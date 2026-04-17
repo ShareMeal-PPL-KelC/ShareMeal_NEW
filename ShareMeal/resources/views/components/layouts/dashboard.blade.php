@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'ShareMeal Dashboard' }}</title>
+    <title>Dashboard - ShareMeal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Lucide Icons -->
@@ -12,14 +12,9 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3, .font-manrope { font-family: 'Manrope', sans-serif; }
-        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
-    @php
-        $currentUser = \App\Support\ShareMealState::currentUser();
-    @endphp
-
     <!-- Top Navigation -->
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,13 +25,13 @@
 
                 <div class="flex items-center gap-4">
                     <div class="hidden md:block text-right">
-                        <div class="text-sm font-medium text-gray-900">{{ $currentUser['name'] }}</div>
-                        <div class="text-xs text-gray-500 capitalize">{{ $currentUser['type'] }}</div>
+                        <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
+                        <div class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</div>
                     </div>
                     <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop" class="hidden md:flex">
                         @csrf
                         <button type="submit" class="flex items-center gap-2 border border-gray-300 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors">
-                            <i data-lucide="log-out" class="w-4 h-4 text-gray-500"></i>
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
                             Keluar
                         </button>
                     </form>
@@ -126,10 +121,10 @@
             <!-- Mobile Menu Overlay -->
             <div x-show="mobileMenuOpen" class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40" @click="mobileMenuOpen = false" x-cloak>
                 <div class="bg-white w-64 h-full p-4" @click.stop>
-                    <div class="mb-6 flex justify-between items-center border-b pb-4">
+                    <div class="mb-6 flex justify-between items-center">
                         <div>
-                            <div class="text-sm font-medium text-gray-900">{{ $currentUser['name'] }}</div>
-                            <div class="text-xs text-gray-500 capitalize">{{ $currentUser['type'] }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
+                            <div class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</div>
                         </div>
                         <button @click="mobileMenuOpen = false" class="text-gray-400 hover:text-gray-600">
                             <i data-lucide="x" class="w-5 h-5"></i>
@@ -157,15 +152,15 @@
                                 <i data-lucide="heart" class="w-5 h-5"></i><span>Donasi</span>
                             </a>
                         @elseif(request()->is('mitra*'))
-                           <a href="{{ route('mitra.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                               <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
-                           </a>
-                           <a href="{{ route('mitra.inventory') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.inventory') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                               <i data-lucide="package" class="w-5 h-5"></i><span>Inventaris</span>
-                           </a>
-                           <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                               <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Pesanan</span>
-                           </a>
+                            <a href="{{ route('mitra.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
+                            </a>
+                            <a href="{{ route('mitra.inventory') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.inventory') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="package" class="w-5 h-5"></i><span>Inventaris</span>
+                            </a>
+                            <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Pesanan</span>
+                            </a>
                         @else
                             <a href="{{ route('consumer.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
@@ -185,7 +180,7 @@
                         <form method="POST" action="{{ route('logout') }}" id="logout-form-mobile">
                             @csrf
                             <button type="submit" class="flex w-full items-center gap-3 px-4 py-3 text-red-600 font-medium hover:bg-red-50 rounded-lg transition-colors">
-                                <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
+                                <i data-lucide="log-out" class="w-4 h-4"></i>
                                 Keluar
                             </button>
                         </form>
@@ -195,26 +190,14 @@
 
             <!-- Main Content -->
             <main class="flex-1">
-                @if (session('success') || session('error'))
-                    <div class="mb-6 flex justify-center">
-                        @if (session('success'))
-                            <div class="rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-lg w-full max-w-lg text-center">{{ session('success') }}</div>
-                        @endif
-                        @if (session('error'))
-                            <div class="rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg w-full max-w-lg text-center">{{ session('error') }}</div>
-                        @endif
-                    </div>
-                @endif
-                @yield('content')
+                {{ $slot }}
             </main>
         </div>
     </div>
 
     <script>
         // Initialize Lucide Icons
-        if (window.lucide) {
-            lucide.createIcons();
-        }
+        lucide.createIcons();
     </script>
 </body>
 </html>

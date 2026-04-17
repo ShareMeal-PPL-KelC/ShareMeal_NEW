@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     protected $fillable = [
@@ -29,6 +29,9 @@ class User extends Authenticatable
         'document_siup',
         'document_nib',
         'document_halal',
+        'document_legalitas',
+        'document_izin',
+        'document_identitas',
         'last_warning_at',
         'warning_reason',
         'blocked_at',
