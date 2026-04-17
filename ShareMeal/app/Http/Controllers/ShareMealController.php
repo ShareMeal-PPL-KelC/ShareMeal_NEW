@@ -7,7 +7,8 @@ use App\Support\ShareMealState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\View\View;
+use Illuminate\View\View; 
+
 
 class ShareMealController extends Controller
 {
@@ -93,10 +94,20 @@ class ShareMealController extends Controller
             return back()->with('error', 'Email, password, atau tipe pengguna tidak sesuai.');
         }
 
-        // PERBAIKAN: Login di-set berdasarkan ID user yang valid
-        ShareMealState::login($user->id);
+        // We allow login even if unverified so users can see rejection reasons 
+        // and re-upload documents from their dashboard.
 
-        return redirect()->route('home')->with('success', 'Login berhasil.');
+        // Verification Guard for Mitra and Lembaga
+        if (in_array($user->role, ['mitra', 'lembaga']) && !$user->is_verified) {
+        // Verification Guard for Mitra Only
+        if ($user->role === 'mitra' && !$user->is_verified) {
+            return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
+        }
+
+
+        ShareMealState::login($data['user_type'], $user->name);
+
+        return redirect()->route($data['user_type'] . '.dashboard')->with('success', 'Login berhasil.');
     }
 
     public function register(): View
@@ -106,18 +117,36 @@ class ShareMealController extends Controller
 
     public function doRegister(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $rules = [
             'name' => ['required'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'min:6', 'confirmed'],
             'user_type' => ['required', 'in:consumer,mitra,lembaga'],
             'terms' => ['accepted'],
-        ]);
+        ];
 
-        User::query()->create([
+        // Conditional validation for documents (Mitra Only)
+        if ($request->user_type === 'mitra') {
+            $rules['document_ktp_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_siup_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_nib_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_halal_mitra'] = ['nullable', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+        } elseif ($request->user_type === 'lembaga') {
+            $rules['document_legalitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_izin_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+            $rules['document_identitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+        }
+
+        $data = $request->validate($rules);
+
+        }
+
+        $data = $request->validate($rules);
+
+        $userData = [
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'], // Password akan otomatis di-hash karena cast di model User
+            'password' => Hash::make($data['password']),
             'role' => $data['user_type'],
             'status' => 'active',
             'phone' => null,
@@ -126,15 +155,58 @@ class ShareMealController extends Controller
             'transactions_count' => 0,
             'warnings_count' => 0,
             'is_verified' => false,
-        ]);
+        ];
 
-        return redirect()->route('login')->with('success', 'Registrasi berhasil. Silakan login.');
+        // Process file uploads for Mitra
+        if ($data['user_type'] === 'mitra') {
+            $userData['document_ktp'] = $request->file('document_ktp_mitra')->store('documents', 'public');
+            $userData['document_siup'] = $request->file('document_siup_mitra')->store('documents', 'public');
+            $userData['document_nib'] = $request->file('document_nib_mitra')->store('documents', 'public');
+            if ($request->hasFile('document_halal_mitra')) {
+                $userData['document_halal'] = $request->file('document_halal_mitra')->store('documents', 'public');
+            }
+        }
+
+        User::query()->create($userData);
+
+        return redirect()->route('login')->with('success', 'Registrasi berhasil. Akun Anda sedang dalam proses verifikasi oleh admin.');
     }
 
     public function logout(): RedirectResponse
     {
         ShareMealState::logout();
         return redirect()->route('login')->with('success', 'Anda telah keluar.');
+    }
+
+    public function uploadBusinessDocument(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'document_ktp' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_siup' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_nib' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_halal' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $user = User::query()->find($userId);
+
+        if (!$user) {
+            return back()->with('error', 'Sesi tidak valid. Silakan login kembali.');
+        }
+
+        $updates = [];
+        foreach (['document_ktp', 'document_siup', 'document_nib', 'document_halal'] as $field) {
+            if ($request->hasFile($field)) {
+                $updates[$field] = $request->file($field)->store('documents', 'public');
+            }
+        }
+
+        if (!empty($updates)) {
+            $user->update($updates);
+            return back()->with('success', 'Semua dokumen berhasil diunggah dan sedang menunggu verifikasi.');
+        }
+
+        return back()->with('error', 'Gagal mengunggah dokumen.');
     }
 
     public function consumerDashboard(): View
@@ -188,11 +260,11 @@ class ShareMealController extends Controller
             'search' => $search,
             'selectedFilters' => $filters,
             'filters' => [
-                ['id' => 'halal', 'label' => 'Halal', 'icon' => '阜'],
-                ['id' => 'vegan', 'label' => 'Vegan', 'icon' => '験'],
-                ['id' => 'bakery', 'label' => 'Bakery', 'icon' => '込'],
-                ['id' => 'healthy', 'label' => 'Healthy', 'icon' => '･'],
-                ['id' => 'indonesian', 'label' => 'Indonesian', 'icon' => '骨'],
+                ['id' => 'halal', 'label' => 'Halal', 'icon' => '🕌'],
+                ['id' => 'vegan', 'label' => 'Vegan', 'icon' => '🌱'],
+                ['id' => 'bakery', 'label' => 'Bakery', 'icon' => '🍞'],
+                ['id' => 'healthy', 'label' => 'Healthy', 'icon' => '🥗'],
+                ['id' => 'indonesian', 'label' => 'Indonesian', 'icon' => '🍜'],
             ],
         ]);
     }
@@ -295,7 +367,19 @@ class ShareMealController extends Controller
     public function mitraDashboard(): View
     {
         return view('pages.mitra.dashboard', $this->dashboardData('mitra', 'Dashboard Mitra', 'Kelola surplus pangan dan kurangi food waste') + [
-            'stats' => ['total_products' => 45, 'active_flash_sale' => 12, 'pending_orders' => 8, 'total_revenue' => 2450000, 'food_saved' => 85, 'donations_given' => 15],
+            'stats' => (object) [
+                'totalProducts' => 2,
+                'activeFlashSale' => 1,
+                'pendingOrders' => 0,
+                'totalRevenue' => 0,
+                'foodSaved' => 0,
+                'donationsGiven' => 0,
+            ],
+            'expiringItems' => [
+                (object) ['name' => 'Roti Tawar', 'quantity' => 25, 'expiresIn' => '4 hours from now', 'status' => 'warning'],
+                (object) ['name' => 'Roti Keju', 'quantity' => 30, 'expiresIn' => '20 hours from now', 'status' => 'normal'],
+            ],
+            'recentOrders' => []
         ]);
     }
 
@@ -349,8 +433,13 @@ class ShareMealController extends Controller
     public function lembagaDashboard(): View
     {
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => ['total_donations' => 156, 'active_donations' => 8, 'beneficiaries' => 120, 'this_month' => 45],
-            'donations' => ShareMealState::get('donations'),
+            'stats' => (object) [
+                'totalDonations' => 156,
+                'activeDonations' => 8,
+                'beneficiaries' => 120,
+                'thisMonth' => 45,
+            ],
+            'recentDonations' => ShareMealState::get('donations'),
         ]);
     }
 
@@ -390,17 +479,17 @@ class ShareMealController extends Controller
         ]);
     }
 
-    public function adminApproveApplication(int $applicationId): RedirectResponse
+    public function adminApproveApplication(int $userId): RedirectResponse
     {
-        ShareMealState::approveApplication($applicationId);
-        return back()->with('success', 'Aplikasi disetujui.');
+        ShareMealState::approveApplication($userId);
+        return back()->with('success', 'Aplikasi verifikasi disetujui.');
     }
 
-    public function adminRejectApplication(Request $request, int $applicationId): RedirectResponse
+    public function adminRejectApplication(Request $request, int $userId): RedirectResponse
     {
         $data = $request->validate(['reason' => ['required']]);
-        ShareMealState::rejectApplication($applicationId, $data['reason']);
-        return back()->with('success', 'Aplikasi ditolak.');
+        ShareMealState::rejectApplication($userId, $data['reason']);
+        return back()->with('success', 'Aplikasi verifikasi ditolak.');
     }
 
     public function adminUsers(Request $request): View

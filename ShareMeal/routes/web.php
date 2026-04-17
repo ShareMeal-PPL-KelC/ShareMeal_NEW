@@ -23,6 +23,7 @@ Route::prefix('consumer')->name('consumer.')->group(function () {
 
 Route::prefix('mitra')->name('mitra.')->group(function () {
     Route::get('/', [ShareMealController::class, 'mitraDashboard'])->name('dashboard');
+    Route::post('/upload-document', [ShareMealController::class, 'uploadBusinessDocument'])->name('upload.document');
     Route::get('/inventory', [ShareMealController::class, 'mitraInventory'])->name('inventory');
     Route::post('/inventory', [ShareMealController::class, 'mitraInventoryStore'])->name('inventory.store');
     Route::post('/inventory/{productId}/flash-sale', [ShareMealController::class, 'mitraInventoryFlashSale'])->name('inventory.flash-sale');
@@ -33,6 +34,7 @@ Route::prefix('mitra')->name('mitra.')->group(function () {
 
 Route::prefix('lembaga')->name('lembaga.')->group(function () {
     Route::get('/', [ShareMealController::class, 'lembagaDashboard'])->name('dashboard');
+    Route::post('/upload-document', [ShareMealController::class, 'uploadBusinessDocument'])->name('upload.document');
     Route::get('/donations', [ShareMealController::class, 'lembagaDonations'])->name('donations');
     Route::post('/donations/{donationId}/claim', [ShareMealController::class, 'lembagaClaimDonation'])->name('donations.claim');
     Route::post('/donations/{donationId}/complete', [ShareMealController::class, 'lembagaCompleteDonation'])->name('donations.complete');
