@@ -97,14 +97,6 @@ class ShareMealController extends Controller
         // We allow login even if unverified so users can see rejection reasons 
         // and re-upload documents from their dashboard.
 
-        // Verification Guard for Mitra and Lembaga
-        if (in_array($user->role, ['mitra', 'lembaga']) && !$user->is_verified) {
-        // Verification Guard for Mitra Only
-        if ($user->role === 'mitra' && !$user->is_verified) {
-            return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
-        }
-
-
         ShareMealState::login($data['user_type'], $user->name);
 
         return redirect()->route($data['user_type'] . '.dashboard')->with('success', 'Login berhasil.');
@@ -135,10 +127,6 @@ class ShareMealController extends Controller
             $rules['document_legalitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_izin_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_identitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
-        }
-
-        $data = $request->validate($rules);
-
         }
 
         $data = $request->validate($rules);
@@ -202,8 +190,13 @@ class ShareMealController extends Controller
         }
 
         if (!empty($updates)) {
+            // Reset verification status when re-uploading
+            $updates['is_verified'] = false;
+            $updates['verification_rejection_reason'] = null;
+            $updates['status'] = 'active';
+            
             $user->update($updates);
-            return back()->with('success', 'Semua dokumen berhasil diunggah dan sedang menunggu verifikasi.');
+            return back()->with('success', 'Semua dokumen berhasil diunggah dan sedang menunggu verifikasi ulang.');
         }
 
         return back()->with('error', 'Gagal mengunggah dokumen.');
@@ -432,14 +425,20 @@ class ShareMealController extends Controller
 
     public function lembagaDashboard(): View
     {
+        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $userObj = User::query()->find($userId);
+        $donations = ShareMealState::get('donations');
+
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
+            'userObj' => $userObj,
             'stats' => (object) [
                 'totalDonations' => 156,
                 'activeDonations' => 8,
                 'beneficiaries' => 120,
                 'thisMonth' => 45,
             ],
-            'recentDonations' => ShareMealState::get('donations'),
+            'availableDonations' => collect($donations)->filter(fn($d) => $d['status'] === 'available')->take(5),
+            'recentDonations' => collect($donations)->filter(fn($d) => $d['status'] !== 'available')->take(5),
         ]);
     }
 
