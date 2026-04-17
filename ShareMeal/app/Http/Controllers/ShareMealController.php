@@ -7,7 +7,8 @@ use App\Support\ShareMealState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\View\View;
+use Illuminate\View\View; 
+
 
 class ShareMealController extends Controller
 {
