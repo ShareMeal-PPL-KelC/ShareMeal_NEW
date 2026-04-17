@@ -59,6 +59,8 @@
                                 <label class="card cursor-pointer p-4 hover:border-[#174413] transition-colors relative" 
                                        :class="userType === '{{ $role[0] }}' ? 'border-[#174413] ring-1 ring-[#174413] bg-green-50/50' : ''">
                                     <input type="radio" name="user_type" value="{{ $role[0] }}" x-model="userType" class="mb-3 text-[#174413] focus:ring-[#174413]">
+                                <label class="card cursor-pointer p-4 hover:border-[#174413] transition-colors relative has-[:checked]:border-[#174413] has-[:checked]:ring-1 has-[:checked]:ring-[#174413] has-[:checked]:bg-green-50/50">
+                                    <input type="radio" name="user_type" value="{{ $role[0] }}" x-model="userType" class="mb-3 text-[#174413] focus:ring-[#174413]" {{ old('user_type', 'mitra') == $role[0] ? 'checked' : '' }}>
                                     <div class="text-base font-semibold text-[#174413]">{{ $role[1] }}</div>
                                     <div class="text-xs text-slate-500">{{ $role[2] }}</div>
                                 </label>
@@ -73,6 +75,7 @@
                             <i data-lucide="shield-check" class="w-5 h-5"></i>
                             Dokumen Legalitas Usaha
                         </h3>
+                        
                         <div class="grid gap-5 md:grid-cols-2">
                             <div class="space-y-2">
                                 <label class="block text-sm font-semibold text-slate-700">Foto KTP Pemilik <span class="text-red-500">*</span></label>

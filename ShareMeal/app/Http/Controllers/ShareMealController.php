@@ -96,6 +96,8 @@ class ShareMealController extends Controller
 
         // Verification Guard for Mitra and Lembaga
         if (in_array($user->role, ['mitra', 'lembaga']) && !$user->is_verified) {
+        // Verification Guard for Mitra Only
+        if ($user->role === 'mitra' && !$user->is_verified) {
             return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
         }
 
@@ -119,7 +121,7 @@ class ShareMealController extends Controller
             'terms' => ['accepted'],
         ];
 
-        // Conditional validation for documents
+        // Conditional validation for documents (Mitra Only)
         if ($request->user_type === 'mitra') {
             $rules['document_ktp_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_siup_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
@@ -129,6 +131,10 @@ class ShareMealController extends Controller
             $rules['document_legalitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_izin_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_identitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
+        }
+
+        $data = $request->validate($rules);
+
         }
 
         $data = $request->validate($rules);
@@ -149,29 +155,11 @@ class ShareMealController extends Controller
 
         // Process file uploads for Mitra
         if ($data['user_type'] === 'mitra') {
-            if ($request->hasFile('document_ktp_mitra')) {
-                $userData['document_ktp'] = $request->file('document_ktp_mitra')->store('documents', 'public');
-            }
-            if ($request->hasFile('document_siup_mitra')) {
-                $userData['document_siup'] = $request->file('document_siup_mitra')->store('documents', 'public');
-            }
-            if ($request->hasFile('document_nib_mitra')) {
-                $userData['document_nib'] = $request->file('document_nib_mitra')->store('documents', 'public');
-            }
+            $userData['document_ktp'] = $request->file('document_ktp_mitra')->store('documents', 'public');
+            $userData['document_siup'] = $request->file('document_siup_mitra')->store('documents', 'public');
+            $userData['document_nib'] = $request->file('document_nib_mitra')->store('documents', 'public');
             if ($request->hasFile('document_halal_mitra')) {
                 $userData['document_halal'] = $request->file('document_halal_mitra')->store('documents', 'public');
-            }
-        } 
-        // Process file uploads for Lembaga
-        elseif ($data['user_type'] === 'lembaga') {
-            if ($request->hasFile('document_legalitas_lembaga')) {
-                $userData['document_ktp'] = $request->file('document_legalitas_lembaga')->store('documents', 'public');
-            }
-            if ($request->hasFile('document_izin_lembaga')) {
-                $userData['document_siup'] = $request->file('document_izin_lembaga')->store('documents', 'public');
-            }
-            if ($request->hasFile('document_identitas_lembaga')) {
-                $userData['document_nib'] = $request->file('document_identitas_lembaga')->store('documents', 'public');
             }
         }
 
@@ -184,6 +172,37 @@ class ShareMealController extends Controller
     {
         ShareMealState::logout();
         return redirect()->route('login')->with('success', 'Anda telah keluar.');
+    }
+
+    public function uploadBusinessDocument(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'document_ktp' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_siup' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_nib' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_halal' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $user = User::query()->find($userId);
+
+        if (!$user) {
+            return back()->with('error', 'Sesi tidak valid. Silakan login kembali.');
+        }
+
+        $updates = [];
+        foreach (['document_ktp', 'document_siup', 'document_nib', 'document_halal'] as $field) {
+            if ($request->hasFile($field)) {
+                $updates[$field] = $request->file($field)->store('documents', 'public');
+            }
+        }
+
+        if (!empty($updates)) {
+            $user->update($updates);
+            return back()->with('success', 'Semua dokumen berhasil diunggah dan sedang menunggu verifikasi.');
+        }
+
+        return back()->with('error', 'Gagal mengunggah dokumen.');
     }
 
     public function consumerDashboard(): View
@@ -344,7 +363,19 @@ class ShareMealController extends Controller
     public function mitraDashboard(): View
     {
         return view('pages.mitra.dashboard', $this->dashboardData('mitra', 'Dashboard Mitra', 'Kelola surplus pangan dan kurangi food waste') + [
-            'stats' => ['total_products' => 45, 'active_flash_sale' => 12, 'pending_orders' => 8, 'total_revenue' => 2450000, 'food_saved' => 85, 'donations_given' => 15],
+            'stats' => (object) [
+                'totalProducts' => 2,
+                'activeFlashSale' => 1,
+                'pendingOrders' => 0,
+                'totalRevenue' => 0,
+                'foodSaved' => 0,
+                'donationsGiven' => 0,
+            ],
+            'expiringItems' => [
+                (object) ['name' => 'Roti Tawar', 'quantity' => 25, 'expiresIn' => '4 hours from now', 'status' => 'warning'],
+                (object) ['name' => 'Roti Keju', 'quantity' => 30, 'expiresIn' => '20 hours from now', 'status' => 'normal'],
+            ],
+            'recentOrders' => []
         ]);
     }
 
@@ -398,8 +429,13 @@ class ShareMealController extends Controller
     public function lembagaDashboard(): View
     {
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => ['total_donations' => 156, 'active_donations' => 8, 'beneficiaries' => 120, 'this_month' => 45],
-            'donations' => ShareMealState::get('donations'),
+            'stats' => (object) [
+                'totalDonations' => 156,
+                'activeDonations' => 8,
+                'beneficiaries' => 120,
+                'thisMonth' => 45,
+            ],
+            'recentDonations' => ShareMealState::get('donations'),
         ]);
     }
 
