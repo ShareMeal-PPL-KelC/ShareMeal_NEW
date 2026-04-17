@@ -7,8 +7,7 @@ use App\Support\ShareMealState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\View\View; 
-
+use Illuminate\View\View;
 
 class ShareMealController extends Controller
 {
@@ -94,7 +93,8 @@ class ShareMealController extends Controller
             return back()->with('error', 'Email, password, atau tipe pengguna tidak sesuai.');
         }
 
-        ShareMealState::login($data['user_type'], $user->name);
+        // PERBAIKAN: Login di-set berdasarkan ID user yang valid
+        ShareMealState::login($user->id);
 
         return redirect()->route('home')->with('success', 'Login berhasil.');
     }
@@ -117,7 +117,7 @@ class ShareMealController extends Controller
         User::query()->create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
+            'password' => $data['password'], // Password akan otomatis di-hash karena cast di model User
             'role' => $data['user_type'],
             'status' => 'active',
             'phone' => null,
@@ -188,11 +188,11 @@ class ShareMealController extends Controller
             'search' => $search,
             'selectedFilters' => $filters,
             'filters' => [
-                ['id' => 'halal', 'label' => 'Halal', 'icon' => '🕌'],
-                ['id' => 'vegan', 'label' => 'Vegan', 'icon' => '🌱'],
-                ['id' => 'bakery', 'label' => 'Bakery', 'icon' => '🍞'],
-                ['id' => 'healthy', 'label' => 'Healthy', 'icon' => '🥗'],
-                ['id' => 'indonesian', 'label' => 'Indonesian', 'icon' => '🍜'],
+                ['id' => 'halal', 'label' => 'Halal', 'icon' => '阜'],
+                ['id' => 'vegan', 'label' => 'Vegan', 'icon' => '験'],
+                ['id' => 'bakery', 'label' => 'Bakery', 'icon' => '込'],
+                ['id' => 'healthy', 'label' => 'Healthy', 'icon' => '･'],
+                ['id' => 'indonesian', 'label' => 'Indonesian', 'icon' => '骨'],
             ],
         ]);
     }

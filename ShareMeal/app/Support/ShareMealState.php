@@ -18,12 +18,16 @@ class ShareMealState
 {
     public static function boot(): void
     {
+        // PERBAIKAN: Fitur auto-login dimatikan sementara agar Anda bisa mengetes
+        // form Login & Register dengan benar.
+        /*
         if (!Session::has('sharemeal.current_user_id')) {
             $defaultUser = User::query()->where('role', 'consumer')->where('name', 'Budi Santoso')->first();
             if ($defaultUser) {
                 Session::put('sharemeal.current_user_id', $defaultUser->id);
             }
         }
+        */
     }
 
     public static function currentUser(): array
@@ -40,14 +44,10 @@ class ShareMealState
         ];
     }
 
-    public static function login(string $type, string $name): void
+    // PERBAIKAN: Login menggunakan ID yang pasti unik agar tidak salah akun
+    public static function login(int $userId): void
     {
-        $user = User::query()->where('role', $type)->where('name', $name)->first()
-            ?? User::query()->where('role', $type)->first();
-
-        if ($user) {
-            Session::put('sharemeal.current_user_id', $user->id);
-        }
+        Session::put('sharemeal.current_user_id', $userId);
     }
 
     public static function logout(): void
