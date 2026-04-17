@@ -169,6 +169,42 @@ class ShareMealController extends Controller
         return redirect()->route('login')->with('success', 'Anda telah keluar.');
     }
 
+    public function uploadBusinessDocument(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'document_ktp' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_siup' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_nib' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'document_halal' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+        ]);
+
+        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $user = User::query()->find($userId);
+
+        if (!$user) {
+            return back()->with('error', 'Sesi tidak valid. Silakan login kembali.');
+        }
+
+        $updates = [];
+        foreach (['document_ktp', 'document_siup', 'document_nib', 'document_halal'] as $field) {
+            if ($request->hasFile($field)) {
+                $updates[$field] = $request->file($field)->store('documents', 'public');
+            }
+        }
+
+        if (!empty($updates)) {
+            // Reset verification status when re-uploading
+            $updates['is_verified'] = false;
+            $updates['verification_rejection_reason'] = null;
+            $updates['status'] = 'active';
+            
+            $user->update($updates);
+            return back()->with('success', 'Semua dokumen berhasil diunggah dan sedang menunggu verifikasi ulang.');
+        }
+
+        return back()->with('error', 'Gagal mengunggah dokumen.');
+    }
+
     public function consumerDashboard(): View
     {
         $stores = ShareMealState::get('stores');
@@ -485,6 +521,10 @@ class ShareMealController extends Controller
 
     public function lembagaDashboard(): View
     {
+        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $userObj = User::query()->find($userId);
+        $donations = ShareMealState::get('donations');
+
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
             'stats' => ['total_donations' => 156, 'active_donations' => 8, 'beneficiaries' => 120, 'this_month' => 45],
             'donations' => ShareMealState::get('donations'),

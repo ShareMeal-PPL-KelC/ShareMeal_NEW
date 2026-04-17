@@ -89,5 +89,9 @@ class DatabaseSeeder extends Seeder
             'quantity' => 1,
             'price' => 15000,
         ]);
+
+        $this->call([
+            AdminSeeder::class,
+        ]);
     }
 }
