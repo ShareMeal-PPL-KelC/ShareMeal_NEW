@@ -99,6 +99,7 @@ class ShareMealController extends Controller
             return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
         }
 
+        \Illuminate\Support\Facades\Auth::login($user);
         ShareMealState::login($data['user_type'], $user->name);
 
         return redirect()->route($data['user_type'] . '.dashboard')->with('success', 'Login berhasil.');
@@ -160,6 +161,7 @@ class ShareMealController extends Controller
 
     public function logout(): RedirectResponse
     {
+        \Illuminate\Support\Facades\Auth::logout();
         ShareMealState::logout();
         return redirect()->route('login')->with('success', 'Anda telah keluar.');
     }

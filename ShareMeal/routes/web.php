@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ConsumerController;
 use App\Http\Controllers\ShareMealController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,14 +12,12 @@ Route::post('/register', [ShareMealController::class, 'doRegister'])->name('regi
 Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
 
 Route::prefix('consumer')->name('consumer.')->group(function () {
-    Route::get('/', [ShareMealController::class, 'consumerDashboard'])->name('dashboard');
-    Route::get('/search', [ShareMealController::class, 'consumerSearch'])->name('search');
-    Route::post('/book', [ShareMealController::class, 'consumerBook'])->name('book');
-    Route::get('/checkout', [ShareMealController::class, 'consumerCheckout'])->name('checkout');
-    Route::post('/checkout/confirm', [ShareMealController::class, 'consumerConfirmPayment'])->name('checkout.confirm');
-    Route::get('/history', [ShareMealController::class, 'consumerHistory'])->name('history');
-    Route::post('/history/review', [ShareMealController::class, 'consumerReview'])->name('history.review');
-    Route::get('/education', [ShareMealController::class, 'consumerEducation'])->name('education');
+    Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
+    Route::get('/search', [ConsumerController::class, 'search'])->name('search');
+    Route::get('/history', [ConsumerController::class, 'history'])->name('history');
+    Route::get('/education', [ConsumerController::class, 'education'])->name('education');
+    Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');
+    Route::post('/checkout', [ConsumerController::class, 'storeOrder'])->name('checkout.store');
 });
 
 Route::prefix('mitra')->name('mitra.')->group(function () {
