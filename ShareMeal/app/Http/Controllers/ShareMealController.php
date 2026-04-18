@@ -16,7 +16,7 @@ class ShareMealController extends Controller
 {
     protected function currentUser(): array
     {
-        return ShareMealState::currentUser(); 
+        return ShareMealState::currentUser();
     }
 
     protected function dashboardNavigation(string $type): array
@@ -203,7 +203,7 @@ class ShareMealController extends Controller
             $updates['is_verified'] = false;
             $updates['verification_rejection_reason'] = null;
             $updates['status'] = 'active';
-            
+
             $user->update($updates);
             return back()->with('success', 'Semua dokumen berhasil diunggah dan sedang menunggu verifikasi ulang.');
         }
@@ -438,7 +438,7 @@ class ShareMealController extends Controller
     public function mitraInventoryUpdate(Request $request, int $productId): RedirectResponse
     {
         $product = Product::where('user_id', Auth::id())->findOrFail($productId);
-        
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'category' => ['required', 'string'],
@@ -470,7 +470,7 @@ class ShareMealController extends Controller
     public function mitraInventoryFlashSale(int $productId): RedirectResponse
     {
         $product = Product::where('user_id', Auth::id())->findOrFail($productId);
-        
+
         $product->update([
             'status' => 'flash-sale',
             'discount_price' => floor($product->price * 0.7), // Example 30% discount
@@ -504,7 +504,7 @@ class ShareMealController extends Controller
     {
         $product = Product::where('user_id', Auth::id())->findOrFail($productId);
         $product->delete();
-        
+
         return back()->with('success', 'Produk dihapus.');
     }
 
