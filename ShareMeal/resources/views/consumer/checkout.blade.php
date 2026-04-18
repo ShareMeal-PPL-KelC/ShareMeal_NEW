@@ -218,6 +218,12 @@
                 <div class="bg-gray-50 border border-gray-100 p-8 rounded-2xl mb-8 max-w-sm mx-auto shadow-inner">
                     <div class="space-y-4 text-left">
                         <div>
+                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Lokasi Pengambilan</span>
+                            <div class="font-bold text-gray-900 text-sm mb-0.5">{{ $booking->storeName }}</div>
+                            <div class="text-xs text-gray-500 font-medium">{{ $booking->address }}</div>
+                        </div>
+                        <div class="h-px bg-gray-200 w-full"></div>
+                        <div>
                             <span class="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Kode Pengambilan</span>
                             <div class="font-mono font-black text-[#174413] text-2xl tracking-wider" x-text="pickupCode"></div>
                         </div>
@@ -239,11 +245,12 @@
         </div>
     </div>
 
-    <!-- Hidden Form to Submit Order -->
     <form id="checkout-form" action="{{ route('consumer.checkout.store') }}" method="POST" class="hidden">
         @csrf
-        <input type="hidden" name="product_id" value="{{ $booking->productId ?? 1 }}">
+        <input type="hidden" name="product_id" value="{{ $booking->product_id }}">
+        <input type="hidden" name="mitra_id" value="{{ $booking->mitra_id }}">
         <input type="hidden" name="quantity" value="{{ $booking->quantity }}">
+        <input type="hidden" name="price" value="{{ $booking->price }}">
         <input type="hidden" name="payment_method" :value="paymentMethod">
     </form>
 </div>
