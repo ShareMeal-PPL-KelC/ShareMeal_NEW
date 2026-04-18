@@ -56,13 +56,11 @@
                         <label class="mb-3 block text-sm font-semibold uppercase tracking-[0.2em] text-[#174413]">Pilih Peran Anda</label>
                         <div class="grid gap-3 md:grid-cols-3">
                             @foreach ([['mitra', 'Mitra', 'Toko atau Restoran'], ['consumer', 'Konsumen', 'Pahlawan Makanan'], ['lembaga', 'Lembaga', 'Organisasi Sosial']] as $role)
-                                <label class="card cursor-pointer p-4 hover:border-[#174413] transition-colors relative" 
-                                       :class="userType === '{{ $role[0] }}' ? 'border-[#174413] ring-1 ring-[#174413] bg-green-50/50' : ''">
-                                    <input type="radio" name="user_type" value="{{ $role[0] }}" x-model="userType" class="mb-3 text-[#174413] focus:ring-[#174413]">
-                                <label class="card cursor-pointer p-4 hover:border-[#174413] transition-colors relative has-[:checked]:border-[#174413] has-[:checked]:ring-1 has-[:checked]:ring-[#174413] has-[:checked]:bg-green-50/50">
-                                    <input type="radio" name="user_type" value="{{ $role[0] }}" x-model="userType" class="mb-3 text-[#174413] focus:ring-[#174413]" {{ old('user_type', 'mitra') == $role[0] ? 'checked' : '' }}>
-                                    <div class="text-base font-semibold text-[#174413]">{{ $role[1] }}</div>
-                                    <div class="text-xs text-slate-500">{{ $role[2] }}</div>
+                                <label class="cursor-pointer rounded-xl border-2 p-4 transition-all relative block" 
+                                       :class="userType === '{{ $role[0] }}' ? 'border-[#174413] bg-green-50 shadow-sm' : 'border-slate-100 hover:border-slate-200 bg-white'">
+                                    <input type="radio" name="user_type" value="{{ $role[0] }}" x-model="userType" class="mb-3 h-4 w-4 text-[#174413] focus:ring-[#174413]" {{ old('user_type', 'mitra') == $role[0] ? 'checked' : '' }}>
+                                    <div class="text-base font-bold text-[#174413]">{{ $role[1] }}</div>
+                                    <div class="text-[10px] leading-tight text-slate-500 mt-0.5">{{ $role[2] }}</div>
                                 </label>
                             @endforeach
                         </div>
