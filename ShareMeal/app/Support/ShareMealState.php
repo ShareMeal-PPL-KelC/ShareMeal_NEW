@@ -2,14 +2,7 @@
 
 namespace App\Support;
 
-use App\Models\Article;
-use App\Models\Booking;
-use App\Models\Deal;
-use App\Models\Donation;
-use App\Models\InventoryProduct;
-use App\Models\Store;
 use App\Models\User;
-use App\Models\VerificationApplication;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -18,12 +11,16 @@ class ShareMealState
 {
     public static function boot(): void
     {
+        // PERBAIKAN: Fitur auto-login dimatikan sementara agar Anda bisa mengetes
+        // form Login & Register dengan benar.
+        /*
         if (!Session::has('sharemeal.current_user_id')) {
             $defaultUser = User::query()->where('role', 'consumer')->where('name', 'Budi Santoso')->first();
             if ($defaultUser) {
                 Session::put('sharemeal.current_user_id', $defaultUser->id);
             }
         }
+        */
     }
 
     public static function currentUser(): array
@@ -40,14 +37,10 @@ class ShareMealState
         ];
     }
 
-    public static function login(string $type, string $name): void
+    // PERBAIKAN: Login menggunakan ID yang pasti unik agar tidak salah akun
+    public static function login(int $userId): void
     {
-        $user = User::query()->where('role', $type)->where('name', $name)->first()
-            ?? User::query()->where('role', $type)->first();
-
-        if ($user) {
-            Session::put('sharemeal.current_user_id', $user->id);
-        }
+        Session::put('sharemeal.current_user_id', $userId);
     }
 
     public static function logout(): void
@@ -59,15 +52,15 @@ class ShareMealState
     public static function get(string $key, mixed $default = []): mixed
     {
         return match ($key) {
-            'stores' => Store::query()->with('deals')->get()->map(fn (Store $store) => self::transformStore($store))->all(),
-            'bookings' => Booking::query()->orderByDesc('booking_date')->get()->map(fn (Booking $booking) => self::transformBooking($booking))->all(),
-            'orders' => Booking::query()->orderByDesc('booking_date')->get()->map(fn (Booking $booking) => self::transformOrder($booking))->all(),
-            'inventory_products' => InventoryProduct::query()->orderBy('id')->get()->map(fn (InventoryProduct $product) => self::transformInventoryProduct($product))->all(),
-            'transactions' => Booking::query()->whereIn('status', ['ready', 'completed'])->orderByDesc('booking_date')->get()->map(fn (Booking $booking) => self::transformTransaction($booking))->all(),
-            'donations' => Donation::query()->with(['store', 'items'])->orderBy('id')->get()->map(fn (Donation $donation) => self::transformDonation($donation))->all(),
-            'applications' => VerificationApplication::query()->orderBy('id')->get()->map(fn (VerificationApplication $application) => self::transformApplication($application))->all(),
+            'stores' => [],
+            'bookings' => [],
+            'orders' => [],
+            'inventory_products' => [],
+            'transactions' => [],
+            'donations' => [],
+            'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
             'users' => User::query()->orderBy('id')->get()->map(fn (User $user) => self::transformUser($user))->all(),
-            'articles' => Article::query()->orderByDesc('published_on')->orderByDesc('id')->get()->map(fn (Article $article) => self::transformArticle($article))->all(),
+            'articles' => [],
             default => $default,
         };
     }
@@ -187,23 +180,19 @@ class ShareMealState
         ]);
     }
 
-    public static function approveApplication(int $applicationId): void
+    public static function approveApplication(int $userId): void
     {
-        VerificationApplication::query()->whereKey($applicationId)->update([
-            'status' => 'approved',
-            'approved_at' => now(),
-            'rejected_at' => null,
-            'reject_reason' => null,
+        User::query()->whereKey($userId)->update([
+            'is_verified' => true,
+            'verification_rejection_reason' => null,
         ]);
     }
 
-    public static function rejectApplication(int $applicationId, string $reason): void
+    public static function rejectApplication(int $userId, string $reason): void
     {
-        VerificationApplication::query()->whereKey($applicationId)->update([
-            'status' => 'rejected',
-            'rejected_at' => now(),
-            'reject_reason' => $reason,
-            'approved_at' => null,
+        User::query()->whereKey($userId)->update([
+            'is_verified' => false,
+            'verification_rejection_reason' => $reason,
         ]);
     }
 
@@ -385,24 +374,23 @@ class ShareMealState
         ];
     }
 
-    protected static function transformApplication(VerificationApplication $application): array
+    protected static function transformApplication(User $user): array
     {
         return [
-            'id' => $application->id,
-            'name' => $application->name,
-            'type' => $application->type,
-            'email' => $application->email,
-            'phone' => $application->phone,
-            'address' => $application->address,
-            'submitted_at' => optional($application->submitted_at)->format('Y-m-d H:i'),
-            'documents' => $application->documents ?? [],
-            'status' => $application->status,
-            'business_type' => $application->business_type,
-            'description' => $application->description,
-            'beneficiaries' => $application->beneficiaries,
-            'approved_at' => optional($application->approved_at)->format('Y-m-d H:i'),
-            'rejected_at' => optional($application->rejected_at)->format('Y-m-d H:i'),
-            'reject_reason' => $application->reject_reason,
+            'id' => $user->id,
+            'name' => $user->name,
+            'type' => $user->role,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'submitted_at' => optional($user->created_at)->format('Y-m-d H:i'),
+            'documents' => [
+                'ktp' => $user->document_ktp,
+                'siup' => $user->document_siup,
+                'nib' => $user->document_nib,
+                'halal' => $user->document_halal,
+            ],
+            'status' => 'pending', // Applications are always pending if is_verified is false
+            'rejection_reason' => $user->verification_rejection_reason,
         ];
     }
 

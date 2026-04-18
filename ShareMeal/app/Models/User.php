@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
+<<<<<<< HEAD
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+=======
+use Database\Factories\UserFactory;
+>>>>>>> 5fd5ecf864b9ef7f9d80e13d3398a01117004f98
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,16 +16,30 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
+        'phone',
+        'status',
+        'organization_name',
+        'joined_at',
+        'transactions_count',
+        'warnings_count',
+        'is_verified',
+        'verification_rejection_reason',
+        'document_ktp',
+        'document_siup',
+        'document_nib',
+        'document_halal',
+        'document_legalitas',
+        'document_izin',
+        'document_identitas',
+        'last_warning_at',
+        'warning_reason',
+        'blocked_at',
+        'block_reason',
     ];
 
     /**
@@ -164,7 +182,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class, 'mitra_id');
     }
-
     /**
      * Get the attributes that should be cast.
      *

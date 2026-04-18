@@ -35,6 +35,8 @@ class Order extends Model
         'customer',
         'time',
         'items_string',
+        'orderTime',
+        'completedTime'
     ];
 
     public function getAmountAttribute()
@@ -52,6 +54,15 @@ class Order extends Model
         return $this->created_at ? $this->created_at->diffForHumans() : '-';
     }
 
+    public function getOrderTimeAttribute()
+    {
+        return $this->created_at ? $this->created_at->format('d/m/Y H:i') : '-';
+    }
+
+    public function getCompletedTimeAttribute()
+    {
+        return $this->updated_at ? $this->updated_at->format('d M Y, H:i') : '-';
+    }
     public function getItemsStringAttribute()
     {
         if ($this->relationLoaded('items')) {

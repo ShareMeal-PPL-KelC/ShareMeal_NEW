@@ -25,6 +25,7 @@ Route::prefix('mitra')->name('mitra.')->group(function () {
     Route::post('/upload-document', [ShareMealController::class, 'uploadBusinessDocument'])->name('upload.document');
     Route::get('/inventory', [ShareMealController::class, 'mitraInventory'])->name('inventory');
     Route::post('/inventory', [ShareMealController::class, 'mitraInventoryStore'])->name('inventory.store');
+    Route::post('/inventory/{productId}', [ShareMealController::class, 'mitraInventoryUpdate'])->name('inventory.update');
     Route::post('/inventory/{productId}/flash-sale', [ShareMealController::class, 'mitraInventoryFlashSale'])->name('inventory.flash-sale');
     Route::post('/inventory/{productId}/delete', [ShareMealController::class, 'mitraInventoryDelete'])->name('inventory.delete');
     Route::get('/orders', [ShareMealController::class, 'mitraOrders'])->name('orders');
