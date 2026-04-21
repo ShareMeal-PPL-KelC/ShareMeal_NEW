@@ -518,10 +518,15 @@ class ShareMealController extends Controller
         return view('pages.mitra.orders', compact('orders'));
     }
 
-    public function mitraOrdersConfirm(int $orderId): RedirectResponse
+    public function mitraOrdersConfirm(int $orderId): JsonResponse|RedirectResponse
     {
-        $order = \App\Models\Order::where('mitra_id', Auth::id())->findOrFail($orderId);
+        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
         $order->update(['status' => 'completed']);
+
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
         return back()->with('success', 'Pesanan dikonfirmasi sebagai sudah diambil.');
     }
 
