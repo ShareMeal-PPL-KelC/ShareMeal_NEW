@@ -125,14 +125,32 @@
             activeTab: 'pending',
             orders: @json($orders),
             
-            confirmPickup(id) {
+            async confirmPickup(id) {
                 if(confirm('Konfirmasi bahwa pesanan ini sudah diambil?')) {
-                    const order = this.orders.find(o => o.id === id);
-                    if (order) {
-                        order.status = 'completed';
-                        order.completedTime = new Date().toLocaleString('id-ID', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                        alert('Pesanan dikonfirmasi sebagai sudah diambil!');
-                        setTimeout(() => lucide.createIcons(), 50);
+                    try {
+                        const response = await fetch(`/mitra/orders/${id}/confirm`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            const order = this.orders.find(o => o.id === id);
+                            if (order) {
+                                order.status = 'completed';
+                                order.completedTime = new Date().toLocaleString('id-ID', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                                alert('Pesanan dikonfirmasi sebagai sudah diambil!');
+                                setTimeout(() => lucide.createIcons(), 50);
+                            }
+                        } else {
+                            alert('Gagal mengonfirmasi pesanan. Silakan coba lagi.');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan koneksi.');
                     }
                 }
             },
