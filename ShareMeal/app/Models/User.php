@@ -58,4 +58,9 @@ class User extends Authenticatable
             'is_verified' => 'boolean',
         ];
     }
+
+    public function favoriteStores()
+    {
+        return $this->belongsToMany(Store::class, 'favorite_stores');
+    }
 }

@@ -12,10 +12,13 @@ use App\Models\User;
 use App\Models\VerificationApplication;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
+use App\Notifications\FlashSaleNotification;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
 
 class ShareMealState
 {
+
     public static function boot(): void
     {
         if (!Session::has('sharemeal.current_user_id')) {
@@ -148,7 +151,7 @@ class ShareMealState
 
     public static function setFlashSale(int $productId): void
     {
-        $product = InventoryProduct::query()->find($productId);
+        $product = InventoryProduct::query()->with('store.favoritedBy')->find($productId);
         if (!$product) {
             return;
         }
@@ -157,6 +160,18 @@ class ShareMealState
             'status' => 'flash-sale',
             'discount_price' => (int) floor($product->price * 0.7),
         ]);
+
+        // Kirim notifikasi ke user yang memfavoritkan toko ini
+        if ($product->store) {
+            Notification::send(
+                $product->store->favoritedBy,
+                new FlashSaleNotification(
+                    $product->store->name,
+                    $product->name,
+                    $product->discount_price
+                )
+            );
+        }
     }
 
     public static function deleteInventoryProduct(int $productId): void
