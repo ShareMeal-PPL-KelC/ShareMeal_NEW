@@ -190,4 +190,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function favoriteStores()
+    {
+        return $this->belongsToMany(Store::class, 'favorite_stores');
+    }
 }

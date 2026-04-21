@@ -175,6 +175,14 @@ class ShareMealController extends Controller
         return redirect()->route('login')->with('success', 'Anda telah keluar.');
     }
 
+    public function markNotificationsRead(): RedirectResponse
+    {
+        if (Auth::check()) {
+            Auth::user()->unreadNotifications->markAsRead();
+        }
+        return back();
+    }
+
     public function uploadBusinessDocument(Request $request): RedirectResponse
     {
         $request->validate([
@@ -213,6 +221,9 @@ class ShareMealController extends Controller
 
     public function consumerDashboard(): View
     {
+        $userModel = User::find($this->currentUser()['id']);
+        $notifications = $userModel ? $userModel->unreadNotifications : collect();
+
         $stores = ShareMealState::get('stores');
         $flashSales = collect($stores)->flatMap(function ($store) {
             return collect($store['deals'])->map(function ($deal) use ($store) {
@@ -236,6 +247,7 @@ class ShareMealController extends Controller
         return view('pages.consumer.dashboard', $this->dashboardData('consumer', 'Dashboard Konsumen', 'Hemat uang dan selamatkan lingkungan') + [
             'stats' => ['saved_meals' => 24, 'money_saved' => 350000, 'co2_reduced' => 15.5, 'favorite_stores' => 8],
             'flashSales' => $flashSales,
+            'notifications' => $notifications,
             'favoriteStores' => collect($stores)->map(fn ($store) => [
                 'id' => $store['id'],
                 'name' => $store['name'],

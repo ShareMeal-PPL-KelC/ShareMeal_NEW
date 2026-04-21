@@ -2,12 +2,27 @@
 
 namespace App\Models;
 
+use App\Notifications\OrderStatusUpdated;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Notification;
 
 class Order extends Model
 {
+    protected static function booted()
+    {
+        static::created(function ($order) {
+            $order->customerRelation->notify(new OrderStatusUpdated($order));
+        });
+
+        static::updated(function ($order) {
+            if ($order->wasChanged('status')) {
+                $order->customerRelation->notify(new OrderStatusUpdated($order));
+            }
+        });
+    }
+
     protected $fillable = [
         'customer_id',
         'mitra_id',

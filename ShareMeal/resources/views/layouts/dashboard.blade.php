@@ -24,6 +24,77 @@
                 </a>
 
                 <div class="flex items-center gap-4">
+                    <!-- Notifications Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="relative p-2 text-gray-400 hover:text-gray-500 transition-colors focus:outline-none">
+                            <i data-lucide="bell" class="w-6 h-6"></i>
+                            @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                                <span class="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
+                            @endif
+                        </button>
+
+                        <div x-show="open" 
+                             @click.away="open = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50"
+                             x-cloak>
+                            <div class="px-4 py-2 border-b border-gray-50 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-900">Notifikasi</h3>
+                                @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                                    <form method="POST" action="{{ route('notifications.markRead') }}">
+                                        @csrf
+                                        <button type="submit" class="text-xs text-green-600 font-semibold hover:text-green-700">Tandai semua dibaca</button>
+                                    </form>
+                                @endif
+                            </div>
+                            <div class="max-h-96 overflow-y-auto">
+                                @if(Auth::check())
+                                    @forelse(Auth::user()->notifications()->latest()->take(5)->get() as $notification)
+                                        <div class="px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 {{ $notification->unread() ? 'bg-blue-50/30' : '' }}">
+                                            <div class="flex gap-3">
+                                                <div class="mt-1">
+                                                    @if(($notification->data['status'] ?? '') == 'completed')
+                                                        <div class="bg-green-100 p-1.5 rounded-full">
+                                                            <i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>
+                                                        </div>
+                                                    @elseif(($notification->data['status'] ?? '') == 'cancelled')
+                                                        <div class="bg-red-100 p-1.5 rounded-full">
+                                                            <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+                                                        </div>
+                                                    @else
+                                                        <div class="bg-blue-100 p-1.5 rounded-full">
+                                                            <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="flex-1">
+                                                    <div class="text-sm font-bold text-gray-900">{{ $notification->data['title'] ?? 'Notifikasi' }}</div>
+                                                    <div class="text-xs text-gray-600 mt-0.5">{{ $notification->data['message'] ?? '' }}</div>
+                                                    <div class="text-[10px] text-gray-400 mt-1 uppercase font-medium">{{ $notification->created_at->diffForHumans() }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="px-4 py-8 text-center">
+                                            <div class="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                <i data-lucide="bell-off" class="w-6 h-6 text-gray-300"></i>
+                                            </div>
+                                            <p class="text-sm text-gray-500">Belum ada notifikasi baru</p>
+                                        </div>
+                                    @endforelse
+                                @endif
+                            </div>
+                            <div class="px-4 py-2 border-t border-gray-50 text-center">
+                                <a href="#" class="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors">Lihat Semua Notifikasi</a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="hidden md:block text-right">
                         @if(Auth::check())
                             <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
