@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
 use App\Notifications\FlashSaleNotification;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 
 class ShareMealState
