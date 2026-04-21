@@ -1,13 +1,13 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="space-y-6" x-data="{ 
-    searchQuery: '', 
+<div class="space-y-6" x-data="{
+    searchQuery: '',
     activeCategory: 'Semua',
     articles: {{ json_encode($articles) }},
     get filteredArticles() {
         return this.articles.filter(article => {
-            const matchesSearch = article.title.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+            const matchesSearch = article.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                                  article.content.toLowerCase().includes(this.searchQuery.toLowerCase());
             const matchesCategory = this.activeCategory === 'Semua' || article.category === this.activeCategory;
             return matchesSearch && matchesCategory;
@@ -27,20 +27,20 @@
                 Mari Bersama Kurangi Food Waste
             </h1>
             <p class="text-green-100 text-lg mb-8 max-w-xl font-medium opacity-90">
-                Tingkatkan pengetahuanmu tentang dampak sampah makanan dan temukan tips praktis 
+                Tingkatkan pengetahuanmu tentang dampak sampah makanan dan temukan tips praktis
                 untuk mulai menyelamatkan makanan hari ini.
             </p>
             <div class="relative max-w-md">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input 
-                    type="text" 
-                    placeholder="Cari artikel atau topik..." 
+                <input
+                    type="text"
+                    placeholder="Cari artikel atau topik..."
                     x-model="searchQuery"
                     class="w-full pl-12 pr-4 py-4 bg-white text-gray-900 rounded-2xl outline-none focus:ring-4 focus:ring-green-500/30 transition shadow-lg font-medium"
                 >
             </div>
         </div>
-        
+
         <!-- Decorative SVG -->
         <div class="absolute -right-16 -bottom-16 opacity-10">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-80 h-80"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg>
@@ -81,7 +81,7 @@
     <!-- Categories Filter -->
     <div class="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
         @foreach($categories as $category)
-        <button 
+        <button
             @click="activeCategory = '{{ $category }}'"
             :class="activeCategory === '{{ $category }}' ? 'bg-[#174413] text-white shadow-xl shadow-green-100' : 'bg-white text-gray-600 border border-gray-100 hover:bg-gray-50'"
             class="px-8 py-3 rounded-2xl font-black text-sm transition-all flex-shrink-0"
@@ -112,10 +112,10 @@
                     </div>
                     <h3 class="text-xl font-black text-gray-900 mb-3 leading-tight group-hover:text-[#174413] transition-colors" x-text="article.title"></h3>
                     <p class="text-gray-500 text-sm font-medium line-clamp-3 mb-6 flex-1 leading-relaxed" x-text="article.content"></p>
-                    
+
                     <div class="pt-6 border-t border-gray-50 flex items-center justify-between mt-auto">
                         <button class="text-[#174413] font-black text-sm flex items-center gap-1.5 hover:gap-3 transition-all group/btn">
-                            Baca Selengkapnya 
+                            Baca Selengkapnya
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         </button>
                         <button @click="handleShare(article.title)" class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition">
@@ -134,7 +134,7 @@
         </div>
         <h3 class="text-xl font-black text-gray-900 mb-2">Tidak ada artikel ditemukan</h3>
         <p class="text-gray-500 font-medium">Coba gunakan kata kunci lain atau reset filter Anda.</p>
-        <button 
+        <button
             @click="searchQuery = ''; activeCategory = 'Semua'"
             class="mt-6 bg-[#174413] text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-[#256020] transition"
         >
