@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-<<<<<<< Updated upstream
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -34,7 +33,6 @@ class Donation extends Model
     public function lembaga(): BelongsTo
     {
         return $this->belongsTo(User::class, 'lembaga_id');
-=======
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -70,6 +68,5 @@ class Donation extends Model
     public function items()
     {
         return $this->hasMany(DonationItem::class, 'donation_id');
->>>>>>> Stashed changes
     }
 }

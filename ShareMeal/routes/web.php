@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ConsumerController;
 use App\Http\Controllers\ShareMealController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,14 +14,12 @@ Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
 Route::post('/notifications/mark-as-read', [ShareMealController::class, 'markNotificationsRead'])->name('notifications.markRead');
 
 Route::prefix('consumer')->name('consumer.')->group(function () {
-    Route::get('/', [ShareMealController::class, 'consumerDashboard'])->name('dashboard');
-    Route::get('/search', [ShareMealController::class, 'consumerSearch'])->name('search');
-    Route::post('/book', [ShareMealController::class, 'consumerBook'])->name('book');
-    Route::get('/checkout', [ShareMealController::class, 'consumerCheckout'])->name('checkout');
-    Route::post('/checkout/confirm', [ShareMealController::class, 'consumerConfirmPayment'])->name('checkout.confirm');
-    Route::get('/history', [ShareMealController::class, 'consumerHistory'])->name('history');
-    Route::post('/history/review', [ShareMealController::class, 'consumerReview'])->name('history.review');
-    Route::get('/education', [ShareMealController::class, 'consumerEducation'])->name('education');
+    Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
+    Route::get('/search', [ConsumerController::class, 'search'])->name('search');
+    Route::get('/history', [ConsumerController::class, 'history'])->name('history');
+    Route::get('/education', [ConsumerController::class, 'education'])->name('education');
+    Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');
+    Route::post('/checkout', [ConsumerController::class, 'storeOrder'])->name('checkout.store');
 });
 
 Route::prefix('mitra')->name('mitra.')->group(function () {
@@ -28,6 +27,7 @@ Route::prefix('mitra')->name('mitra.')->group(function () {
     Route::post('/upload-document', [ShareMealController::class, 'uploadBusinessDocument'])->name('upload.document');
     Route::get('/inventory', [ShareMealController::class, 'mitraInventory'])->name('inventory');
     Route::post('/inventory', [ShareMealController::class, 'mitraInventoryStore'])->name('inventory.store');
+    Route::post('/inventory/{productId}', [ShareMealController::class, 'mitraInventoryUpdate'])->name('inventory.update');
     Route::post('/inventory/{productId}/flash-sale', [ShareMealController::class, 'mitraInventoryFlashSale'])->name('inventory.flash-sale');
     Route::post('/inventory/{productId}/delete', [ShareMealController::class, 'mitraInventoryDelete'])->name('inventory.delete');
     Route::get('/orders', [ShareMealController::class, 'mitraOrders'])->name('orders');

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-<<<<<<< Updated upstream
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -23,7 +22,6 @@ class Article extends Model
     {
         return $this->belongsTo(User::class, 'author_id');
     }
-=======
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -45,5 +43,4 @@ class Article extends Model
     protected $casts = [
         'published_on' => 'date',
     ];
->>>>>>> Stashed changes
 }
