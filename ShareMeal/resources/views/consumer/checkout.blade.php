@@ -1,12 +1,12 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="space-y-6" x-data="{ 
+<div class="space-y-6" x-data="{
     paymentMethod: 'qris',
     countdown: 600,
     paymentComplete: false,
     pickupCode: 'PICK-{{ strtoupper(bin2hex(random_bytes(2))) }}',
-    
+
     init() {
         setInterval(() => {
             if (this.countdown > 0 && !this.paymentComplete) {
@@ -14,13 +14,13 @@
             }
         }, 1000);
     },
-    
+
     formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return mins + ':' + (secs < 10 ? '0' : '') + secs;
     },
-    
+
     handleConfirmPayment() {
         this.paymentComplete = true;
     },
@@ -62,7 +62,7 @@
                 </div>
                 <div class="p-6 space-y-3">
                     @foreach($paymentMethods as $method)
-                    <div class="flex items-center space-x-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors" 
+                    <div class="flex items-center space-x-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
                          :class="paymentMethod === '{{ $method->id }}' ? 'border-green-600 bg-green-50/30' : ''"
                          @click="paymentMethod = '{{ $method->id }}'">
                         <input type="radio" name="payment_method_radio" value="{{ $method->id }}" x-model="paymentMethod" class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-600">
@@ -214,7 +214,7 @@
                 </div>
                 <h2 class="text-3xl font-black text-gray-900 mb-2">Pembayaran Berhasil!</h2>
                 <p class="text-gray-500 font-medium mb-8">Terima kasih, pesanan Anda sedang diproses oleh penjual.</p>
-                
+
                 <div class="bg-gray-50 border border-gray-100 p-8 rounded-2xl mb-8 max-w-sm mx-auto shadow-inner">
                     <div class="space-y-4 text-left">
                         <div>
@@ -236,7 +236,7 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                    <button @click="const form = document.getElementById('checkout-form'); const input = document.createElement('input'); input.type = 'hidden'; input.name = 'pickup_code'; input.value = pickupCode; form.appendChild(input); form.submit();" 
+                    <button @click="const form = document.getElementById('checkout-form'); const input = document.createElement('input'); input.type = 'hidden'; input.name = 'pickup_code'; input.value = pickupCode; form.appendChild(input); form.submit();"
                             class="flex items-center justify-center gap-2 bg-[#174413] text-white py-4 px-8 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition">
                         Lihat Riwayat
                     </button>
