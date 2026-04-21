@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="space-y-6" x-data="{ 
+<div class="space-y-6" x-data="{
     isReviewDialogOpen: false,
     selectedOrderId: null,
     rating: 0,
@@ -40,7 +40,7 @@
         </div>
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
             <div class="text-3xl font-black text-yellow-500">
-                @php 
+                @php
                     $rated = collect($transactions)->filter(fn($t) => $t->rating > 0);
                     $avg = $rated->count() > 0 ? $rated->avg('rating') : 0;
                 @endphp
