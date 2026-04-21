@@ -164,6 +164,14 @@ class ShareMealController extends Controller
         return redirect()->route('login')->with('success', 'Anda telah keluar.');
     }
 
+    public function markNotificationsRead(): RedirectResponse
+    {
+        if (Auth::check()) {
+            Auth::user()->unreadNotifications->markAsRead();
+        }
+        return back();
+    }
+
     public function uploadBusinessDocument(Request $request): RedirectResponse
     {
         $request->validate([

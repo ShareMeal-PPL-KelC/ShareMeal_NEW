@@ -10,6 +10,8 @@ Route::get('/register', [ShareMealController::class, 'register'])->name('registe
 Route::post('/register', [ShareMealController::class, 'doRegister'])->name('register.submit');
 Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
 
+Route::post('/notifications/mark-as-read', [ShareMealController::class, 'markNotificationsRead'])->name('notifications.markRead');
+
 Route::prefix('consumer')->name('consumer.')->group(function () {
     Route::get('/', [ShareMealController::class, 'consumerDashboard'])->name('dashboard');
     Route::get('/search', [ShareMealController::class, 'consumerSearch'])->name('search');
