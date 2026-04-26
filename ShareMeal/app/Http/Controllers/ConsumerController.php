@@ -16,13 +16,22 @@ class ConsumerController extends Controller
     {
         $userId = Auth::id();
         
+        $completedOrders = OrderItem::whereHas('order', function($q) use ($userId) {
+            $q->where('customer_id', $userId)->where('status', 'completed');
+        })->with('product')->get();
+
+        $savedMeals = $completedOrders->sum('quantity');
+        $moneySaved = $completedOrders->sum(function($item) {
+            $originalPrice = $item->product->price ?? 0;
+            $paidPrice = $item->price;
+            return max(0, ($originalPrice - $paidPrice) * $item->quantity);
+        });
+
         $stats = (object) [
-            'savedMeals' => OrderItem::whereHas('order', function($q) use ($userId) {
-                $q->where('customer_id', $userId)->where('status', 'completed');
-            })->sum('quantity'),
-            'moneySaved' => 0, // Placeholder
-            'co2Reduced' => 6.5,
-            'favoriteStores' => 8,
+            'savedMeals' => $savedMeals,
+            'moneySaved' => $moneySaved,
+            'co2Reduced' => round($savedMeals * 0.5, 1), // Assuming 0.5kg CO2 per meal
+            'favoriteStores' => Auth::user()->favoriteStores()->count(),
         ];
 
         $flashSales = Product::with('user.profile')
@@ -123,6 +132,9 @@ class ConsumerController extends Controller
             'quantity' => $request->quantity,
             'price' => $request->price,
         ]);
+
+        // Decrement product stock
+        Product::where('id', $request->product_id)->decrement('stock', $request->quantity);
 
         return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
     }

@@ -213,36 +213,66 @@
             },
             
             saveProduct() {
-                if (this.isEditing) {
-                    const index = this.products.findIndex(p => p.id === this.formData.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.formData };
-                    }
-                    alert('Produk berhasil diperbarui!');
-                } else {
-                    const newProduct = {
-                        ...this.formData,
-                        id: this.products.length > 0 ? Math.max(...this.products.map(p => p.id)) + 1 : 1
-                    };
-                    this.products.push(newProduct);
-                    alert('Produk berhasil ditambahkan!');
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = this.isEditing ? `/mitra/inventory/${this.formData.id}` : '/mitra/inventory';
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+                
+                const fields = {
+                    _token: csrfToken,
+                    name: this.formData.name,
+                    category: this.formData.category,
+                    price: this.formData.price,
+                    discount_price: this.formData.discount_price || 0,
+                    stock: this.formData.stock,
+                    expires_at: this.formData.expires_at,
+                    status: this.formData.status,
+                };
+
+                for (const [key, value] of Object.entries(fields)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
                 }
-                this.isDialogOpen = false;
+
+                document.body.appendChild(form);
+                form.submit();
             },
             
             setFlashSale(id) {
-                const product = this.products.find(p => p.id === id);
-                if (product) {
-                    product.status = 'flash-sale';
-                    product.discount_price = Math.floor(product.price * 0.7);
-                    alert('Status produk diperbarui menjadi Flash Sale!');
-                }
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/mitra/inventory/${id}/flash-sale`;
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = '_token';
+                input.value = csrfToken;
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+                form.submit();
             },
             
             deleteProduct(id) {
                 if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-                    this.products = this.products.filter(p => p.id !== id);
-                    alert('Produk dihapus!');
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/mitra/inventory/${id}/delete`;
+                    
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = '_token';
+                    input.value = csrfToken;
+                    form.appendChild(input);
+
+                    document.body.appendChild(form);
+                    form.submit();
                 }
             }
         }
