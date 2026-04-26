@@ -24,6 +24,11 @@
                 </a>
 
                 <div class="flex items-center gap-4">
+                    <!-- Favorite Stores -->
+                    <a href="{{ route('consumer.favorites') }}" class="relative p-2 text-gray-400 hover:text-red-500 transition-colors group">
+                        <i data-lucide="heart" class="w-6 h-6 group-hover:fill-red-500 group-hover:text-red-500 transition-all duration-300"></i>
+                    </a>
+
                     <!-- Notifications Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="relative p-2 text-gray-400 hover:text-gray-500 transition-colors focus:outline-none">
