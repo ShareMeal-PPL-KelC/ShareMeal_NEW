@@ -101,25 +101,28 @@
                 </button>
             </div>
 
-            <form @submit.prevent="saveProduct" class="space-y-5">
+            <form :action="isEditing ? `/mitra/inventory/${formData.id}` : '/mitra/inventory'" method="POST" x-ref="productForm" class="space-y-5">
+                @csrf
+                <template x-if="isEditing">
+                    <input type="hidden" name="_method" value="POST"> {{-- We use POST for update in this case as per routes --}}
+                </template>
+                <input type="hidden" name="status" :value="formData.status">
+
                 <div class="space-y-2">
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Gambar Produk</label>
-                    <input type="file" id="imageInput" @change="handleImageUpload" accept="image/*" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
-                    <div x-show="formData.image && formData.image.startsWith('blob:')" class="mt-2 text-xs text-green-600 font-bold flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        Gambar berhasil dipilih dari perangkat
-                    </div>
+                    <input type="text" name="image" x-model="formData.image" placeholder="URL Gambar" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                    <p class="text-[10px] text-gray-400 mt-1 italic">Gunakan URL gambar (Unsplash, dsb) untuk demo ini.</p>
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Nama Produk</label>
-                    <input type="text" x-model="formData.name" required placeholder="Contoh: Roti Tawar" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                    <input type="text" name="name" x-model="formData.name" required placeholder="Contoh: Roti Tawar" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
                 </div>
 
                 <div class="grid grid-cols-2 gap-5">
                     <div class="space-y-2">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Kategori</label>
-                        <select x-model="formData.category" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <select name="category" x-model="formData.category" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
                             <option>Bakery</option>
                             <option>Healthy</option>
                             <option>Meal</option>
@@ -128,18 +131,18 @@
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Stok</label>
-                        <input type="number" x-model="formData.stock" required placeholder="20" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <input type="number" name="stock" x-model="formData.stock" required placeholder="20" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-5">
                     <div class="space-y-2">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Harga Normal</label>
-                        <input type="number" x-model="formData.price" required placeholder="15000" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <input type="number" name="price" x-model="formData.price" required placeholder="15000" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Waktu Expired</label>
-                        <input type="datetime-local" x-model="formData.expires_at" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <input type="datetime-local" name="expires_at" x-model="formData.expires_at" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
                     </div>
                 </div>
 
@@ -150,6 +153,15 @@
             </form>
         </div>
     </div>
+
+    <!-- Hidden Forms for Actions -->
+    <form id="flash-sale-form" method="POST" class="hidden">
+        @csrf
+    </form>
+
+    <form id="delete-form" method="POST" class="hidden">
+        @csrf
+    </form>
 </div>
 
 <script>
@@ -170,19 +182,8 @@
                 image: 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080'
             },
             
-            handleImageUpload(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    this.formData.image = URL.createObjectURL(file);
-                }
-            },
-            
             openAddDialog() {
                 this.isEditing = false;
-                // Reset file input UI
-                const fileInput = document.getElementById('imageInput');
-                if (fileInput) fileInput.value = '';
-                
                 this.formData = {
                     id: null,
                     name: '',
@@ -199,50 +200,28 @@
             
             openEditDialog(product) {
                 this.isEditing = true;
-                // Reset file input UI
-                const fileInput = document.getElementById('imageInput');
-                if (fileInput) fileInput.value = '';
-                
                 this.formData = { ...product };
-                const date = new Date(product.expires_at);
-                // Adjust timezone offset for datetime-local
-                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-                this.formData.expires_at = date.toISOString().slice(0, 16);
-                
+                if (product.expires_at) {
+                    const date = new Date(product.expires_at);
+                    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                    this.formData.expires_at = date.toISOString().slice(0, 16);
+                }
                 this.isDialogOpen = true;
             },
             
-            saveProduct() {
-                if (this.isEditing) {
-                    const index = this.products.findIndex(p => p.id === this.formData.id);
-                    if (index !== -1) {
-                        this.products[index] = { ...this.formData };
-                    }
-                    alert('Produk berhasil diperbarui!');
-                } else {
-                    const newProduct = {
-                        ...this.formData,
-                        id: this.products.length > 0 ? Math.max(...this.products.map(p => p.id)) + 1 : 1
-                    };
-                    this.products.push(newProduct);
-                    alert('Produk berhasil ditambahkan!');
-                }
-                this.isDialogOpen = false;
-            },
-            
             setFlashSale(id) {
-                const product = this.products.find(p => p.id === id);
-                if (product) {
-                    product.status = 'flash-sale';
-                    product.discount_price = Math.floor(product.price * 0.7);
-                    alert('Status produk diperbarui menjadi Flash Sale!');
+                if (confirm('Aktifkan Flash Sale untuk produk ini?')) {
+                    const form = document.getElementById('flash-sale-form');
+                    form.action = `/mitra/inventory/${id}/flash-sale`;
+                    form.submit();
                 }
             },
             
             deleteProduct(id) {
                 if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-                    this.products = this.products.filter(p => p.id !== id);
-                    alert('Produk dihapus!');
+                    const form = document.getElementById('delete-form');
+                    form.action = `/mitra/inventory/${id}/delete`;
+                    form.submit();
                 }
             }
         }

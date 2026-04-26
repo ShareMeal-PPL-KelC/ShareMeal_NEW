@@ -433,7 +433,7 @@ class ShareMealController extends Controller
         ]);
 
         Product::create([
-            'user_id' => Auth::id(),
+            'user_id' => $this->currentUser()['id'] ?? \App\Models\User::where('role', 'mitra')->first()?->id,
             'name' => $data['name'],
             'category' => $data['category'],
             'price' => $data['price'],
