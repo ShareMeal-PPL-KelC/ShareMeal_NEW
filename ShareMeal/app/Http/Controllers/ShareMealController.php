@@ -39,6 +39,7 @@ class ShareMealController extends Controller
             ],
             'admin' => [
                 ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
+                ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'shopping-cart'],
                 ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield'],
                 ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
                 ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'book-open'],
@@ -544,63 +545,252 @@ class ShareMealController extends Controller
 
     public function lembagaDashboard(): View
     {
-        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
-        $userObj = User::query()->find($userId);
-        $donations = ShareMealState::get('donations');
+        $userId = Auth::id();
+        $userObj = User::find($userId);
+        
+        $availableDonations = Donation::with('mitra.profile')
+            ->where('status', 'pending')
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn($d) => $this->transformDonationModel($d));
+
+        $recentDonations = Donation::with('mitra.profile')
+            ->where('lembaga_id', $userId)
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn($d) => $this->transformDonationModel($d));
+
+        $stats = (object) [
+            'totalDonations' => Donation::where('lembaga_id', $userId)->where('status', 'completed')->count(),
+            'activeDonations' => Donation::where('lembaga_id', $userId)->where('status', 'claimed')->count(),
+            'beneficiaries' => 120, // This could be a field in UserProfile
+            'thisMonth' => Donation::where('lembaga_id', $userId)
+                ->where('status', 'completed')
+                ->whereMonth('created_at', now()->month)
+                ->count(),
+        ];
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => ['total_donations' => 156, 'active_donations' => 8, 'beneficiaries' => 120, 'this_month' => 45],
-            'donations' => ShareMealState::get('donations'),
+            'userObj' => $userObj,
+            'stats' => $stats,
+            'availableDonations' => $availableDonations,
+            'recentDonations' => $recentDonations,
         ]);
     }
 
     public function lembagaDonations(): View
     {
+        $userId = Auth::id();
+        $activeTab = request('tab', 'available');
+        
+        $query = Donation::with('mitra.profile');
+
+        if ($activeTab === 'available') {
+            $query->where('status', 'pending');
+        } elseif ($activeTab === 'claimed') {
+            $query->where('lembaga_id', $userId)->where('status', 'claimed');
+        } else {
+            $query->where('lembaga_id', $userId)->where('status', 'completed');
+        }
+
+        $donations = $query->latest()->get()->map(fn($d) => $this->transformDonationModel($d));
+
         return view('pages.lembaga.donations', $this->dashboardData('lembaga', 'Kelola Donasi', 'Klaim & tracking donasi makanan') + [
-            'donations' => ShareMealState::get('donations'),
-            'activeTab' => request('tab', 'available'),
+            'donations' => $donations,
+            'activeTab' => $activeTab,
+            'userObj' => User::find($userId),
         ]);
     }
 
-    public function lembagaClaimDonation(string $donationId): RedirectResponse
+    public function lembagaClaimDonation(int $donationId): RedirectResponse
     {
-        ShareMealState::claimDonation($donationId);
-        return back()->with('success', 'Donasi berhasil diklaim.');
+        $donation = Donation::findOrFail($donationId);
+        
+        if ($donation->status !== 'pending') {
+            return back()->with('error', 'Donasi sudah diklaim oleh lembaga lain.');
+        }
+
+        $donation->update([
+            'lembaga_id' => Auth::id(),
+            'status' => 'claimed',
+            'claimed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Donasi berhasil diklaim. Silakan lakukan pengambilan sesuai jadwal.');
     }
 
-    public function lembagaCompleteDonation(string $donationId): RedirectResponse
+    public function lembagaCompleteDonation(int $donationId): RedirectResponse
     {
-        ShareMealState::completeDonation($donationId);
-        return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
+        $donation = Donation::where('lembaga_id', Auth::id())->findOrFail($donationId);
+        
+        $donation->update([
+            'status' => 'completed',
+            'delivered_at' => now(),
+        ]);
+
+        return back()->with('success', 'Donasi dikonfirmasi telah diterima. Terima kasih!');
+    }
+
+    protected function transformDonationModel(Donation $donation): array
+    {
+        return [
+            'id' => $donation->id,
+            'store' => [
+                'name' => $donation->mitra->name ?? 'Toko Tidak Dikenal',
+                'address' => $donation->mitra->profile->address ?? 'Alamat tidak tersedia',
+                'phone' => $donation->mitra->phone ?? '-',
+            ],
+            'items' => [
+                ['name' => $donation->title, 'quantity' => $donation->quantity]
+            ],
+            'distance' => '0.8 km',
+            'available_until' => $donation->expires_at ? $donation->expires_at->format('H:i') : 'Sore ini',
+            'status' => $donation->status,
+            'claimed_at' => $donation->claimed_at ? $donation->claimed_at->format('Y-m-d H:i') : null,
+            'tracking_status' => $donation->status === 'claimed' ? 'confirmed' : ($donation->status === 'completed' ? 'delivered' : 'pending'),
+            'delivered_at' => $donation->delivered_at ? $donation->delivered_at->format('Y-m-d H:i') : null,
+        ];
+    }
+
+    public function adminTransactions(Request $request): View
+    {
+        $search = (string) $request->query('search', '');
+        $status = (string) $request->query('status', 'all');
+
+        $query = \App\Models\Order::with(['customer', 'mitra', 'items.product']);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('customer', function($cq) use ($search) {
+                    $cq->where('name', 'like', "%{$search}%");
+                })->orWhereHas('mitra', function($mq) use ($search) {
+                    $mq->where('name', 'like', "%{$search}%");
+                })->orWhere('id', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $orders = $query->latest()->get();
+
+        return view('pages.admin.transactions', $this->dashboardData('admin', 'Monitoring Transaksi', 'Pantau aktivitas transaksi di seluruh platform') + [
+            'orders' => $orders,
+            'search' => $search,
+            'status' => $status,
+            'stats' => [
+                'total_volume' => \App\Models\Order::where('status', 'completed')->sum('total_amount'),
+                'total_count' => \App\Models\Order::count(),
+                'pending_count' => \App\Models\Order::where('status', 'pending')->count(),
+                'completed_count' => \App\Models\Order::where('status', 'completed')->count(),
+            ]
+        ]);
+    }
+
+    public function adminCancelOrder(int $orderId): RedirectResponse
+    {
+        $order = \App\Models\Order::findOrFail($orderId);
+        
+        if ($order->status === 'completed') {
+            return back()->with('error', 'Pesanan yang sudah selesai tidak dapat dibatalkan.');
+        }
+
+        $order->update(['status' => 'cancelled']);
+
+        return back()->with('success', 'Pesanan #' . str_pad($order->id, 5, '0', STR_PAD_LEFT) . ' berhasil dibatalkan.');
     }
 
     public function adminDashboard(): View
     {
-        return view('pages.admin.dashboard', $this->dashboardData('admin', 'Dashboard Admin', 'Kelola sistem, verifikasi akun, dan moderasi platform') + [
-            'applications' => ShareMealState::get('applications'),
-            'users' => ShareMealState::get('users'),
+        $stats = [
+            'total_users' => 1250,
+            'pending_verifications' => 15,
+            'active_mitra' => 142,
+            'active_lembaga' => 38,
+            'total_transactions' => 5420,
+            'food_saved' => '12.5k',
+            'co2_reduced' => '31250',
+            'gmv' => '189.7M',
+        ];
+
+        $pendingApplications = \App\Models\VerificationApplication::with('user')
+            ->where('status', 'pending')
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $recentActivities = collect([
+            ['type' => 'user', 'user' => 'Budi Santoso', 'action' => 'mendaftar sebagai konsumen', 'time' => '2 menit yang lalu', 'color' => 'blue'],
+            ['type' => 'order', 'user' => 'Warung Berkah', 'action' => 'menerima pesanan baru #00123', 'time' => '15 menit yang lalu', 'color' => 'green'],
+            ['type' => 'verify', 'user' => 'Toko Roti Sejahtera', 'action' => 'mengajukan verifikasi mitra', 'time' => '1 jam yang lalu', 'color' => 'orange'],
+            ['type' => 'alert', 'user' => 'System', 'action' => 'mendeteksi aktivitas mencurigakan di IP 192.168.1.1', 'time' => '3 jam yang lalu', 'color' => 'red'],
+        ]);
+
+        return view('pages.admin.dashboard', $this->dashboardData('admin', 'Dashboard Admin', 'Kelola sistem dan pantau dampak platform') + [
+            'stats' => $stats,
+            'pendingApplications' => $pendingApplications,
+            'recentActivities' => $recentActivities,
         ]);
     }
 
     public function adminVerification(): View
     {
+        $applications = User::whereIn('role', ['mitra', 'lembaga'])
+            ->where('is_verified', false)
+            ->orderBy('id')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'type' => $user->role,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'submitted_at' => $user->created_at->format('Y-m-d H:i'),
+                    'documents' => [
+                        'ktp' => $user->document_ktp,
+                        'siup' => $user->document_siup,
+                        'nib' => $user->document_nib,
+                        'halal' => $user->document_halal,
+                        'legalitas' => $user->document_legalitas,
+                        'izin' => $user->document_izin,
+                        'identitas' => $user->document_identitas,
+                    ],
+                    'status' => 'pending',
+                ];
+            });
+
         return view('pages.admin.verification', $this->dashboardData('admin', 'Verifikasi Mitra & Lembaga Sosial', 'Sistem approval & verifikasi admin') + [
-            'applications' => ShareMealState::get('applications'),
+            'applications' => $applications,
             'activeTab' => request('tab', 'pending'),
         ]);
     }
 
     public function adminApproveApplication(int $applicationId): RedirectResponse
     {
-        ShareMealState::approveApplication($applicationId);
-        return back()->with('success', 'Aplikasi disetujui.');
+        $user = User::findOrFail($applicationId);
+        $user->update([
+            'is_verified' => true,
+            'verification_rejection_reason' => null,
+        ]);
+
+        return back()->with('success', "Akun {$user->name} berhasil disetujui.");
     }
 
     public function adminRejectApplication(Request $request, int $applicationId): RedirectResponse
     {
-        $data = $request->validate(['reason' => ['required']]);
-        ShareMealState::rejectApplication($applicationId, $data['reason']);
-        return back()->with('success', 'Aplikasi ditolak.');
+        $data = $request->validate(['reason' => ['required', 'string']]);
+        
+        $user = User::findOrFail($applicationId);
+        $user->update([
+            'is_verified' => false,
+            'verification_rejection_reason' => $data['reason'],
+        ]);
+
+        return back()->with('success', "Pendaftaran {$user->name} telah ditolak.");
     }
 
     public function adminUsers(Request $request): View
@@ -608,16 +798,45 @@ class ShareMealController extends Controller
         $search = (string) $request->query('search', '');
         $type = (string) $request->query('type', 'all');
         $status = (string) $request->query('status', 'all');
-        $users = collect(ShareMealState::get('users'))->filter(function ($user) use ($search, $type, $status) {
-            $matchesSearch = $search === '' || str_contains(strtolower($user['name']), strtolower($search)) || str_contains(strtolower($user['email']), strtolower($search));
-            $matchesType = $type === 'all' || $user['type'] === $type;
-            $matchesStatus = $status === 'all' || $user['status'] === $status;
-            return $matchesSearch && $matchesType && $matchesStatus;
-        })->values();
+
+        $query = User::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($type !== 'all') {
+            $query->where('role', $type);
+        }
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $users = $query->orderBy('id')->get()->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'type' => $user->role,
+                'status' => $user->status,
+                'joined_at' => $user->created_at->format('Y-m-d'),
+                'transactions' => $user->transactions_count,
+                'warnings' => $user->warnings_count,
+                'verified' => $user->is_verified,
+                'last_warning' => $user->last_warning_at ? $user->last_warning_at->format('Y-m-d') : null,
+                'warning_reason' => $user->warning_reason,
+                'blocked_at' => $user->blocked_at ? $user->blocked_at->format('Y-m-d') : null,
+                'block_reason' => $user->block_reason,
+            ];
+        });
 
         return view('pages.admin.users', $this->dashboardData('admin', 'Manajemen Data User', 'Kelola akun & moderasi pelanggaran') + [
             'users' => $users,
-            'allUsers' => ShareMealState::get('users'),
             'search' => $search,
             'type' => $type,
             'status' => $status,
@@ -626,36 +845,76 @@ class ShareMealController extends Controller
 
     public function adminWarnUser(int $userId): RedirectResponse
     {
-        ShareMealState::warnUser($userId);
-        return back()->with('success', 'Peringatan diberikan kepada user.');
+        $user = User::findOrFail($userId);
+        $user->update([
+            'status' => 'warned',
+            'warnings_count' => $user->warnings_count + 1,
+            'last_warning_at' => now(),
+        ]);
+
+        return back()->with('success', "Peringatan berhasil dikirim ke {$user->name}.");
     }
 
     public function adminBlockUser(Request $request, int $userId): RedirectResponse
     {
-        $data = $request->validate(['reason' => ['required']]);
-        ShareMealState::blockUser($userId, $data['reason']);
-        return back()->with('success', 'User diblokir.');
+        $data = $request->validate(['reason' => ['required', 'string']]);
+        
+        $user = User::findOrFail($userId);
+        $user->update([
+            'status' => 'blocked',
+            'blocked_at' => now(),
+            'block_reason' => $data['reason'],
+        ]);
+
+        return back()->with('success', "Akun {$user->name} telah diblokir.");
     }
 
     public function adminUnblockUser(int $userId): RedirectResponse
     {
-        ShareMealState::unblockUser($userId);
-        return back()->with('success', 'Blokir user dibuka.');
+        $user = User::findOrFail($userId);
+        $user->update([
+            'status' => 'active',
+            'blocked_at' => null,
+            'block_reason' => null,
+        ]);
+
+        return back()->with('success', "Blokir pada akun {$user->name} telah dibuka.");
     }
 
     public function adminEducation(Request $request): View
     {
         $search = (string) $request->query('search', '');
         $tab = (string) $request->query('tab', 'all');
-        $articles = collect(ShareMealState::get('articles'))->filter(function ($article) use ($search, $tab) {
-            $matchesSearch = $search === '' || str_contains(strtolower($article['title']), strtolower($search)) || str_contains(strtolower($article['category']), strtolower($search));
-            $matchesTab = $tab === 'all' || strtolower($article['status']) === $tab;
-            return $matchesSearch && $matchesTab;
-        })->values();
+
+        $query = Article::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%");
+            });
+        }
+
+        if ($tab !== 'all') {
+            $query->where('status', ucfirst($tab));
+        }
+
+        $articles = $query->latest()->get()->map(function ($article) {
+            return [
+                'id' => $article->id,
+                'title' => $article->title,
+                'category' => $article->category,
+                'status' => $article->status,
+                'date' => $article->published_on ? $article->published_on->format('Y-m-d') : $article->created_at->format('Y-m-d'),
+                'author' => $article->author,
+                'content' => $article->content,
+                'image' => $article->image,
+                'read_time' => $article->read_time,
+            ];
+        });
 
         return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste') + [
             'articles' => $articles,
-            'allArticles' => ShareMealState::get('articles'),
             'search' => $search,
             'tab' => $tab,
         ]);
@@ -664,30 +923,50 @@ class ShareMealController extends Controller
     public function adminEducationStore(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'title' => ['required'],
-            'category' => ['required'],
-            'status' => ['required'],
-            'content' => ['required'],
+            'title' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string'],
+            'status' => ['required', 'string'],
+            'content' => ['required', 'string'],
         ]);
-        ShareMealState::saveArticle($data);
+
+        Article::create([
+            'title' => $data['title'],
+            'category' => $data['category'],
+            'status' => ucfirst($data['status']),
+            'content' => $data['content'],
+            'author' => Auth::user()->name ?? 'Admin System',
+            'published_on' => $data['status'] === 'published' ? now() : null,
+            'image' => 'https://images.unsplash.com/photo-1593113702251-272b1bc414a9?auto=format&fit=crop&q=80&w=800',
+            'read_time' => '4 min read',
+        ]);
+
         return back()->with('success', 'Artikel berhasil ditambahkan.');
     }
 
     public function adminEducationUpdate(Request $request, int $articleId): RedirectResponse
     {
         $data = $request->validate([
-            'title' => ['required'],
-            'category' => ['required'],
-            'status' => ['required'],
-            'content' => ['required'],
+            'title' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string'],
+            'status' => ['required', 'string'],
+            'content' => ['required', 'string'],
         ]);
-        ShareMealState::saveArticle($data, $articleId);
+
+        $article = Article::findOrFail($articleId);
+        $article->update([
+            'title' => $data['title'],
+            'category' => $data['category'],
+            'status' => ucfirst($data['status']),
+            'content' => $data['content'],
+            'published_on' => ($data['status'] === 'published' && !$article->published_on) ? now() : $article->published_on,
+        ]);
+
         return back()->with('success', 'Artikel berhasil diperbarui.');
     }
 
     public function adminEducationDelete(int $articleId): RedirectResponse
     {
-        ShareMealState::deleteArticle($articleId);
+        Article::findOrFail($articleId)->delete();
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
 }

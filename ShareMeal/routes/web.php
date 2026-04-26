@@ -3,6 +3,7 @@
 use App\Http\Controllers\ConsumerController;
 use App\Http\Controllers\ShareMealController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminTransactionController;
 
 Route::get('/', [ShareMealController::class, 'landing'])->name('home');
 Route::get('/login', [ShareMealController::class, 'login'])->name('login');
@@ -44,6 +45,8 @@ Route::prefix('lembaga')->name('lembaga.')->group(function () {
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [ShareMealController::class, 'adminDashboard'])->name('dashboard');
+    Route::get('/transactions', [ShareMealController::class, 'adminTransactions'])->name('transactions');
+    Route::post('/transactions/{orderId}/cancel', [ShareMealController::class, 'adminCancelOrder'])->name('transactions.cancel');
     Route::get('/verification', [ShareMealController::class, 'adminVerification'])->name('verification');
     Route::post('/verification/{applicationId}/approve', [ShareMealController::class, 'adminApproveApplication'])->name('verification.approve');
     Route::post('/verification/{applicationId}/reject', [ShareMealController::class, 'adminRejectApplication'])->name('verification.reject');

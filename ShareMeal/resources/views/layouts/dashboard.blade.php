@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard - ShareMeal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -97,8 +98,8 @@
 
                     <div class="hidden md:block text-right">
                         @if(Auth::check())
-                            <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
-                            <div class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</div>
+                            <div class="text-sm font-bold text-gray-900">Admin ShareMeal</div>
+                            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Admin</div>
                         @endif
                     </div>
                     <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop" class="hidden md:flex">
