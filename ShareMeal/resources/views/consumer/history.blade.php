@@ -82,6 +82,36 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                             {{ $t->storeAddress }}
                         </div>
+                        @if($t->status === 'pending')
+                        <div x-data="{
+                            endTime: new Date('{{ $t->created_at ? $t->created_at->addHours(2)->toIso8601String() : now()->addHours(2)->toIso8601String() }}').getTime(),
+                            timeRemaining: '',
+                            isExpired: false,
+                            init() {
+                                this.updateTime();
+                                setInterval(() => this.updateTime(), 1000);
+                            },
+                            updateTime() {
+                                const now = new Date().getTime();
+                                const distance = this.endTime - now;
+                                
+                                if (distance < 0) {
+                                    this.isExpired = true;
+                                    return;
+                                }
+                                
+                                const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                const s = Math.floor((distance % (1000 * 60)) / 1000);
+                                
+                                this.timeRemaining = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                            }
+                        }" class="flex items-center gap-1.5 mt-1.5 text-sm font-bold text-red-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span x-show="!isExpired">Sisa waktu sebelum layak konsumsi: <span x-text="timeRemaining" class="font-mono bg-red-50 px-1.5 py-0.5 rounded text-red-600 border border-red-100 ml-1"></span></span>
+                            <span x-show="isExpired" class="bg-red-50 px-2 py-0.5 rounded text-red-600 border border-red-100" x-cloak>Waktu layak konsumsi habis</span>
+                        </div>
+                        @endif
                     </div>
                     <div class="text-right flex flex-col items-end">
                         <div class="text-3xl font-black text-gray-900 leading-none">Rp {{ number_format($t->total, 0, ',', '.') }}</div>
