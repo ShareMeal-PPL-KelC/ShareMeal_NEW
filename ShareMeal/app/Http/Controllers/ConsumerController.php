@@ -73,6 +73,15 @@ class ConsumerController extends Controller
         return view('consumer.history', compact('transactions'));
     }
 
+    public function favorites()
+    {
+        $stores = User::where('role', 'mitra')->with(['profile', 'products' => function($q) {
+            $q->where('status', 'flash-sale')->where('stock', '>', 0);
+        }])->get();
+
+        return view('consumer.favorites', compact('stores'));
+    }
+
     public function checkout(Request $request)
     {
         $product = Product::with('user.profile')->findOrFail($request->product_id);
