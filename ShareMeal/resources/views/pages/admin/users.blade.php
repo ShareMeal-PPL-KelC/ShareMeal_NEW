@@ -14,7 +14,7 @@ $totalBlocked = count(array_filter($allUsers, fn($u) => $u['status'] === 'blocke
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Manajemen Data User</h1>
-            <p class="text-gray-600 mt-1">Kelola akun & moderasi pelanggaran (FR-20, FR-21)</p>
+            <p class="text-gray-600 mt-1">Kelola akun & moderasi pelanggaran</p>
         </div>
     </div>
 
@@ -161,7 +161,7 @@ $totalBlocked = count(array_filter($allUsers, fn($u) => $u['status'] === 'blocke
                         <!-- Blokir Form & Modal Trigger -->
                         <button type="button" onclick="openBlockModal({{ $user['id'] }})" class="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition text-sm font-bold active:scale-95">
                             <i data-lucide="ban" class="w-4 h-4"></i>
-                            Blokir Akun (FR-21)
+                            Blokir Akun
                         </button>
                     @else
                         <form action="{{ route('admin.users.unblock', $user['id']) }}" method="POST" class="inline">
