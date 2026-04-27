@@ -549,8 +549,11 @@ class ShareMealController extends Controller
         $donations = ShareMealState::get('donations');
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => ['total_donations' => 156, 'active_donations' => 8, 'beneficiaries' => 120, 'this_month' => 45],
-            'donations' => ShareMealState::get('donations'),
+            'stats' => (object) ['totalDonations' => 156, 'activeDonations' => 8, 'beneficiaries' => 120, 'thisMonth' => 45],
+            'donations' => $donations,
+            'availableDonations' => collect($donations)->where('status', 'available')->all(),
+            'recentDonations' => collect($donations)->whereIn('status', ['claimed', 'completed'])->sortByDesc('claimed_at')->take(5)->all(),
+            'userObj' => $userObj,
         ]);
     }
 
