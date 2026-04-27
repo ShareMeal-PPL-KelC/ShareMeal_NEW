@@ -144,6 +144,11 @@
                                 <i data-lucide="users" class="w-5 h-5"></i>
                                 <span>Kelola User</span>
                             </a>
+                            <a href="{{ route('admin.transactions') }}" 
+                               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.transactions') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="receipt" class="w-5 h-5"></i>
+                                <span>Transaksi</span>
+                            </a>
                             <a href="{{ route('admin.education') }}" 
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="book-open" class="w-5 h-5"></i>
@@ -220,6 +225,9 @@
                             </a>
                             <a href="{{ route('admin.users') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.users') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="users" class="w-5 h-5"></i><span>Kelola User</span>
+                            </a>
+                            <a href="{{ route('admin.transactions') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.transactions') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="receipt" class="w-5 h-5"></i><span>Transaksi</span>
                             </a>
                             <a href="{{ route('admin.education') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="book-open" class="w-5 h-5"></i><span>Edukasi</span>
