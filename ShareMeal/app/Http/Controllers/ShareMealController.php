@@ -579,9 +579,58 @@ class ShareMealController extends Controller
 
     public function adminDashboard(): View
     {
+        $activities = [
+            [
+                'title' => 'Toko Roti Sejahtera',
+                'description' => 'Menunggu verifikasi dokumen',
+                'time' => '5 menit lalu',
+                'type' => 'warning',
+                'icon' => 'clock'
+            ],
+            [
+                'title' => 'Budi Santoso',
+                'description' => 'Registrasi akun konsumen baru',
+                'time' => '10 menit lalu',
+                'type' => 'success',
+                'icon' => 'check-circle'
+            ],
+            [
+                'title' => 'Yayasan Harapan Bangsa',
+                'description' => 'Menunggu verifikasi legalitas',
+                'time' => '30 menit lalu',
+                'type' => 'warning',
+                'icon' => 'clock'
+            ],
+            [
+                'title' => 'Sistem',
+                'description' => 'Laporan penyalahgunaan dari Toko ABC',
+                'time' => '1 jam lalu',
+                'type' => 'danger',
+                'icon' => 'alert-circle'
+            ],
+            [
+                'title' => 'Warung Makan Ibu Rina',
+                'description' => 'Dokumen disetujui',
+                'time' => '2 jam lalu',
+                'type' => 'success',
+                'icon' => 'check-circle'
+            ],
+        ];
+
         return view('pages.admin.dashboard', $this->dashboardData('admin', 'Dashboard Admin', 'Kelola sistem, verifikasi akun, dan moderasi platform') + [
             'applications' => ShareMealState::get('applications'),
             'users' => ShareMealState::get('users'),
+            'activities' => $activities,
+            'stats' => [
+                'total_user' => 1250,
+                'pending' => 15,
+                'mitra_aktif' => 142,
+                'lembaga_aktif' => 38,
+                'transaksi' => 5420,
+                'makanan_saved' => '12.5k',
+                'co2_dikurangi' => '31250',
+                'gmv_platform' => 'Rp 189.7M',
+            ]
         ]);
     }
 
@@ -624,6 +673,80 @@ class ShareMealController extends Controller
             'search' => $search,
             'type' => $type,
             'status' => $status,
+        ]);
+    }
+
+    public function adminTransactions(Request $request): View
+    {
+        $page = (int) $request->query('page', 1);
+
+        if ($page === 1) {
+            $transactions = collect([
+                (object)[
+                    'id' => 5420,
+                    'customer' => (object)['name' => 'Budi Santoso'],
+                    'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
+                    'total_amount' => 45000,
+                    'status' => 'completed',
+                    'created_at' => now()->subMinutes(15)
+                ],
+                (object)[
+                    'id' => 5419,
+                    'customer' => (object)['name' => 'Siti Aminah'],
+                    'mitra' => (object)['name' => 'Warung Makan Ibu Rina'],
+                    'total_amount' => 28500,
+                    'status' => 'pending',
+                    'created_at' => now()->subMinutes(30)
+                ],
+                (object)[
+                    'id' => 5418,
+                    'customer' => (object)['name' => 'Andi Wijaya'],
+                    'mitra' => (object)['name' => 'Healthy Cafe'],
+                    'total_amount' => 120000,
+                    'status' => 'completed',
+                    'created_at' => now()->subHours(2)
+                ],
+                (object)[
+                    'id' => 5417,
+                    'customer' => (object)['name' => 'Rina Melati'],
+                    'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
+                    'total_amount' => 15000,
+                    'status' => 'cancelled',
+                    'created_at' => now()->subHours(5)
+                ],
+            ]);
+        } else {
+            $transactions = collect([
+                (object)[
+                    'id' => 5416,
+                    'customer' => (object)['name' => 'Dwi Cahyo'],
+                    'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
+                    'total_amount' => 60000,
+                    'status' => 'completed',
+                    'created_at' => now()->subHours(6)
+                ],
+                (object)[
+                    'id' => 5415,
+                    'customer' => (object)['name' => 'Yuni Pertiwi'],
+                    'mitra' => (object)['name' => 'Healthy Cafe'],
+                    'total_amount' => 35000,
+                    'status' => 'completed',
+                    'created_at' => now()->subHours(7)
+                ],
+            ]);
+        }
+        
+        $stats = [
+            'total_transaksi' => 5420,
+            'total_selesai' => 4150,
+            'total_pending' => 1270,
+            'gmv' => 'Rp 189.7M'
+        ];
+
+        return view('pages.admin.transactions', $this->dashboardData('admin', 'Pemantauan Transaksi', 'Pantau seluruh aktivitas transaksi di platform ShareMeal') + [
+            'transactions' => $transactions,
+            'stats' => $stats,
+            'page' => $page
         ]);
     }
 
