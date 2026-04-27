@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Models\Donation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
 use App\Notifications\FlashSaleNotification;
@@ -59,7 +60,24 @@ class ShareMealState
             'orders' => [],
             'inventory_products' => [],
             'transactions' => [],
-            'donations' => [],
+            'donations' => \App\Models\Donation::query()->get()->map(function ($donation) {
+                return [
+                    'id' => $donation->id,
+                    'store' => [
+                        'name' => $donation->mitra->name ?? 'Mitra Default',
+                        'address' => 'Jl. Pahlawan No. 10, Jakarta',
+                        'phone' => '081234567890',
+                    ],
+                    'distance' => '1.5 km',
+                    'items' => [
+                        ['name' => $donation->title, 'quantity' => $donation->quantity]
+                    ],
+                    'available_until' => $donation->expires_at ? \Carbon\Carbon::parse($donation->expires_at)->format('d M, H:i') : '18:00',
+                    'claimed_at' => $donation->claimed_at ? \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') : null,
+                    'delivered_at' => $donation->delivered_at ? \Carbon\Carbon::parse($donation->delivered_at)->format('d M, H:i') : null,
+                    'status' => $donation->status === 'pending' ? 'available' : $donation->status,
+                ];
+            })->all(),
             'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
             'users' => User::query()->orderBy('id')->get()->map(fn (User $user) => self::transformUser($user))->all(),
             'articles' => [],

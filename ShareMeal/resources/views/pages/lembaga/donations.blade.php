@@ -20,19 +20,19 @@
     <div class="space-y-6">
         <!-- Tabs List -->
         <div class="flex space-x-1 border-b border-gray-200">
-            <button @click="activeTab = 'available'" 
+            <button @click="activeTab = 'available'"
                     :class="{'border-b-2 border-green-600 text-green-600': activeTab === 'available', 'text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'available'}" 
                     class="px-4 py-2 font-medium text-sm flex items-center gap-2 border-b-2 border-transparent transition-colors">
                 <i data-lucide="package" class="w-4 h-4"></i>
                 Tersedia (<span x-text="availableDonations().length"></span>)
             </button>
-            <button @click="activeTab = 'claimed'" 
+            <button @click="activeTab = 'claimed'"
                     :class="{'border-b-2 border-green-600 text-green-600': activeTab === 'claimed', 'text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'claimed'}" 
                     class="px-4 py-2 font-medium text-sm flex items-center gap-2 border-b-2 border-transparent transition-colors">
                 <i data-lucide="truck" class="w-4 h-4"></i>
                 Diproses (<span x-text="claimedDonations().length"></span>)
             </button>
-            <button @click="activeTab = 'completed'" 
+            <button @click="activeTab = 'completed'"
                     :class="{'border-b-2 border-green-600 text-green-600': activeTab === 'completed', 'text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'completed'}" 
                     class="px-4 py-2 font-medium text-sm flex items-center gap-2 border-b-2 border-transparent transition-colors">
                 <i data-lucide="check-circle" class="w-4 h-4"></i>
@@ -87,7 +87,7 @@
                                 </span>
                             </div>
                             
-                            <form :action="'{{ route('lembaga.donations.claim', '') }}/' + donation.id" method="POST" class="mt-4">
+                            <form :action="'{{ route('lembaga.donations.claim', 'DONATION_ID') }}'.replace('DONATION_ID', donation.id)" method="POST" class="mt-4">
                                 @csrf
                                 <button type="submit" class="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-all font-bold shadow-lg shadow-purple-100">
                                     <i data-lucide="heart" class="w-4 h-4 text-white"></i>
@@ -161,11 +161,15 @@
                             </div>
                             
                             <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                                <a :href="'https://maps.google.com/?q=' + encodeURIComponent(donation.store.address)" target="_blank" class="flex-1 flex items-center justify-center gap-2 border-2 border-blue-100 text-blue-700 px-4 py-3 rounded-xl hover:bg-blue-50 transition-all font-bold">
+                                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                    Lokasi Resto
+                                </a>
                                 <a :href="'https://wa.me/' + donation.store.phone" class="flex-1 flex items-center justify-center gap-2 border-2 border-gray-100 text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-50 transition-all font-bold">
                                     <i data-lucide="message-circle" class="w-4 h-4"></i>
                                     Hubungi Mitra
                                 </a>
-                                <form :action="'{{ route('lembaga.donations.complete', '') }}/' + donation.id" method="POST" class="flex-1">
+                                <form :action="'{{ route('lembaga.donations.complete', 'DONATION_ID') }}'.replace('DONATION_ID', donation.id)" method="POST" class="flex-1">
                                     @csrf
                                     <button type="submit" class="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition-all font-bold shadow-lg shadow-green-100">
                                         <i data-lucide="check-circle" class="w-4 h-4"></i>
