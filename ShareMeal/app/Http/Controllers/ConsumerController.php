@@ -134,6 +134,11 @@ class ConsumerController extends Controller
             'price' => $request->price,
         ]);
 
+        $mitra = User::find($request->mitra_id);
+        if ($mitra) {
+            $mitra->notify(new \App\Notifications\IncomingOrderNotification($order));
+        }
+
         return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
     }
 
