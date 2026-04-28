@@ -47,7 +47,6 @@ class Order extends Model
         'rating',
         'review',
         'amount',
-        'customer',
         'time',
         'items_string',
         'orderTime',
@@ -57,11 +56,6 @@ class Order extends Model
     public function getAmountAttribute()
     {
         return $this->attributes['total_amount'] ?? 0;
-    }
-
-    public function getCustomerAttribute()
-    {
-        return $this->customerRelation ? $this->customerRelation->name : 'Unknown Customer';
     }
 
     public function getTimeAttribute()
