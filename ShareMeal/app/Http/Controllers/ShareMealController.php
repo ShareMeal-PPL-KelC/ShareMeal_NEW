@@ -856,9 +856,17 @@ class ShareMealController extends Controller
             return $matchesSearch && $matchesTab;
         })->values();
 
-        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste') + [
+        $allArticles = collect(ShareMealState::get('articles'));
+        $stats = [
+            'total' => $allArticles->count(),
+            'published' => $allArticles->where('status', 'Published')->count(),
+            'drafts' => $allArticles->where('status', 'Draft')->count(),
+        ];
+
+        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste (FR-19)') + [
             'articles' => $articles,
-            'allArticles' => ShareMealState::get('articles'),
+            'allArticles' => $allArticles->all(),
+            'stats' => $stats,
             'search' => $search,
             'tab' => $tab,
         ]);
