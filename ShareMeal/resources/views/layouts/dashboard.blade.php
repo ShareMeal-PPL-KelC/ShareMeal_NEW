@@ -149,6 +149,11 @@
                                 <i data-lucide="receipt" class="w-5 h-5"></i>
                                 <span>Transaksi</span>
                             </a>
+                            <a href="{{ route('admin.reports') }}" 
+                               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.reports') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                                <span>Laporan</span>
+                            </a>
                             <a href="{{ route('admin.education') }}" 
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="book-open" class="w-5 h-5"></i>
@@ -229,37 +234,10 @@
                             <a href="{{ route('admin.transactions') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.transactions') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="receipt" class="w-5 h-5"></i><span>Transaksi</span>
                             </a>
+                            <a href="{{ route('admin.reports') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.reports') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="bar-chart-2" class="w-5 h-5"></i><span>Laporan</span>
+                            </a>
                             <a href="{{ route('admin.education') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="book-open" class="w-5 h-5"></i><span>Edukasi</span>
-                            </a>
-                        @elseif(request()->is('lembaga*'))
-                            <a href="{{ route('lembaga.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('lembaga.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
-                            </a>
-                            <a href="{{ route('lembaga.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('lembaga.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="heart" class="w-5 h-5"></i><span>Donasi</span>
-                            </a>
-                        @elseif(request()->is('mitra*'))
-                            <a href="{{ route('mitra.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
-                            </a>
-                            <a href="{{ route('mitra.inventory') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.inventory') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="package" class="w-5 h-5"></i><span>Inventaris</span>
-                            </a>
-                            <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Pesanan</span>
-                            </a>
-                        @else
-                            <a href="{{ route('consumer.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
-                            </a>
-                            <a href="{{ route('consumer.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.search') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="search" class="w-5 h-5"></i><span>Cari Makanan</span>
-                            </a>
-                            <a href="{{ route('consumer.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="history" class="w-5 h-5"></i><span>Riwayat</span>
-                            </a>
-                            <a href="{{ route('consumer.education') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="book-open" class="w-5 h-5"></i><span>Edukasi</span>
                             </a>
                         @endif
