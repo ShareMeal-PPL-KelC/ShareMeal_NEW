@@ -18,9 +18,10 @@ Route::prefix('consumer')->name('consumer.')->group(function () {
     Route::get('/search', [ConsumerController::class, 'search'])->name('search');
     Route::get('/history', [ConsumerController::class, 'history'])->name('history');
     Route::get('/education', [ConsumerController::class, 'education'])->name('education');
+    Route::get('/education/{id}', [ConsumerController::class, 'showArticle'])->name('education.show');
     Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [ConsumerController::class, 'storeOrder'])->name('checkout.store');
-    Route::get('/favorites', [ConsumerController::class, 'favorites'])->name('favorites');
+    // Route::get('/favorites', [ConsumerController::class, 'favorites'])->name('favorites');
 });
 
 Route::prefix('mitra')->name('mitra.')->group(function () {
