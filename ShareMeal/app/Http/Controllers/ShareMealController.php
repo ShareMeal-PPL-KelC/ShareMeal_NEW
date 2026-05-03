@@ -917,32 +917,6 @@ class ShareMealController extends Controller
         return back()->with('success', 'Blokir user dibuka.');
     }
 
-    public function adminEducation(Request $request): View
-    {
-        $search = (string) $request->query('search', '');
-        $tab = (string) $request->query('tab', 'all');
-        $articles = collect(ShareMealState::get('articles'))->filter(function ($article) use ($search, $tab) {
-            $matchesSearch = $search === '' || str_contains(strtolower($article['title']), strtolower($search)) || str_contains(strtolower($article['category']), strtolower($search));
-            $matchesTab = $tab === 'all' || strtolower($article['status']) === $tab;
-            return $matchesSearch && $matchesTab;
-        })->values();
-
-        $allArticles = collect(ShareMealState::get('articles'));
-        $stats = [
-            'total' => $allArticles->count(),
-            'published' => $allArticles->where('status', 'Published')->count(),
-            'drafts' => $allArticles->where('status', 'Draft')->count(),
-        ];
-
-        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste (FR-19)') + [
-            'articles' => $articles,
-            'allArticles' => $allArticles->all(),
-            'stats' => $stats,
-            'search' => $search,
-            'tab' => $tab,
-        ]);
-    }
-
     public function adminEducationStore(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -999,31 +973,6 @@ class ShareMealController extends Controller
             'articles' => $articles,
         ]);
     }
-
-    private function dashboardData(string $role, string $title, string $description): array
-    {
-        return [
-            'role' => $role,
-            'title' => $title,
-            'description' => $description,
-            'user' => \Illuminate\Support\Facades\Auth::user(),
-            'notifications' => [],
-            'nav' => $this->dashboardNavigation($role)
-        ];
-    }
-
-    private function dashboardNavigation(string $role): array
-    {
-        if ($role === 'admin') {
-            return [
-                ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
-                ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield-check'],
-                ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
-                ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'receipt'],
-                ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart-3'],
-                ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'graduation-cap'],
-            ];
-        }
-        return [];
-    }
 }
+
+
