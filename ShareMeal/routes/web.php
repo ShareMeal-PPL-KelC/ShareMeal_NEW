@@ -34,6 +34,8 @@ Route::prefix('mitra')->name('mitra.')->group(function () {
     Route::post('/inventory/{productId}/delete', [ShareMealController::class, 'mitraInventoryDelete'])->name('inventory.delete');
     Route::get('/orders', [ShareMealController::class, 'mitraOrders'])->name('orders');
     Route::post('/orders/{orderId}/confirm', [ShareMealController::class, 'mitraOrdersConfirm'])->name('orders.confirm');
+    Route::get('/donations', [ShareMealController::class, 'mitraDonations'])->name('donations');
+    Route::post('/donations', [ShareMealController::class, 'mitraDonationStore'])->name('donations.store');
 });
 
 Route::prefix('lembaga')->name('lembaga.')->group(function () {
@@ -58,4 +60,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/education/{articleId}', [ShareMealController::class, 'adminEducationUpdate'])->name('education.update');
     Route::post('/education/{articleId}/delete', [ShareMealController::class, 'adminEducationDelete'])->name('education.delete');
     Route::get('/transactions', [ShareMealController::class, 'adminTransactions'])->name('transactions');
+    Route::get('/reports', [ShareMealController::class, 'adminReports'])->name('reports');
+
 });

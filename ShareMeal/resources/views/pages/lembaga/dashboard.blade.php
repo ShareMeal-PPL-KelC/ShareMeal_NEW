@@ -136,7 +136,7 @@
                 <div class="flex-1">
                     <h4 class="font-bold text-gray-900 text-lg">{{ $d['store']['name'] }}</h4>
                     <p class="text-sm text-gray-600 mt-1">
-                        {{ collect($d['items'])->map(fn($i) => $i['name'])->join(', ') }} ({{ collect($d['items'])->sum('quantity') }} unit)
+                        {{ collect($d['items'])->map(fn($i) => $i['name'])->join(', ') }} ({{ collect($d['items'])->map(fn($i) => $i['quantity'] . ' ' . ($i['unit'] ?? 'unit'))->join(', ') }})
                     </p>
                     <div class="flex flex-wrap gap-4 mt-3 text-xs text-gray-500 font-medium uppercase">
                         <span>📍 {{ $d['store']['address'] }}</span>

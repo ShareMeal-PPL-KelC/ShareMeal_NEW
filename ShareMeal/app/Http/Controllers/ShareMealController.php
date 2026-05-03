@@ -27,6 +27,7 @@ class ShareMealController extends Controller
                 ['label' => 'Dashboard', 'route' => 'mitra.dashboard', 'icon' => 'layout-dashboard'],
                 ['label' => 'Inventaris', 'route' => 'mitra.inventory', 'icon' => 'package'],
                 ['label' => 'Pesanan', 'route' => 'mitra.orders', 'icon' => 'shopping-cart'],
+                ['label' => 'Donasi', 'route' => 'mitra.donations', 'icon' => 'heart'],
             ],
             'consumer' => [
                 ['label' => 'Dashboard', 'route' => 'consumer.dashboard', 'icon' => 'layout-dashboard'],
@@ -42,6 +43,9 @@ class ShareMealController extends Controller
                 ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
                 ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield'],
                 ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
+                ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'shopping-cart'],
+                ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart'],
+
                 ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'book-open'],
             ],
             default => [],
@@ -433,8 +437,8 @@ class ShareMealController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
-        Product::create([
-            'user_id' => $this->currentUser()['id'] ?? \App\Models\User::where('role', 'mitra')->first()?->id,
+        $product = Product::create([
+            'user_id' => Auth::id() ?? \App\Models\User::where('role', 'mitra')->first()?->id,
             'name' => $data['name'],
             'category' => $data['category'],
             'price' => $data['price'],
@@ -444,6 +448,17 @@ class ShareMealController extends Controller
             'status' => $data['status'],
             'image' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080',
         ]);
+
+        if ($product->status === 'flash-sale') {
+            $mitra = \App\Models\User::find($product->user_id);
+            if ($mitra) {
+                // Because favorite stores logic is frontend-only (localStorage), we notify all consumers as a mock demo
+                $consumers = \App\Models\User::where('role', 'consumer')->get();
+                if ($consumers->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+                }
+            }
+        }
 
         return back()->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -463,6 +478,8 @@ class ShareMealController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
+        $wasNotFlashSale = $product->getOriginal('status') !== 'flash-sale';
+
         $product->update([
             'name' => $data['name'],
             'category' => $data['category'],
@@ -477,6 +494,16 @@ class ShareMealController extends Controller
             $product->update(['image' => $request->file('image')->store('products', 'public')]);
         }
 
+        if ($product->status === 'flash-sale' && $wasNotFlashSale) {
+            $mitra = \App\Models\User::find($product->user_id);
+            if ($mitra) {
+                $consumers = \App\Models\User::where('role', 'consumer')->get();
+                if ($consumers->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+                }
+            }
+        }
+
         return back()->with('success', 'Informasi produk berhasil diperbarui.');
     }
 
@@ -489,6 +516,14 @@ class ShareMealController extends Controller
             'discount_price' => floor($product->price * 0.7), // Example 30% discount
         ]);
 
+        $mitra = \App\Models\User::find($product->user_id);
+        if ($mitra) {
+            $consumers = \App\Models\User::where('role', 'consumer')->get();
+            if ($consumers->count() > 0) {
+                \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+            }
+        }
+
         return back()->with('success', 'Flash sale diaktifkan.');
     }
 
@@ -498,19 +533,41 @@ class ShareMealController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
             'unit' => ['required', 'string'],
+            'expires_at' => ['required', 'date'],
             'description' => ['nullable', 'string'],
         ]);
 
-        Donation::create([
-            'mitra_id' => Auth::id(),
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+
+        $donation = Donation::create([
+            'mitra_id' => $userId,
             'title' => $data['title'],
             'quantity' => $data['quantity'],
             'unit' => $data['unit'],
+            'expires_at' => $data['expires_at'],
             'description' => $data['description'],
             'status' => 'pending',
         ]);
 
+        $lembagas = \App\Models\User::where('role', 'lembaga')->get();
+        if ($lembagas->count() > 0) {
+            $mitraName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Resto Mitra';
+            \Illuminate\Support\Facades\Notification::send($lembagas, new \App\Notifications\DonationAvailableNotification($mitraName, $donation->title, $donation->quantity . ' ' . $donation->unit));
+        }
+
         return back()->with('success', 'Donasi berhasil didaftarkan.');
+    }
+
+    public function mitraDonations(): View
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        
+        $donations = Donation::with('lembaga')
+            ->where('mitra_id', $userId)
+            ->latest()
+            ->get();
+
+        return view('pages.mitra.donations', compact('donations'));
     }
 
     public function mitraInventoryDelete(int $productId): RedirectResponse
@@ -547,13 +604,13 @@ class ShareMealController extends Controller
     {
         $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         $userObj = User::query()->find($userId);
-        $donations = ShareMealState::get('donations');
+        $donations = Donation::all();
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => (object) ['totalDonations' => 156, 'activeDonations' => 8, 'beneficiaries' => 120, 'thisMonth' => 45],
+            'stats' => (object) ['totalDonations' => Donation::where('lembaga_id', $userId)->count(), 'activeDonations' => Donation::where('status', 'available')->count()],
             'donations' => $donations,
-            'availableDonations' => collect($donations)->where('status', 'available')->all(),
-            'recentDonations' => collect($donations)->whereIn('status', ['claimed', 'completed'])->sortByDesc('claimed_at')->take(5)->all(),
+            'availableDonations' => Donation::where('status', 'available')->get(),
+            'recentDonations' => Donation::whereIn('status', ['claimed', 'completed'])->latest('claimed_at')->take(5)->get(),
             'userObj' => $userObj,
         ]);
     }
@@ -561,20 +618,32 @@ class ShareMealController extends Controller
     public function lembagaDonations(): View
     {
         return view('pages.lembaga.donations', $this->dashboardData('lembaga', 'Kelola Donasi', 'Klaim & tracking donasi makanan') + [
-            'donations' => ShareMealState::get('donations'),
+            'donations' => Donation::all(),
             'activeTab' => request('tab', 'available'),
         ]);
     }
 
     public function lembagaClaimDonation(string $donationId): RedirectResponse
     {
-        ShareMealState::claimDonation($donationId);
-        return back()->with('success', 'Donasi berhasil diklaim.');
+        $donation = Donation::findOrFail($donationId);
+        
+        if ($donation->status !== 'pending') {
+            return back()->with('error', 'Donasi sudah diklaim oleh lembaga lain.');
+        }
+
+        $donation->update([
+            'lembaga_id' => Auth::id(),
+            'status' => 'claimed',
+            'claimed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Donasi berhasil diklaim. Silakan lakukan pengambilan sesuai jadwal.');
     }
 
     public function lembagaCompleteDonation(string $donationId): RedirectResponse
     {
-        ShareMealState::completeDonation($donationId);
+        $donation = Donation::findOrFail($donationId);
+        $donation->update(['status' => 'completed']);
         return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
     }
 
@@ -751,6 +820,84 @@ class ShareMealController extends Controller
         ]);
     }
 
+    public function adminReports(Request $request): View
+    {
+        $stats = [
+            'total_food_saved' => '12.480 Kg',
+            'co2_reduction' => '31.200 Kg',
+            'meals_distributed' => '8.240',
+            'impact_value' => 'Rp 245.8M',
+            'waste_reduction_rate' => 24.5, // percentage
+        ];
+
+        $monthlyData = [
+            ['month' => 'Jan', 'saved' => 850, 'target' => 1000],
+            ['month' => 'Feb', 'saved' => 1200, 'target' => 1000],
+            ['month' => 'Mar', 'saved' => 1500, 'target' => 1000],
+            ['month' => 'Apr', 'saved' => 1800, 'target' => 1000],
+            ['month' => 'Mei', 'saved' => 2100, 'target' => 1000],
+        ];
+
+        $distributions = collect([
+            (object)[
+                'id' => 1,
+                'mitra' => 'Toko Roti Sejahtera',
+                'lembaga' => 'Yayasan Kasih Ibu',
+                'items' => 'Roti Manis, Brownies',
+                'quantity' => '25 Kg',
+                'type' => 'Donasi',
+                'status' => 'Diterima',
+                'date' => now()->subDays(1)->format('d M Y')
+            ],
+            (object)[
+                'id' => 2,
+                'mitra' => 'Warung Makan Barokah',
+                'lembaga' => 'Panti Asuhan Al-Falah',
+                'items' => 'Nasi Bungkus, Lauk Pauk',
+                'quantity' => '15 Kg',
+                'type' => 'Donasi',
+                'status' => 'Diterima',
+                'date' => now()->subDays(2)->format('d M Y')
+            ],
+            (object)[
+                'id' => 3,
+                'mitra' => 'Healthy Cafe',
+                'lembaga' => '-',
+                'items' => 'Salad Bowl, Juice',
+                'quantity' => '8 Kg',
+                'type' => 'Flash Sale',
+                'status' => 'Terjual',
+                'date' => now()->subDays(3)->format('d M Y')
+            ],
+            (object)[
+                'id' => 4,
+                'mitra' => 'Bakery Delight',
+                'lembaga' => 'Rumah Singgah',
+                'items' => 'Croissant, Danish',
+                'quantity' => '12 Kg',
+                'type' => 'Donasi',
+                'status' => 'Dalam Perjalanan',
+                'date' => now()->subDays(1)->format('d M Y')
+            ],
+            (object)[
+                'id' => 5,
+                'mitra' => 'Resto Sedap Malam',
+                'lembaga' => 'Yayasan Yatim Piatu',
+                'items' => 'Ayam Bakar, Nasi',
+                'quantity' => '30 Kg',
+                'type' => 'Donasi',
+                'status' => 'Diterima',
+                'date' => now()->subDays(4)->format('d M Y')
+            ],
+        ]);
+
+        return view('pages.admin.reports', $this->dashboardData('admin', 'Laporan Distribusi & Dampak', 'Evaluasi pengurangan food waste dan dampak sosial platform') + [
+            'stats' => $stats,
+            'monthlyData' => $monthlyData,
+            'distributions' => $distributions,
+        ]);
+    }
+
     public function adminWarnUser(int $userId): RedirectResponse
     {
         ShareMealState::warnUser($userId);
@@ -780,9 +927,17 @@ class ShareMealController extends Controller
             return $matchesSearch && $matchesTab;
         })->values();
 
-        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste') + [
+        $allArticles = collect(ShareMealState::get('articles'));
+        $stats = [
+            'total' => $allArticles->count(),
+            'published' => $allArticles->where('status', 'Published')->count(),
+            'drafts' => $allArticles->where('status', 'Draft')->count(),
+        ];
+
+        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste (FR-19)') + [
             'articles' => $articles,
-            'allArticles' => ShareMealState::get('articles'),
+            'allArticles' => $allArticles->all(),
+            'stats' => $stats,
             'search' => $search,
             'tab' => $tab,
         ]);

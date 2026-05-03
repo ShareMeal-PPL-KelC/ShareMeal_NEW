@@ -3,6 +3,10 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Models\Article;
+use App\Models\Store;
+use App\Models\Booking;
+use App\Models\InventoryProduct;
 use App\Models\Donation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
@@ -70,7 +74,7 @@ class ShareMealState
                     ],
                     'distance' => '1.5 km',
                     'items' => [
-                        ['name' => $donation->title, 'quantity' => $donation->quantity]
+                        ['name' => $donation->title, 'quantity' => $donation->quantity, 'unit' => $donation->unit]
                     ],
                     'available_until' => $donation->expires_at ? \Carbon\Carbon::parse($donation->expires_at)->format('d M, H:i') : '18:00',
                     'claimed_at' => $donation->claimed_at ? \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') : null,
@@ -80,7 +84,7 @@ class ShareMealState
             })->all(),
             'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
             'users' => User::query()->orderBy('id')->get()->map(fn (User $user) => self::transformUser($user))->all(),
-            'articles' => [],
+            'articles' => \App\Models\Article::query()->latest()->get()->map(fn ($a) => self::transformArticle($a))->all(),
             default => $default,
         };
     }
