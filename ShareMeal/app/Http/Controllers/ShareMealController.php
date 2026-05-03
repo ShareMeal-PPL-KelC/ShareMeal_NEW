@@ -934,4 +934,58 @@ class ShareMealController extends Controller
         ShareMealState::deleteArticle($articleId);
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
+    public function adminEducation(Request $request): View
+    {
+        $articles = [
+            [
+                'id' => 1,
+                'title' => '5 Cara Mengurangi Food Waste di Rumah',
+                'category' => 'Tips',
+                'status' => 'Published',
+                'date' => '10 Apr 2024',
+                'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400',
+                'content' => 'Limbah makanan adalah masalah besar bagi lingkungan...'
+            ],
+            [
+                'id' => 2,
+                'title' => 'Panduan Donasi Makanan Aman',
+                'category' => 'Panduan',
+                'status' => 'Published',
+                'date' => '08 Apr 2024',
+                'image' => 'https://images.unsplash.com/photo-1488459711615-228239c83252?auto=format&fit=crop&q=80&w=400',
+                'content' => 'Pastikan makanan yang Anda donasikan masih layak konsumsi...'
+            ],
+        ];
+
+        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola konten & edukasi food waste') + [
+            'articles' => $articles,
+        ]);
+    }
+
+    private function dashboardData(string $role, string $title, string $description): array
+    {
+        return [
+            'role' => $role,
+            'title' => $title,
+            'description' => $description,
+            'user' => \Illuminate\Support\Facades\Auth::user(),
+            'notifications' => [],
+            'nav' => $this->dashboardNavigation($role)
+        ];
+    }
+
+    private function dashboardNavigation(string $role): array
+    {
+        if ($role === 'admin') {
+            return [
+                ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
+                ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield-check'],
+                ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
+                ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'receipt'],
+                ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart-3'],
+                ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'graduation-cap'],
+            ];
+        }
+        return [];
+    }
 }
