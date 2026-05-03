@@ -160,10 +160,10 @@
                 <i data-lucide="users" class="w-4 h-4 text-gray-500 group-hover:text-gray-900"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900">Kelola User</span>
             </a>
-            <button class="flex items-center justify-center gap-2 border border-gray-200 rounded-lg py-3 px-4 hover:bg-gray-50 hover:border-gray-300 transition group text-sm">
+            <a href="{{ route('admin.reports') }}" class="flex items-center justify-center gap-2 border border-gray-200 rounded-lg py-3 px-4 hover:bg-gray-50 hover:border-gray-300 transition group text-sm">
                 <i data-lucide="line-chart" class="w-4 h-4 text-gray-500 group-hover:text-gray-900"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900">Lihat Laporan</span>
-            </button>
+            </a>
             <button class="flex items-center justify-center gap-2 border border-gray-200 rounded-lg py-3 px-4 hover:bg-gray-50 hover:border-gray-300 transition group text-sm">
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-gray-500 group-hover:text-gray-900"></i>
                 <span class="font-medium text-gray-700 group-hover:text-gray-900">Moderasi Konten</span>
