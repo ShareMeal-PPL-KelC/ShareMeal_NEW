@@ -101,7 +101,7 @@
                 </button>
             </div>
 
-            <form :action="isEditing ? `/mitra/inventory/${formData.id}` : '/mitra/inventory'" method="POST" x-ref="productForm" class="space-y-5">
+            <form :action="isEditing ? `/mitra/inventory/${formData.id}` : '/mitra/inventory'" method="POST" enctype="multipart/form-data" x-ref="productForm" class="space-y-5">
                 @csrf
                 <template x-if="isEditing">
                     <input type="hidden" name="_method" value="POST"> {{-- We use POST for update in this case as per routes --}}
@@ -110,8 +110,8 @@
 
                 <div class="space-y-2">
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Gambar Produk</label>
-                    <input type="text" name="image" x-model="formData.image" placeholder="URL Gambar" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
-                    <p class="text-[10px] text-gray-400 mt-1 italic">Gunakan URL gambar (Unsplash, dsb) untuk demo ini.</p>
+                    <input type="file" name="image" accept="image/*" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                    <p class="text-[10px] text-gray-400 mt-1 italic">Unggah foto produk baru (kosongkan jika tidak ingin mengubah gambar).</p>
                 </div>
 
                 <div class="space-y-2">
