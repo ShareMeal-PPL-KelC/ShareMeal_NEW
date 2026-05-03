@@ -1100,6 +1100,7 @@ class ShareMealController extends Controller
         ]);
     }
 
+
     private function dashboardData(string $role, string $title, string $description): array
     {
         return [
