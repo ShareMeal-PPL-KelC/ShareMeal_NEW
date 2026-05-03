@@ -74,7 +74,7 @@
                                     <template x-for="(item, index) in donation.items" :key="index">
                                         <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl border border-transparent hover:border-gray-100 transition">
                                             <span class="text-gray-900 font-medium" x-text="item.name"></span>
-                                            <span class="font-bold text-gray-600" x-text="item.quantity + ' unit'"></span>
+                                            <span class="font-bold text-gray-600" x-text="item.quantity + ' ' + (item.unit || 'unit')"></span>
                                         </div>
                                     </template>
                                 </div>
@@ -141,7 +141,7 @@
                                     <template x-for="(item, index) in donation.items" :key="index">
                                         <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
                                             <span class="text-gray-900 font-medium" x-text="item.name"></span>
-                                            <span class="font-bold text-gray-600" x-text="item.quantity + ' unit'"></span>
+                                            <span class="font-bold text-gray-600" x-text="item.quantity + ' ' + (item.unit || 'unit')"></span>
                                         </div>
                                     </template>
                                 </div>

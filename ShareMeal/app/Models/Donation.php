@@ -21,11 +21,16 @@ class Donation extends Model
         'status',
         'pickup_time',
         'image',
+        'claimed_at',
+        'delivered_at',
+        'tracking_status',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'pickup_time' => 'datetime',
+        'claimed_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     public function mitra(): BelongsTo

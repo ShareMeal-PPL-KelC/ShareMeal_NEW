@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="space-y-6" x-data="{ 
+<div class="space-y-6" x-data="{
     isReviewDialogOpen: false,
     selectedOrderId: null,
     rating: 0,
@@ -19,6 +19,18 @@
         this.isReviewDialogOpen = false;
         this.rating = 0;
         this.review = '';
+    },
+    isReceiptDialogOpen: false,
+    receiptData: null,
+    openReceiptModal(data) {
+        this.receiptData = data;
+        this.isReceiptDialogOpen = true;
+    },
+    downloadReceipt() {
+        alert('Memulai unduhan struk untuk pesanan ' + this.receiptData.id + '...');
+        setTimeout(() => {
+            this.isReceiptDialogOpen = false;
+        }, 500);
     }
 }">
     <div>
@@ -40,7 +52,7 @@
         </div>
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
             <div class="text-3xl font-black text-yellow-500">
-                @php 
+                @php
                     $rated = collect($transactions)->filter(fn($t) => $t->rating > 0);
                     $avg = $rated->count() > 0 ? $rated->avg('rating') : 0;
                 @endphp
@@ -94,16 +106,16 @@
                             updateTime() {
                                 const now = new Date().getTime();
                                 const distance = this.endTime - now;
-                                
+
                                 if (distance < 0) {
                                     this.isExpired = true;
                                     return;
                                 }
-                                
+
                                 const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                                 const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                                 const s = Math.floor((distance % (1000 * 60)) / 1000);
-                                
+
                                 this.timeRemaining = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
                             }
                         }" class="flex items-center gap-1.5 mt-1.5 text-sm font-bold text-red-500">
@@ -183,9 +195,22 @@
                 @endif
 
                 <div class="flex gap-3 pt-4">
-                    <button class="flex-1 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl font-bold text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                    <button @click="openReceiptModal({
+                        id: '{{ $t->orderId }}',
+                        store: '{{ $t->store }}',
+                        date: '{{ $t->orderTime }}',
+                        status: '{{ $t->status }}',
+                        subtotal: {{ $t->subtotal }},
+                        discount: {{ $t->discount }},
+                        total: {{ $t->total }},
+                        items: [
+                            @foreach($t->items as $item)
+                            { name: '{{ $item->product ? addslashes($item->product->name) : addslashes($item->name) }}', qty: {{ $item->quantity }}, price: {{ $item->price }} },
+                            @endforeach
+                        ]
+                    })" class="flex-1 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl font-bold text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Unduh Bukti
+                        Lihat Bukti
                     </button>
                     <a href="{{ route('consumer.search') }}" class="flex-1 bg-[#174413] text-white px-4 py-3 rounded-2xl font-bold text-sm hover:bg-[#256020] transition flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
@@ -226,6 +251,77 @@
                     <button @click="isReviewDialogOpen = false" class="flex-1 border border-gray-100 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 transition">Batal</button>
                     <button @click="submitReview()" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition">Kirim Review</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal Overlay -->
+    <div x-show="isReceiptDialogOpen" class="fixed inset-0  flex items-center justify-center  bg-black/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative" @click.away="isReceiptDialogOpen = false"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <!-- Receipt Header -->
+            <div class="bg-gray-50 p-6 text-center border-b border-gray-100 border-dashed">
+                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                </div>
+                <h3 class="text-xl font-black text-gray-900">ShareMeal Struk</h3>
+                <p class="text-sm text-gray-500 font-medium mt-1" x-text="receiptData ? receiptData.store : ''"></p>
+                <div class="mt-4 flex justify-between items-center text-xs text-gray-400 font-mono">
+                    <span x-text="receiptData ? receiptData.date : ''"></span>
+                    <span x-text="receiptData ? receiptData.id : ''"></span>
+                </div>
+            </div>
+
+            <!-- Receipt Body -->
+            <div class="p-6 space-y-4 bg-white">
+                <div class="space-y-3" x-show="receiptData">
+                    <template x-for="(item, index) in (receiptData ? receiptData.items : [])" :key="index">
+                        <div class="flex justify-between text-sm font-medium text-gray-700">
+                            <div>
+                                <span x-text="item.name"></span>
+                                <span class="text-gray-400 text-xs ml-1" x-text="'x' + item.qty"></span>
+                            </div>
+                            <div class="text-gray-900 font-bold" x-text="'Rp ' + (item.price * item.qty).toLocaleString('id-ID')"></div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="border-t border-dashed border-gray-200 pt-4 space-y-2" x-show="receiptData">
+                    <div class="flex justify-between text-sm text-gray-500">
+                        <span>Subtotal</span>
+                        <span x-text="'Rp ' + receiptData.subtotal.toLocaleString('id-ID')"></span>
+                    </div>
+                    <div class="flex justify-between text-sm text-green-600 font-bold">
+                        <span>Hemat (Diskon)</span>
+                        <span x-text="'- Rp ' + receiptData.discount.toLocaleString('id-ID')"></span>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-4 flex justify-between items-center" x-show="receiptData">
+                    <span class="font-black text-gray-900">Total Bayar</span>
+                    <span class="text-xl font-black text-gray-900" x-text="'Rp ' + receiptData.total.toLocaleString('id-ID')"></span>
+                </div>
+
+                <div class="text-center pt-4" x-show="receiptData">
+                    <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+                          :class="receiptData.status === 'completed' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-orange-100 text-orange-700 border border-orange-200'"
+                          x-text="receiptData.status === 'completed' ? 'LUNAS & SELESAI' : 'PENDING / BELUM DIAMBIL'">
+                    </span>
+                </div>
+            </div>
+
+            <!-- Receipt Footer / Actions -->
+            <div class="bg-gray-50 p-4 flex gap-3 border-t border-gray-100">
+                <button @click="isReceiptDialogOpen = false" class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-100 transition">Tutup</button>
+                <button @click="downloadReceipt()" class="flex-1 bg-[#174413] text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-green-100 hover:bg-[#256020] transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Unduh PDF
+                </button>
             </div>
         </div>
     </div>

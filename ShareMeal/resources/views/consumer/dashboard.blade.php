@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="space-y-6" x-data="{
-    openManage: false,
+    openManage: false, 
     allStores: [
         {id: 1, name: 'Toko Roti Makmur', category: 'Bakery', distance: '0.5 km', rating: 4.8, activeDeals: 2, isFavorite: true},
         {id: 2, name: 'Healthy Cafe', category: 'Healthy Food', distance: '1.2 km', rating: 4.5, activeDeals: 1, isFavorite: true},
