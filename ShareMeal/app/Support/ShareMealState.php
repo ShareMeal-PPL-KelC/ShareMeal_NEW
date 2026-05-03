@@ -80,7 +80,7 @@ class ShareMealState
             })->all(),
             'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
             'users' => User::query()->orderBy('id')->get()->map(fn (User $user) => self::transformUser($user))->all(),
-            'articles' => [],
+            'articles' => \App\Models\Article::query()->orderByDesc('id')->get()->map(fn (\App\Models\Article $article) => self::transformArticle($article))->all(),
             default => $default,
         };
     }
