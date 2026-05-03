@@ -36,7 +36,14 @@
                                     {{ $donation->status === 'claimed' ? 'Terklaim' : ($donation->status === 'completed' ? 'Selesai' : 'Menunggu Klaim') }}
                                 </span>
                             </div>
-                            <p class="text-sm text-gray-400 font-medium mt-2">Didaftarkan pada: {{ \Carbon\Carbon::parse($donation->created_at)->format('d M Y, H:i') }}</p>
+                            <div class="flex flex-wrap items-center gap-4 mt-2">
+                                <p class="text-sm text-gray-400 font-medium">Didaftarkan: {{ \Carbon\Carbon::parse($donation->created_at)->format('d M Y, H:i') }}</p>
+                                @if($donation->expires_at)
+                                <p class="text-sm text-orange-500 font-medium flex items-center gap-1">
+                                    <i data-lucide="clock" class="w-4 h-4"></i> Layak Konsumsi s/d: {{ \Carbon\Carbon::parse($donation->expires_at)->format('d M Y, H:i') }}
+                                </p>
+                                @endif
+                            </div>
                         </div>
                         <div class="text-right">
                             <div class="text-2xl font-black text-gray-900">{{ $donation->quantity }} {{ $donation->unit }}</div>
@@ -133,6 +140,12 @@
                             <option value="kg">Kg</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Batas Waktu Layak Konsumsi</label>
+                    <input type="datetime-local" name="expires_at" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                    <p class="text-[10px] text-gray-400 mt-1 italic">Tentukan batas akhir waktu makanan ini aman dan layak untuk dikonsumsi.</p>
                 </div>
 
                 <div class="space-y-2">
