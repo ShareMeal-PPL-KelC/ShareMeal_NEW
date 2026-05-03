@@ -972,6 +972,19 @@ class ShareMealController extends Controller
         ShareMealState::deleteArticle($articleId);
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
+    public function adminUsers(Request $request): View
+    {
+        $users = collect([
+            ['name' => 'Budi Santoso', 'email' => 'budi@example.com', 'type' => 'mitra', 'status' => 'active', 'joined_at' => '12 Apr 2024'],
+            ['name' => 'Siti Aminah', 'email' => 'siti@example.com', 'type' => 'konsumen', 'status' => 'active', 'joined_at' => '15 Apr 2024'],
+            ['name' => 'Yayasan Kasih Ibu', 'email' => 'kasihibu@example.com', 'type' => 'lembaga', 'status' => 'active', 'joined_at' => '20 Apr 2024'],
+            ['name' => 'Andi Wijaya', 'email' => 'andi@example.com', 'type' => 'mitra', 'status' => 'blocked', 'joined_at' => '05 Apr 2024'],
+        ]);
+
+        return view('pages.admin.users', $this->dashboardData('admin', 'Manajemen Data User', 'Kelola akun & moderasi pelanggaran') + [
+        ]);
+    }
+
     public function adminTransactions(Request $request): View
     {
         $page = (int) $request->query('page', 1);
@@ -1083,6 +1096,7 @@ class ShareMealController extends Controller
             'stats' => $stats,
             'monthlyData' => $monthlyData,
             'distributions' => $distributions,
+
         ]);
     }
 
@@ -1093,7 +1107,7 @@ class ShareMealController extends Controller
             'title' => $title,
             'description' => $description,
             'user' => \Illuminate\Support\Facades\Auth::user(),
-            'notifications' => [], // Add dummy if needed
+            'notifications' => [],
             'nav' => $this->dashboardNavigation($role)
         ];
     }
