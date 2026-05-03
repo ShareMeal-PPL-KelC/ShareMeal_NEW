@@ -917,32 +917,6 @@ class ShareMealController extends Controller
         return back()->with('success', 'Blokir user dibuka.');
     }
 
-    public function adminEducation(Request $request): View
-    {
-        $search = (string) $request->query('search', '');
-        $tab = (string) $request->query('tab', 'all');
-        $articles = collect(ShareMealState::get('articles'))->filter(function ($article) use ($search, $tab) {
-            $matchesSearch = $search === '' || str_contains(strtolower($article['title']), strtolower($search)) || str_contains(strtolower($article['category']), strtolower($search));
-            $matchesTab = $tab === 'all' || strtolower($article['status']) === $tab;
-            return $matchesSearch && $matchesTab;
-        })->values();
-
-        $allArticles = collect(ShareMealState::get('articles'));
-        $stats = [
-            'total' => $allArticles->count(),
-            'published' => $allArticles->where('status', 'Published')->count(),
-            'drafts' => $allArticles->where('status', 'Draft')->count(),
-        ];
-
-        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste (FR-19)') + [
-            'articles' => $articles,
-            'allArticles' => $allArticles->all(),
-            'stats' => $stats,
-            'search' => $search,
-            'tab' => $tab,
-        ]);
-    }
-
     public function adminEducationStore(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -972,6 +946,34 @@ class ShareMealController extends Controller
         ShareMealState::deleteArticle($articleId);
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
+    public function adminEducation(Request $request): View
+    {
+        $articles = [
+            [
+                'id' => 1,
+                'title' => '5 Cara Mengurangi Food Waste di Rumah',
+                'category' => 'Tips',
+                'status' => 'Published',
+                'date' => '10 Apr 2024',
+                'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400',
+                'content' => 'Limbah makanan adalah masalah besar bagi lingkungan...'
+            ],
+            [
+                'id' => 2,
+                'title' => 'Panduan Donasi Makanan Aman',
+                'category' => 'Panduan',
+                'status' => 'Published',
+                'date' => '08 Apr 2024',
+                'image' => 'https://images.unsplash.com/photo-1488459711615-228239c83252?auto=format&fit=crop&q=80&w=400',
+                'content' => 'Pastikan makanan yang Anda donasikan masih layak konsumsi...'
+            ],
+        ];
+
+        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola konten & edukasi food waste') + [
+            'articles' => $articles,
+        ]);
+    }
+
     public function adminUsers(Request $request): View
     {
         $users = collect([
@@ -1127,4 +1129,7 @@ class ShareMealController extends Controller
         }
         return [];
     }
+
 }
+
+
