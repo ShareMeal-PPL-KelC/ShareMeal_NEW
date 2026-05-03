@@ -817,4 +817,44 @@ class ShareMealController extends Controller
         ShareMealState::deleteArticle($articleId);
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
+    public function adminUsers(Request $request): View
+    {
+        $users = collect([
+            ['name' => 'Budi Santoso', 'email' => 'budi@example.com', 'type' => 'mitra', 'status' => 'active', 'joined_at' => '12 Apr 2024'],
+            ['name' => 'Siti Aminah', 'email' => 'siti@example.com', 'type' => 'konsumen', 'status' => 'active', 'joined_at' => '15 Apr 2024'],
+            ['name' => 'Yayasan Kasih Ibu', 'email' => 'kasihibu@example.com', 'type' => 'lembaga', 'status' => 'active', 'joined_at' => '20 Apr 2024'],
+            ['name' => 'Andi Wijaya', 'email' => 'andi@example.com', 'type' => 'mitra', 'status' => 'blocked', 'joined_at' => '05 Apr 2024'],
+        ]);
+
+        return view('pages.admin.users', $this->dashboardData('admin', 'Manajemen Data User', 'Kelola akun & moderasi pelanggaran') + [
+            'users' => $users,
+        ]);
+    }
+
+    private function dashboardData(string $role, string $title, string $description): array
+    {
+        return [
+            'role' => $role,
+            'title' => $title,
+            'description' => $description,
+            'user' => \Illuminate\Support\Facades\Auth::user(),
+            'notifications' => [],
+            'nav' => $this->dashboardNavigation($role)
+        ];
+    }
+
+    private function dashboardNavigation(string $role): array
+    {
+        if ($role === 'admin') {
+            return [
+                ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
+                ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield-check'],
+                ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
+                ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'receipt'],
+                ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart-3'],
+                ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'graduation-cap'],
+            ];
+        }
+        return [];
+    }
 }
