@@ -982,7 +982,121 @@ class ShareMealController extends Controller
         ]);
 
         return view('pages.admin.users', $this->dashboardData('admin', 'Manajemen Data User', 'Kelola akun & moderasi pelanggaran') + [
-            'users' => $users,
+        ]);
+    }
+
+    public function adminTransactions(Request $request): View
+    {
+        $page = (int) $request->query('page', 1);
+        $transactions = collect([
+            (object)[
+                'id' => 5420,
+                'customer' => (object)['name' => 'Budi Santoso'],
+                'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
+                'total_amount' => 45000,
+                'status' => 'completed',
+                'created_at' => now()->subMinutes(15)
+            ],
+            (object)[
+                'id' => 5419,
+                'customer' => (object)['name' => 'Siti Aminah'],
+                'mitra' => (object)['name' => 'Warung Makan Ibu Rina'],
+                'total_amount' => 28500,
+                'status' => 'pending',
+                'created_at' => now()->subMinutes(30)
+            ],
+        ]);
+        
+        $stats = [
+            'total_transaksi' => 5420,
+            'total_selesai' => 4150,
+            'total_pending' => 1270,
+            'gmv' => 'Rp 189.7M'
+        ];
+
+        return view('pages.admin.transactions', $this->dashboardData('admin', 'Pemantauan Transaksi', 'Pantau seluruh aktivitas transaksi di platform ShareMeal') + [
+            'transactions' => $transactions,
+            'stats' => $stats,
+            'page' => $page
+        ]);
+    }
+
+    public function adminReports(Request $request): View
+    {
+        $stats = [
+            'total_food_saved' => '12.480 Kg',
+            'co2_reduction' => '31.200 Kg',
+            'meals_distributed' => '8.240',
+            'impact_value' => 'Rp 245.8M',
+            'waste_reduction_rate' => 24.5, // percentage
+        ];
+
+        $monthlyData = [
+            ['month' => 'Jan', 'saved' => 850, 'target' => 1000],
+            ['month' => 'Feb', 'saved' => 1200, 'target' => 1000],
+            ['month' => 'Mar', 'saved' => 1500, 'target' => 1000],
+            ['month' => 'Apr', 'saved' => 1800, 'target' => 1000],
+            ['month' => 'Mei', 'saved' => 2100, 'target' => 1000],
+        ];
+
+        $distributions = collect([
+            (object)[
+                'id' => 1,
+                'mitra' => 'Toko Roti Sejahtera',
+                'lembaga' => 'Yayasan Kasih Ibu',
+                'items' => 'Roti Manis, Brownies',
+                'quantity' => '25 Kg',
+                'type' => 'Donasi',
+                'status' => 'Diterima',
+                'date' => now()->subDays(1)->format('d M Y')
+            ],
+            (object)[
+                'id' => 2,
+                'mitra' => 'Warung Makan Barokah',
+                'lembaga' => 'Panti Asuhan Al-Falah',
+                'items' => 'Nasi Bungkus, Lauk Pauk',
+                'quantity' => '15 Kg',
+                'type' => 'Donasi',
+                'status' => 'Diterima',
+                'date' => now()->subDays(2)->format('d M Y')
+            ],
+            (object)[
+                'id' => 3,
+                'mitra' => 'Healthy Cafe',
+                'lembaga' => '-',
+                'items' => 'Salad Bowl, Juice',
+                'quantity' => '8 Kg',
+                'type' => 'Flash Sale',
+                'status' => 'Terjual',
+                'date' => now()->subDays(3)->format('d M Y')
+            ],
+            (object)[
+                'id' => 4,
+                'mitra' => 'Bakery Delight',
+                'lembaga' => 'Rumah Singgah',
+                'items' => 'Croissant, Danish',
+                'quantity' => '12 Kg',
+                'type' => 'Donasi',
+                'status' => 'Dalam Perjalanan',
+                'date' => now()->subDays(1)->format('d M Y')
+            ],
+            (object)[
+                'id' => 5,
+                'mitra' => 'Resto Sedap Malam',
+                'lembaga' => 'Yayasan Yatim Piatu',
+                'items' => 'Ayam Bakar, Nasi',
+                'quantity' => '30 Kg',
+                'type' => 'Donasi',
+                'status' => 'Diterima',
+                'date' => now()->subDays(4)->format('d M Y')
+            ],
+        ]);
+
+        return view('pages.admin.reports', $this->dashboardData('admin', 'Laporan Distribusi & Dampak', 'Evaluasi pengurangan food waste dan dampak sosial platform') + [
+            'stats' => $stats,
+            'monthlyData' => $monthlyData,
+            'distributions' => $distributions,
+
         ]);
     }
 
