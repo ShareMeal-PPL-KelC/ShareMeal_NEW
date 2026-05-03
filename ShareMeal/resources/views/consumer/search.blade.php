@@ -1,18 +1,64 @@
 @extends('layouts.dashboard')
 
 @section('content')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <div class="space-y-6" x-data='{ 
     searchQuery: "", 
     selectedFilters: [],
     stores: {!! json_encode($stores) !!},
     filters: {!! json_encode($filters) !!},
     favorites: JSON.parse(localStorage.getItem("favoriteStores") || "[]"),
+    
+    // Map Picker Data
+    openMap: false,
+    selectedAddress: "Jl. Telekomunikasi No. 1, Bandung",
+    map: null,
+    marker: null,
+
     init() {
         this.stores.forEach(store => {
             store.isFavorite = this.favorites.includes(store.id);
         });
         this.$watch("favorites", val => localStorage.setItem("favoriteStores", JSON.stringify(val)));
     },
+
+    initMap() {
+        if (this.map) return;
+        
+        setTimeout(() => {
+            this.map = L.map("map-picker").setView([-6.974, 107.630], 15);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: "© OpenStreetMap"
+            }).addTo(this.map);
+
+            this.marker = L.marker([-6.974, 107.630], {draggable: true}).addTo(this.map);
+            
+            this.map.on("click", (e) => {
+                this.marker.setLatLng(e.latlng);
+                this.updateAddress(e.latlng.lat, e.latlng.lng);
+            });
+
+            this.marker.on("dragend", () => {
+                const pos = this.marker.getLatLng();
+                this.updateAddress(pos.lat, pos.lng);
+            });
+        }, 100);
+    },
+
+    updateAddress(lat, lng) {
+        // Dummy reverse geocoding
+        const dummyAddresses = [
+            "Jl. Bojongsoang Raya No. 45, Bandung",
+            "Kost Putra Barokah, Sukabirus",
+            "Apartemen Buah Batu Park, Bandung",
+            "Gedung Kuliah Umum Telkom University",
+            "Warteg Bahari, Jl. Sukapura"
+        ];
+        this.selectedAddress = dummyAddresses[Math.floor(Math.random() * dummyAddresses.length)];
+    },
+
     toggleFavoriteStore(store) {
         store.isFavorite = !store.isFavorite;
         if (store.isFavorite) {
@@ -41,9 +87,15 @@
         });
     }
 }'>
-    <div>
-        <h1 class="text-3xl font-bold text-gray-900">Cari Makanan Terdekat</h1>
-        <p class="text-gray-600 mt-1">Temukan surplus makanan lezat dengan harga hemat</p>
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Cari Makanan Terdekat</h1>
+            <p class="text-gray-600 mt-1">Temukan surplus makanan lezat dengan harga hemat</p>
+        </div>
+        <div class="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-xl border border-green-100 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-green-600"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <span class="text-sm font-bold text-green-900" x-text="selectedAddress"></span>
+        </div>
     </div>
 
     <!-- Search & Filter Card -->
@@ -58,7 +110,7 @@
                     class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-green-600 focus:bg-white transition"
                 >
             </div>
-            <button class="bg-[#174413] text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#256020] transition shadow-lg shadow-green-100">
+            <button @click="openMap = true; initMap()" class="bg-[#174413] text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#256020] transition shadow-lg shadow-green-100">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
                 Lokasi Saya
             </button>
@@ -174,6 +226,71 @@
             </div>
             <h3 class="text-xl font-bold text-gray-900 mb-2">Tidak Ada Hasil</h3>
             <p class="text-gray-500">Coba ubah kata kunci atau filter pencarian Anda untuk menemukan makanan lezat lainnya.</p>
+        </div>
+    </div>
+
+    <!-- Map Picker Modal -->
+    <div x-show="openMap" 
+         class="fixed inset-0 z-[100] overflow-y-auto" 
+         x-cloak
+         @keydown.escape.window="openMap = false">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="openMap" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0" 
+                 x-transition:enter-end="opacity-100" 
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100" 
+                 x-transition:leave-end="opacity-0" 
+                 class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" 
+                 @click="openMap = false"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+            <div x-show="openMap" 
+                 x-transition:enter="ease-out duration-300" 
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave="ease-in duration-200" 
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
+                 class="inline-block w-full max-w-3xl overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-3xl sm:my-8">
+                
+                <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Pilih Lokasi Pengantaran</h3>
+                        <p class="text-sm text-gray-500 mt-1">Klik pada peta atau geser pin untuk menentukan lokasi</p>
+                    </div>
+                    <button @click="openMap = false" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+
+                <div class="relative">
+                    <div id="map-picker" class="h-[400px] w-full bg-gray-100"></div>
+                    
+                    <div class="absolute bottom-6 left-6 right-6 z-[1000]">
+                        <div class="bg-white p-4 rounded-2xl shadow-xl border border-gray-100">
+                            <div class="flex items-start gap-4">
+                                <div class="bg-green-100 p-2 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-green-600"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Alamat Terpilih</div>
+                                    <div class="text-gray-900 font-bold leading-snug" x-text="selectedAddress"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-gray-50 flex justify-end gap-3">
+                    <button @click="openMap = false" class="px-6 py-3 font-bold text-gray-500 hover:text-gray-700 transition">Batal</button>
+                    <button @click="openMap = false" class="bg-[#174413] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-100 hover:bg-[#256020] transition">
+                        Konfirmasi Lokasi
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

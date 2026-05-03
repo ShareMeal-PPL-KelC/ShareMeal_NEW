@@ -110,14 +110,16 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-orange-600"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> <span x-text="article.readTime"></span>
                         </span>
                     </div>
-                    <h3 class="text-xl font-black text-gray-900 mb-3 leading-tight group-hover:text-[#174413] transition-colors" x-text="article.title"></h3>
+                    <a :href="'/consumer/education/' + article.id" class="block group">
+                        <h3 class="text-xl font-black text-gray-900 mb-3 leading-tight group-hover:text-[#174413] transition-colors" x-text="article.title"></h3>
+                    </a>
                     <p class="text-gray-500 text-sm font-medium line-clamp-3 mb-6 flex-1 leading-relaxed" x-text="article.content"></p>
                     
                     <div class="pt-6 border-t border-gray-50 flex items-center justify-between mt-auto">
-                        <button class="text-[#174413] font-black text-sm flex items-center gap-1.5 hover:gap-3 transition-all group/btn">
+                        <a :href="'/consumer/education/' + article.id" class="text-[#174413] font-black text-sm flex items-center gap-1.5 hover:gap-3 transition-all group/btn">
                             Baca Selengkapnya 
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
+                        </a>
                         <button @click="handleShare(article.title)" class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                         </button>
