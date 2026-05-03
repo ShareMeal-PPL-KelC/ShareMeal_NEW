@@ -433,7 +433,7 @@ class ShareMealController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
-        Product::create([
+        $product = Product::create([
             'user_id' => $this->currentUser()['id'] ?? \App\Models\User::where('role', 'mitra')->first()?->id,
             'name' => $data['name'],
             'category' => $data['category'],
@@ -444,6 +444,17 @@ class ShareMealController extends Controller
             'status' => $data['status'],
             'image' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080',
         ]);
+
+        if ($product->status === 'flash-sale') {
+            $mitra = \App\Models\User::find($product->user_id);
+            if ($mitra) {
+                // Because favorite stores logic is frontend-only (localStorage), we notify all consumers as a mock demo
+                $consumers = \App\Models\User::where('role', 'consumer')->get();
+                if ($consumers->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+                }
+            }
+        }
 
         return back()->with('success', 'Produk berhasil ditambahkan.');
     }
@@ -463,6 +474,8 @@ class ShareMealController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
+        $wasNotFlashSale = $product->getOriginal('status') !== 'flash-sale';
+
         $product->update([
             'name' => $data['name'],
             'category' => $data['category'],
@@ -477,6 +490,16 @@ class ShareMealController extends Controller
             $product->update(['image' => $request->file('image')->store('products', 'public')]);
         }
 
+        if ($product->status === 'flash-sale' && $wasNotFlashSale) {
+            $mitra = \App\Models\User::find($product->user_id);
+            if ($mitra) {
+                $consumers = \App\Models\User::where('role', 'consumer')->get();
+                if ($consumers->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+                }
+            }
+        }
+
         return back()->with('success', 'Informasi produk berhasil diperbarui.');
     }
 
@@ -488,6 +511,14 @@ class ShareMealController extends Controller
             'status' => 'flash-sale',
             'discount_price' => floor($product->price * 0.7), // Example 30% discount
         ]);
+
+        $mitra = \App\Models\User::find($product->user_id);
+        if ($mitra) {
+            $consumers = \App\Models\User::where('role', 'consumer')->get();
+            if ($consumers->count() > 0) {
+                \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+            }
+        }
 
         return back()->with('success', 'Flash sale diaktifkan.');
     }
