@@ -972,4 +972,66 @@ class ShareMealController extends Controller
         ShareMealState::deleteArticle($articleId);
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
+    public function adminTransactions(Request $request): View
+    {
+        $page = (int) $request->query('page', 1);
+        $transactions = collect([
+            (object)[
+                'id' => 5420,
+                'customer' => (object)['name' => 'Budi Santoso'],
+                'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
+                'total_amount' => 45000,
+                'status' => 'completed',
+                'created_at' => now()->subMinutes(15)
+            ],
+            (object)[
+                'id' => 5419,
+                'customer' => (object)['name' => 'Siti Aminah'],
+                'mitra' => (object)['name' => 'Warung Makan Ibu Rina'],
+                'total_amount' => 28500,
+                'status' => 'pending',
+                'created_at' => now()->subMinutes(30)
+            ],
+        ]);
+        
+        $stats = [
+            'total_transaksi' => 5420,
+            'total_selesai' => 4150,
+            'total_pending' => 1270,
+            'gmv' => 'Rp 189.7M'
+        ];
+
+        return view('pages.admin.transactions', $this->dashboardData('admin', 'Pemantauan Transaksi', 'Pantau seluruh aktivitas transaksi di platform ShareMeal') + [
+            'transactions' => $transactions,
+            'stats' => $stats,
+            'page' => $page
+        ]);
+    }
+
+    private function dashboardData(string $role, string $title, string $description): array
+    {
+        return [
+            'role' => $role,
+            'title' => $title,
+            'description' => $description,
+            'user' => \Illuminate\Support\Facades\Auth::user(),
+            'notifications' => [],
+            'nav' => $this->dashboardNavigation($role)
+        ];
+    }
+
+    private function dashboardNavigation(string $role): array
+    {
+        if ($role === 'admin') {
+            return [
+                ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
+                ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield-check'],
+                ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
+                ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'receipt'],
+                ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart-3'],
+                ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'graduation-cap'],
+            ];
+        }
+        return [];
+    }
 }
