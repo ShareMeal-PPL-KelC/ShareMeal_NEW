@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Donation;
 use App\Support\ShareMealState;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -532,7 +533,7 @@ class ShareMealController extends Controller
 
     public function mitraOrdersConfirm(int $orderId): JsonResponse|RedirectResponse
     {
-        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $userId = \Illuminate\Support\Facades\Auth::id();
         $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
         $order->update(['status' => 'completed']);
 
