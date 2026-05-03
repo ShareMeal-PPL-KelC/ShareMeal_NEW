@@ -180,6 +180,10 @@
                                 <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                                 <span>Pesanan</span>
                             </a>
+                            <a href="{{ route('mitra.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="heart" class="w-5 h-5"></i>
+                                <span>Donasi</span>
+                            </a>
                         @else
                             <a href="{{ route('consumer.dashboard') }}"
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('consumer.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -250,6 +254,9 @@
                             </a>
                             <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Pesanan</span>
+                            </a>
+                            <a href="{{ route('mitra.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="heart" class="w-5 h-5"></i><span>Donasi</span>
                             </a>
                         @else
                             <a href="{{ route('consumer.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
