@@ -57,7 +57,13 @@ class Product extends Model
 
         public function getImageAttribute($value)
         {
-        return $value ?: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&h=300&fit=crop';
+            if (!$value) {
+                return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&h=300&fit=crop';
+            }
+            if (filter_var($value, FILTER_VALIDATE_URL)) {
+                return $value;
+            }
+            return asset('storage/' . $value);
         }
 
         public function getQuantityAttribute()
