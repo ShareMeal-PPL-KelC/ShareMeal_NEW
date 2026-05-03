@@ -430,7 +430,7 @@ class ShareMealController extends Controller
             'stock' => ['required', 'integer', 'min:0'],
             'expires_at' => ['required', 'date'],
             'status' => ['required', 'string', 'in:normal,flash-sale,donation'],
-            'image' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
         Product::create([
@@ -442,7 +442,7 @@ class ShareMealController extends Controller
             'stock' => $data['stock'],
             'expires_at' => $data['expires_at'],
             'status' => $data['status'],
-            'image' => $data['image'] ?? 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080',
+            'image' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080',
         ]);
 
         return back()->with('success', 'Produk berhasil ditambahkan.');
@@ -460,7 +460,7 @@ class ShareMealController extends Controller
             'stock' => ['required', 'integer', 'min:0'],
             'expires_at' => ['required', 'date'],
             'status' => ['required', 'string', 'in:normal,flash-sale,donation'],
-            'image' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
         $product->update([
@@ -473,8 +473,8 @@ class ShareMealController extends Controller
             'status' => $data['status'],
         ]);
 
-        if (!empty($data['image'])) {
-            $product->update(['image' => $data['image']]);
+        if ($request->hasFile('image')) {
+            $product->update(['image' => $request->file('image')->store('products', 'public')]);
         }
 
         return back()->with('success', 'Informasi produk berhasil diperbarui.');
