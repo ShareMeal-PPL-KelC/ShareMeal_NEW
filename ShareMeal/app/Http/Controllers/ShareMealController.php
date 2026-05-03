@@ -501,7 +501,7 @@ class ShareMealController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        Donation::create([
+        $donation = Donation::create([
             'mitra_id' => Auth::id(),
             'title' => $data['title'],
             'quantity' => $data['quantity'],
@@ -509,6 +509,12 @@ class ShareMealController extends Controller
             'description' => $data['description'],
             'status' => 'pending',
         ]);
+
+        $lembagas = \App\Models\User::where('role', 'lembaga')->get();
+        if ($lembagas->count() > 0) {
+            $mitraName = Auth::user()->name ?? 'Resto Mitra';
+            \Illuminate\Support\Facades\Notification::send($lembagas, new \App\Notifications\DonationAvailableNotification($mitraName, $donation->title, $donation->quantity . ' ' . $donation->unit));
+        }
 
         return back()->with('success', 'Donasi berhasil didaftarkan.');
     }
