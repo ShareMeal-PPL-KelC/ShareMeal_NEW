@@ -532,6 +532,7 @@ class ShareMealController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
             'unit' => ['required', 'string'],
+            'expires_at' => ['required', 'date'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -542,6 +543,7 @@ class ShareMealController extends Controller
             'title' => $data['title'],
             'quantity' => $data['quantity'],
             'unit' => $data['unit'],
+            'expires_at' => $data['expires_at'],
             'description' => $data['description'],
             'status' => 'pending',
         ]);
