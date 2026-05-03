@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard - ShareMeal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -24,6 +25,11 @@
                 </a>
 
                 <div class="flex items-center gap-4">
+                    <!-- Favorite Stores -->
+                    <a href="{{ route('consumer.favorites') }}" class="relative p-2 text-gray-400 hover:text-red-500 transition-colors group">
+                        <i data-lucide="heart" class="w-6 h-6 group-hover:fill-red-500 group-hover:text-red-500 transition-all duration-300"></i>
+                    </a>
+
                     <!-- Notifications Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="relative p-2 text-gray-400 hover:text-gray-500 transition-colors focus:outline-none">
@@ -139,6 +145,11 @@
                                 <i data-lucide="users" class="w-5 h-5"></i>
                                 <span>Kelola User</span>
                             </a>
+                            <a href="{{ route('admin.transactions') }}" 
+                               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.transactions') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="receipt" class="w-5 h-5"></i>
+                                <span>Transaksi</span>
+                            </a>
                             <a href="{{ route('admin.education') }}" 
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="book-open" class="w-5 h-5"></i>
@@ -215,6 +226,9 @@
                             </a>
                             <a href="{{ route('admin.users') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.users') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="users" class="w-5 h-5"></i><span>Kelola User</span>
+                            </a>
+                            <a href="{{ route('admin.transactions') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.transactions') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="receipt" class="w-5 h-5"></i><span>Transaksi</span>
                             </a>
                             <a href="{{ route('admin.education') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="book-open" class="w-5 h-5"></i><span>Edukasi</span>

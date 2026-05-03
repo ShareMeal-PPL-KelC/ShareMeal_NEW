@@ -143,6 +143,7 @@
                                 order.status = 'completed';
                                 order.completedTime = new Date().toLocaleString('id-ID', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
                                 alert('Pesanan dikonfirmasi sebagai sudah diambil!');
+                                this.activeTab = 'completed';
                                 setTimeout(() => lucide.createIcons(), 50);
                             }
                         } else {

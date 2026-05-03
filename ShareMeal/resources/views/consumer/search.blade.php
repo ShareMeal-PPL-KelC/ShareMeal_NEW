@@ -6,6 +6,21 @@
     selectedFilters: [],
     stores: {!! json_encode($stores) !!},
     filters: {!! json_encode($filters) !!},
+    favorites: JSON.parse(localStorage.getItem("favoriteStores") || "[]"),
+    init() {
+        this.stores.forEach(store => {
+            store.isFavorite = this.favorites.includes(store.id);
+        });
+        this.$watch("favorites", val => localStorage.setItem("favoriteStores", JSON.stringify(val)));
+    },
+    toggleFavoriteStore(store) {
+        store.isFavorite = !store.isFavorite;
+        if (store.isFavorite) {
+            if (!this.favorites.includes(store.id)) this.favorites.push(store.id);
+        } else {
+            this.favorites = this.favorites.filter(id => id !== store.id);
+        }
+    },
     toggleFilter(id) {
         if (this.selectedFilters.includes(id)) {
             this.selectedFilters = this.selectedFilters.filter(f => f !== id);
@@ -85,17 +100,19 @@
                     <!-- Store Image -->
                     <div class="relative h-56 md:h-auto overflow-hidden">
                         <img :src="store.image" :alt="store.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                        <button @click="store.isFavorite = !store.isFavorite" class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400" :class="store.isFavorite ? 'fill-red-600 text-red-600' : 'fill-transparent'"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                        </button>
                     </div>
 
                     <!-- Store Details -->
                     <div class="p-8">
                         <div class="flex items-start justify-between mb-4">
                             <div>
-                                <h3 class="text-2xl font-black text-gray-900 leading-tight" x-text="store.name"></h3>
-                                <p class="text-gray-500 font-medium" x-text="store.category"></p>
+                                <div class="flex items-center gap-3">
+                                    <h3 class="text-2xl font-black text-gray-900 leading-tight" x-text="store.name"></h3>
+                                    <button @click="toggleFavoriteStore(store)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition text-gray-300 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-100">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 transition-colors" :class="store.isFavorite ? 'fill-red-500 text-red-500' : 'fill-transparent'"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                    </button>
+                                </div>
+                                <p class="text-gray-500 font-medium mt-1" x-text="store.category"></p>
                             </div>
                             <div class="bg-yellow-50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-yellow-100">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>

@@ -14,7 +14,7 @@ class ConsumerController extends Controller
 {
     public function index()
     {
-        $userId = Auth::id();
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
         
         $stats = (object) [
             'savedMeals' => OrderItem::whereHas('order', function($q) use ($userId) {
@@ -64,12 +64,22 @@ class ConsumerController extends Controller
 
     public function history()
     {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
         $transactions = Order::with(['items.product', 'mitra.profile', 'reviewRelation'])
-            ->where('customer_id', Auth::id())
+            ->where('customer_id', $userId)
             ->latest()
             ->get();
 
         return view('consumer.history', compact('transactions'));
+    }
+
+    public function favorites()
+    {
+        $stores = User::where('role', 'mitra')->with(['profile', 'products' => function($q) {
+            $q->where('status', 'flash-sale')->where('stock', '>', 0);
+        }])->get();
+
+        return view('consumer.favorites', compact('stores'));
     }
 
     public function checkout(Request $request)
@@ -110,7 +120,7 @@ class ConsumerController extends Controller
         ]);
 
         $order = Order::create([
-            'customer_id' => Auth::id(),
+            'customer_id' => Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1,
             'mitra_id' => $request->mitra_id,
             'total_amount' => $request->price * $request->quantity,
             'status' => 'pending',
@@ -123,6 +133,11 @@ class ConsumerController extends Controller
             'quantity' => $request->quantity,
             'price' => $request->price,
         ]);
+
+        $mitra = User::find($request->mitra_id);
+        if ($mitra) {
+            $mitra->notify(new \App\Notifications\IncomingOrderNotification($order));
+        }
 
         return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
     }

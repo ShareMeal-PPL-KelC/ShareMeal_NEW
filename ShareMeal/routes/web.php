@@ -20,6 +20,7 @@ Route::prefix('consumer')->name('consumer.')->group(function () {
     Route::get('/education', [ConsumerController::class, 'education'])->name('education');
     Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [ConsumerController::class, 'storeOrder'])->name('checkout.store');
+    Route::get('/favorites', [ConsumerController::class, 'favorites'])->name('favorites');
 });
 
 Route::prefix('mitra')->name('mitra.')->group(function () {
@@ -55,4 +56,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/education', [ShareMealController::class, 'adminEducationStore'])->name('education.store');
     Route::post('/education/{articleId}', [ShareMealController::class, 'adminEducationUpdate'])->name('education.update');
     Route::post('/education/{articleId}/delete', [ShareMealController::class, 'adminEducationDelete'])->name('education.delete');
+    Route::get('/transactions', [ShareMealController::class, 'adminTransactions'])->name('transactions');
 });
