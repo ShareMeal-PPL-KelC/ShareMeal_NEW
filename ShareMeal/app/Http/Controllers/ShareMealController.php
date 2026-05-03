@@ -45,6 +45,7 @@ class ShareMealController extends Controller
                 ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
                 ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'shopping-cart'],
                 ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart'],
+
                 ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'book-open'],
             ],
             default => [],
@@ -603,13 +604,13 @@ class ShareMealController extends Controller
     {
         $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         $userObj = User::query()->find($userId);
-        $donations = ShareMealState::get('donations');
+        $donations = Donation::all();
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => (object) ['totalDonations' => 156, 'activeDonations' => 8, 'beneficiaries' => 120, 'thisMonth' => 45],
+            'stats' => (object) ['totalDonations' => Donation::where('lembaga_id', $userId)->count(), 'activeDonations' => Donation::where('status', 'available')->count()],
             'donations' => $donations,
-            'availableDonations' => collect($donations)->where('status', 'available')->all(),
-            'recentDonations' => collect($donations)->whereIn('status', ['claimed', 'completed'])->sortByDesc('claimed_at')->take(5)->all(),
+            'availableDonations' => Donation::where('status', 'available')->get(),
+            'recentDonations' => Donation::whereIn('status', ['claimed', 'completed'])->latest('claimed_at')->take(5)->get(),
             'userObj' => $userObj,
         ]);
     }
@@ -617,39 +618,32 @@ class ShareMealController extends Controller
     public function lembagaDonations(): View
     {
         return view('pages.lembaga.donations', $this->dashboardData('lembaga', 'Kelola Donasi', 'Klaim & tracking donasi makanan') + [
-            'donations' => ShareMealState::get('donations'),
+            'donations' => Donation::all(),
             'activeTab' => request('tab', 'available'),
         ]);
     }
 
     public function lembagaClaimDonation(string $donationId): RedirectResponse
     {
-        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = Donation::findOrFail($donationId);
         
-        $donation = \App\Models\Donation::with('mitra')->findOrFail($donationId);
-        
+        if ($donation->status !== 'pending') {
+            return back()->with('error', 'Donasi sudah diklaim oleh lembaga lain.');
+        }
+
         $donation->update([
+            'lembaga_id' => Auth::id(),
             'status' => 'claimed',
             'claimed_at' => now(),
-            'tracking_status' => 'confirmed',
-            'lembaga_id' => $userId
         ]);
-        
-        // Notify the Mitra that their donation was claimed
-        if ($donation->mitra) {
-            $lembagaName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Lembaga Sosial';
-            \Illuminate\Support\Facades\Notification::send(
-                $donation->mitra, 
-                new \App\Notifications\DonationClaimedNotification($lembagaName, $donation->title, $donation->quantity . ' ' . $donation->unit)
-            );
-        }
-        
-        return back()->with('success', 'Donasi berhasil diklaim.');
+
+        return back()->with('success', 'Donasi berhasil diklaim. Silakan lakukan pengambilan sesuai jadwal.');
     }
 
     public function lembagaCompleteDonation(string $donationId): RedirectResponse
     {
-        ShareMealState::completeDonation($donationId);
+        $donation = Donation::findOrFail($donationId);
+        $donation->update(['status' => 'completed']);
         return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
     }
 
@@ -933,9 +927,17 @@ class ShareMealController extends Controller
             return $matchesSearch && $matchesTab;
         })->values();
 
-        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste') + [
+        $allArticles = collect(ShareMealState::get('articles'));
+        $stats = [
+            'total' => $allArticles->count(),
+            'published' => $allArticles->where('status', 'Published')->count(),
+            'drafts' => $allArticles->where('status', 'Draft')->count(),
+        ];
+
+        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste (FR-19)') + [
             'articles' => $articles,
-            'allArticles' => ShareMealState::get('articles'),
+            'allArticles' => $allArticles->all(),
+            'stats' => $stats,
             'search' => $search,
             'tab' => $tab,
         ]);

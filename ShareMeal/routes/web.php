@@ -61,4 +61,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/education/{articleId}/delete', [ShareMealController::class, 'adminEducationDelete'])->name('education.delete');
     Route::get('/transactions', [ShareMealController::class, 'adminTransactions'])->name('transactions');
     Route::get('/reports', [ShareMealController::class, 'adminReports'])->name('reports');
+
 });
