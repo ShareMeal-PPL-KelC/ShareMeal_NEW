@@ -13,7 +13,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         h1, h2, h3, .font-manrope { font-family: 'Manrope', sans-serif; }
-    </style>
+    </style> 
 </head>
 <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
     <!-- Top Navigation -->
