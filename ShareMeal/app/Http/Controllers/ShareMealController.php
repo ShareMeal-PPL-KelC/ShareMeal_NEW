@@ -27,6 +27,7 @@ class ShareMealController extends Controller
                 ['label' => 'Dashboard', 'route' => 'mitra.dashboard', 'icon' => 'layout-dashboard'],
                 ['label' => 'Inventaris', 'route' => 'mitra.inventory', 'icon' => 'package'],
                 ['label' => 'Pesanan', 'route' => 'mitra.orders', 'icon' => 'shopping-cart'],
+                ['label' => 'Donasi', 'route' => 'mitra.donations', 'icon' => 'heart'],
             ],
             'consumer' => [
                 ['label' => 'Dashboard', 'route' => 'consumer.dashboard', 'icon' => 'layout-dashboard'],
@@ -436,7 +437,7 @@ class ShareMealController extends Controller
         ]);
 
         $product = Product::create([
-            'user_id' => $this->currentUser()['id'] ?? \App\Models\User::where('role', 'mitra')->first()?->id,
+            'user_id' => Auth::id() ?? \App\Models\User::where('role', 'mitra')->first()?->id,
             'name' => $data['name'],
             'category' => $data['category'],
             'price' => $data['price'],
@@ -534,8 +535,10 @@ class ShareMealController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+
         $donation = Donation::create([
-            'mitra_id' => Auth::id(),
+            'mitra_id' => $userId,
             'title' => $data['title'],
             'quantity' => $data['quantity'],
             'unit' => $data['unit'],
@@ -545,11 +548,23 @@ class ShareMealController extends Controller
 
         $lembagas = \App\Models\User::where('role', 'lembaga')->get();
         if ($lembagas->count() > 0) {
-            $mitraName = Auth::user()->name ?? 'Resto Mitra';
+            $mitraName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Resto Mitra';
             \Illuminate\Support\Facades\Notification::send($lembagas, new \App\Notifications\DonationAvailableNotification($mitraName, $donation->title, $donation->quantity . ' ' . $donation->unit));
         }
 
         return back()->with('success', 'Donasi berhasil didaftarkan.');
+    }
+
+    public function mitraDonations(): View
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        
+        $donations = Donation::with('lembaga')
+            ->where('mitra_id', $userId)
+            ->latest()
+            ->get();
+
+        return view('pages.mitra.donations', compact('donations'));
     }
 
     public function mitraInventoryDelete(int $productId): RedirectResponse
@@ -607,7 +622,26 @@ class ShareMealController extends Controller
 
     public function lembagaClaimDonation(string $donationId): RedirectResponse
     {
-        ShareMealState::claimDonation($donationId);
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        
+        $donation = \App\Models\Donation::with('mitra')->findOrFail($donationId);
+        
+        $donation->update([
+            'status' => 'claimed',
+            'claimed_at' => now(),
+            'tracking_status' => 'confirmed',
+            'lembaga_id' => $userId
+        ]);
+        
+        // Notify the Mitra that their donation was claimed
+        if ($donation->mitra) {
+            $lembagaName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Lembaga Sosial';
+            \Illuminate\Support\Facades\Notification::send(
+                $donation->mitra, 
+                new \App\Notifications\DonationClaimedNotification($lembagaName, $donation->title, $donation->quantity . ' ' . $donation->unit)
+            );
+        }
+        
         return back()->with('success', 'Donasi berhasil diklaim.');
     }
 

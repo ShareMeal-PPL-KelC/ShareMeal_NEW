@@ -70,7 +70,7 @@ class ShareMealState
                     ],
                     'distance' => '1.5 km',
                     'items' => [
-                        ['name' => $donation->title, 'quantity' => $donation->quantity]
+                        ['name' => $donation->title, 'quantity' => $donation->quantity, 'unit' => $donation->unit]
                     ],
                     'available_until' => $donation->expires_at ? \Carbon\Carbon::parse($donation->expires_at)->format('d M, H:i') : '18:00',
                     'claimed_at' => $donation->claimed_at ? \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') : null,
