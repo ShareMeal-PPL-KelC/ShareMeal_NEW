@@ -5,7 +5,7 @@
     paymentMethod: 'qris',
     countdown: 600,
     paymentComplete: false,
-    pickupCode: 'PICK-{{ strtoupper(bin2hex(random_bytes(2))) }}',
+    pickupCode: 'PICK-{{ strtoupper(bin2hex(random_bytes(2))) }}', 
 
     init() {
         setInterval(() => {
