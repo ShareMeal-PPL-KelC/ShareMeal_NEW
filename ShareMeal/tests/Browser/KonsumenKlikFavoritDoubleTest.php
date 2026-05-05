@@ -9,6 +9,8 @@ use App\Models\User;
 
 class KonsumenKlikFavoritDoubleTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+
     /**
      * TC.Cons.002 - PBI #14
      * Menguji fungsionalitas tambah resto favorit via tombol Kelola
@@ -16,7 +18,15 @@ class KonsumenKlikFavoritDoubleTest extends DuskTestCase
     public function testKonsumenKlikFavoritDouble()
     {
         $this->browse(function (Browser $browser) {
-            $kina = User::where('email', 'kina@gmail.com')->first();
+            $kina = User::firstOrCreate(
+                ['email' => 'kina@gmail.com'],
+                [
+                    'name' => 'kina',
+                    'password' => bcrypt('password'),
+                    'role' => 'consumer',
+                    'is_verified' => true
+                ]
+            );
 
             $browser->loginAs($kina)
                     ->visit('/consumer')

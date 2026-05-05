@@ -126,7 +126,7 @@ class ShareMealController extends Controller
     public function doRegister(Request $request): RedirectResponse
     {
         $rules = [
-            'name' => ['required'],
+            'name' => ['required', 'string', 'regex:/^[a-zA-Z\s]+$/'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'min:6', 'confirmed'],
             'user_type' => ['required', 'in:consumer,mitra,lembaga'],
