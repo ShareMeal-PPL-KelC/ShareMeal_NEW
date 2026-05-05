@@ -2,6 +2,7 @@
 
 namespace Tests\Browser;
 
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use App\Models\User;
@@ -13,6 +14,8 @@ use App\Models\User;
  */
 class AdminRejectVerificationTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+
     public function test_admin_menolak_dokumen()
     {
         // Setup: Buat user unverified (Mitra) secara langsung di database untuk di-test
@@ -32,6 +35,17 @@ class AdminRejectVerificationTest extends DuskTestCase
         ]);
 
         $this->browse(function (Browser $browser) use ($unverifiedUser) {
+            // Ensure admin user exists
+            User::firstOrCreate(
+                ['email' => 'admin@sharemeal.id'],
+                [
+                    'name' => 'Admin ShareMeal',
+                    'password' => bcrypt('password123'),
+                    'role' => 'admin',
+                    'is_verified' => true
+                ]
+            );
+
             $browser->driver->manage()->deleteAllCookies();
             
             // Login sebagai admin

@@ -9,6 +9,8 @@ use App\Models\User;
 
 class KonsumenMelihatRiwayatTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+
     /**
      * TC.Cons.003 - PBI #15
      * Menguji akses tampilan riwayat pembelian
@@ -16,7 +18,16 @@ class KonsumenMelihatRiwayatTest extends DuskTestCase
     public function testKonsumenMelihatRiwayatPesanan()
     {
         $this->browse(function (Browser $browser) {
-            $kina = User::where('email', 'kina@gmail.com')->first();
+            $kina = User::firstOrCreate(
+                ['email' => 'kina@gmail.com'],
+                [
+                    'name' => 'kina',
+                    'password' => bcrypt('password'),
+                    'role' => 'consumer',
+                    'is_verified' => true
+                ]
+            );
+
             $browser->loginAs($kina)
                     ->visit('/consumer/history')
                     ->assertSee('Riwayat Transaksi');

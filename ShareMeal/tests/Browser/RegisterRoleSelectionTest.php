@@ -2,6 +2,7 @@
 
 namespace Tests\Browser;
 
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -13,12 +14,15 @@ use Tests\DuskTestCase;
  */
 class RegisterRoleSelectionTest extends DuskTestCase
 {
+    use DatabaseMigrations;
     
     public function test_halaman_register_menampilkan_pilihan_role()
     {
         $this->browse(function (Browser $browser) {
             $browser->driver->manage()->deleteAllCookies();
             $browser->visit('/register')
+                    ->screenshot('register_page_initial')
+                    ->waitForText('Buat Akun Baru', 15)
                     ->assertSee('Buat Akun Baru')
                     ->assertSee('PILIH PERAN ANDA')
                     ->assertSee('Mitra')
@@ -32,6 +36,7 @@ class RegisterRoleSelectionTest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $browser->driver->manage()->deleteAllCookies();
             $browser->visit('/register')
+                    ->waitFor('input[name="user_type"]')
                     // Mitra adalah default (seperti di x-data="{ userType: 'mitra' }")
                     ->assertRadioSelected('user_type', 'mitra')
                     
@@ -47,6 +52,7 @@ class RegisterRoleSelectionTest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $browser->driver->manage()->deleteAllCookies();
             $browser->visit('/register')
+                    ->waitFor('input[name="user_type"]')
                     // Klik role lain dulu untuk memastikan perubahannya
                     ->radio('user_type', 'consumer')
                     ->pause(300)
@@ -63,6 +69,7 @@ class RegisterRoleSelectionTest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $browser->driver->manage()->deleteAllCookies();
             $browser->visit('/register')
+                    ->waitFor('input[name="user_type"]')
                     // Klik radio button Lembaga
                     ->radio('user_type', 'lembaga')
                     ->pause(300)
