@@ -40,6 +40,7 @@ class Order extends Model
         'total',
         'subtotal',
         'discount',
+        'savedAmount',
         'store',
         'storeAddress',
         'orderId',
@@ -111,16 +112,24 @@ class Order extends Model
     {
         if ($this->relationLoaded('items')) {
             return $this->items->sum(function($item) {
-                $originalPrice = $item->product ? ($item->product->getRawOriginal('price') ?? $item->price) : $item->price;
-                return $originalPrice * $item->quantity;
+                $currentOriginalPrice = $item->product ? ($item->product->getRawOriginal('price') ?? $item->price) : $item->price;
+                $effectiveOriginalPrice = max((int) $currentOriginalPrice, (int) $item->price);
+
+                return $effectiveOriginalPrice * $item->quantity;
             });
         }
-        return $this->attributes['total_amount'] ?? 0;
+
+        return $this->getTotalAttribute();
     }
 
     public function getDiscountAttribute()
     {
-        return $this->getSubtotalAttribute() - $this->getTotalAttribute();
+        return max(0, $this->getSubtotalAttribute() - $this->getTotalAttribute());
+    }
+
+    public function getSavedAmountAttribute()
+    {
+        return $this->getTotalAttribute();
     }
 
     public function getStoreAttribute()

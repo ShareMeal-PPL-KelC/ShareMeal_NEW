@@ -16,11 +16,17 @@
     <!-- Products Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <template x-for="product in products" :key="product.id">
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition duration-300">
+            <div class="rounded-3xl border shadow-sm overflow-hidden group hover:shadow-md transition duration-300" :class="product.status === 'expired' ? 'bg-red-50/40 border-red-200' : (product.status === 'donation' ? 'bg-emerald-50/30 border-emerald-200' : 'bg-white border-gray-100')">
                 <div class="relative h-48 overflow-hidden">
-                    <img :src="product.image" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <img :src="product.image" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" :class="['donation', 'expired'].includes(product.status) ? 'opacity-70 grayscale' : ''">
                     <template x-if="product.status === 'flash-sale'">
                         <span class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Flash Sale</span>
+                    </template>
+                    <template x-if="product.status === 'donation'">
+                        <span class="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Sudah Didonasikan</span>
+                    </template>
+                    <template x-if="product.status === 'expired'">
+                        <span class="absolute top-4 right-4 bg-red-700 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Kedaluwarsa</span>
                     </template>
                 </div>
                 <div class="p-6">
@@ -31,7 +37,7 @@
 
                     <div class="flex items-center gap-2 text-sm mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-orange-600"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        <span class="text-orange-600 font-black uppercase text-[10px] tracking-wider" x-text="'Expired: ' + new Date(product.expires_at).toLocaleString('id-ID')"></span>
+                        <span class="text-orange-600 font-black uppercase text-[10px] tracking-wider" x-text="'Expired: ' + product.expires_at_display"></span>
                     </div>
 
                     <div class="flex items-end justify-between border-t border-gray-50 pt-4 mb-6">
@@ -63,8 +69,18 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Aktif
                             </div>
                         </template>
+                        <template x-if="product.status === 'donation'">
+                            <div class="flex-1 bg-emerald-100 text-emerald-700 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><path d="M12 22V7"></path><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg> Masuk Donasi
+                            </div>
+                        </template>
+                        <template x-if="product.status === 'expired'">
+                            <div class="flex-1 min-h-12 bg-red-100 text-red-700 px-3 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 text-center leading-tight">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Tidak Layak
+                            </div>
+                        </template>
                         
-                        <button @click="openEditDialog(product)" class="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition">
+                        <button @click="openEditDialog(product)" :disabled="product.status === 'expired'" class="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-50 disabled:hover:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
 
@@ -201,11 +217,7 @@
             openEditDialog(product) {
                 this.isEditing = true;
                 this.formData = { ...product };
-                if (product.expires_at) {
-                    const date = new Date(product.expires_at);
-                    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-                    this.formData.expires_at = date.toISOString().slice(0, 16);
-                }
+                this.formData.expires_at = product.expires_at_input || '';
                 this.isDialogOpen = true;
             },
             
