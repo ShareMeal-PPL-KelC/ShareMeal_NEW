@@ -9,7 +9,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('status')->default('active'); // active, warned, blocked
             $table->integer('warning_count')->default(0);
         });
     }
@@ -17,7 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['status', 'warning_count']);
+            $table->dropColumn(['warning_count']);
         });
     }
 };
