@@ -628,6 +628,10 @@ class ShareMealController extends Controller
         
         $donation = \App\Models\Donation::with('mitra')->findOrFail($donationId);
         
+        if ($donation->status !== 'pending' || ($donation->expires_at && \Carbon\Carbon::parse($donation->expires_at)->isPast())) {
+            return back()->with('error', 'Donasi sudah tidak tersedia atau telah kedaluwarsa.');
+        }
+        
         $donation->update([
             'status' => 'claimed',
             'claimed_at' => now(),
