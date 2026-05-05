@@ -33,7 +33,7 @@ class UserController extends Controller
 
     public function warn(User $user)
     {
-        $user->increment('warning_count');
+        $user->increment('warnings_count');
         $user->update(['status' => 'warned']);
         return redirect()->back()->with('success', 'Peringatan berhasil dikirim!');
     }
@@ -46,7 +46,7 @@ class UserController extends Controller
 
     public function unblock(User $user)
     {
-        $user->update(['status' => 'active', 'warning_count' => 0]);
+        $user->update(['status' => 'active', 'warnings_count' => 0]);
         return redirect()->back()->with('success', 'Blokir akun telah dibuka.');
     }
 

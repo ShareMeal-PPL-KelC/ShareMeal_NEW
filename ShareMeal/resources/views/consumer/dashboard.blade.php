@@ -34,7 +34,7 @@
         </div>
         <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
             <div class="text-center">
-                <div class="text-3xl font-bold text-blue-600">Rp {{ number_format($stats->moneySaved / 1000, 0) }}k</div>
+                <div class="text-3xl font-bold text-blue-600">Rp {{ number_format($stats->moneySaved, 0, ',', '.') }}</div>
                 <div class="text-xs text-gray-500 mt-1 font-medium uppercase tracking-wider">Uang Dihemat</div>
             </div>
         </div>
