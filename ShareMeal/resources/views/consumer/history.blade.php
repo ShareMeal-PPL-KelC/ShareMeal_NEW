@@ -46,7 +46,7 @@
         </div>
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
             <div class="text-3xl font-black text-blue-600">
-                Rp {{ number_format(collect($transactions)->sum('discount'), 0, ',', '.') }}
+                Rp {{ number_format(collect($transactions)->sum('savedAmount'), 0, ',', '.') }}
             </div>
             <div class="text-xs text-gray-500 font-bold uppercase mt-1">Total Hemat</div>
         </div>
@@ -129,7 +129,7 @@
                         <div class="text-3xl font-black text-gray-900 leading-none">Rp {{ number_format($t->total, 0, ',', '.') }}</div>
                         <div class="text-sm text-gray-400 line-through mt-2">Rp {{ number_format($t->subtotal, 0, ',', '.') }}</div>
                         <div class="text-sm text-green-600 font-black mt-1 bg-green-50 px-2 py-0.5 rounded-lg inline-block">
-                            Hemat Rp {{ number_format($t->discount, 0, ',', '.') }}
+                            Hemat Rp {{ number_format($t->savedAmount, 0, ',', '.') }}
                         </div>
                     </div>
                 </div>
@@ -201,7 +201,7 @@
                         date: '{{ $t->orderTime }}',
                         status: '{{ $t->status }}',
                         subtotal: {{ $t->subtotal }},
-                        discount: {{ $t->discount }},
+                        savedAmount: {{ $t->savedAmount }},
                         total: {{ $t->total }},
                         items: [
                             @foreach($t->items as $item)
@@ -297,8 +297,8 @@
                         <span x-text="'Rp ' + receiptData.subtotal.toLocaleString('id-ID')"></span>
                     </div>
                     <div class="flex justify-between text-sm text-green-600 font-bold">
-                        <span>Hemat (Diskon)</span>
-                        <span x-text="'- Rp ' + receiptData.discount.toLocaleString('id-ID')"></span>
+                        <span>Total Hemat</span>
+                        <span x-text="'Rp ' + receiptData.savedAmount.toLocaleString('id-ID')"></span>
                     </div>
                 </div>
 
