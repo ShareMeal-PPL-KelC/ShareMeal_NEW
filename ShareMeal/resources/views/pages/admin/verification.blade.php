@@ -58,12 +58,12 @@
                             <div class="flex items-center gap-2">
                                 <form action="{{ route('admin.verification.approve', $app['id']) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
+                                    <button id="btn-approve-{{ $app['id'] }}" type="submit" class="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
                                         <i data-lucide="check" class="w-4 h-4"></i>
                                         Setujui
                                     </button>
                                 </form>
-                                <button @click="openReject({{ $app['id'] }}, '{{ $app['name'] }}')" class="inline-flex items-center gap-2 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition">
+                                <button id="btn-reject-{{ $app['id'] }}" @click="openReject({{ $app['id'] }}, '{{ $app['name'] }}')" class="inline-flex items-center gap-2 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition">
                                     <i data-lucide="x" class="w-4 h-4"></i>
                                     Tolak
                                 </button>
@@ -85,7 +85,7 @@
                                                     <div class="text-[10px] text-gray-500 truncate">Verifikasi Diperlukan</div>
                                                 </div>
                                             </div>
-                                            <button @click="openPreview('{{ asset('storage/' . $path) }}', '{{ strtoupper($key) }} - {{ $app['name'] }}')" 
+                                            <button id="btn-preview-{{ $app['id'] }}-{{ $key }}" @click="openPreview('{{ asset('storage/' . $path) }}', '{{ strtoupper($key) }} - {{ $app['name'] }}')" 
                                                     class="w-full py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-[#174413] hover:bg-green-50 hover:border-green-200 transition">
                                                 Preview Dokumen
                                             </button>
@@ -155,7 +155,7 @@
                     </div>
                     <div class="flex gap-3">
                         <button type="button" @click="rejectModalOpen = false" class="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition">Batal</button>
-                        <button type="submit" class="flex-1 py-3 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-700 transition">Konfirmasi Tolak</button>
+                        <button id="btn-confirm-reject" type="submit" class="flex-1 py-3 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-700 transition">Konfirmasi Tolak</button>
                     </div>
                 </form>
             </div>
