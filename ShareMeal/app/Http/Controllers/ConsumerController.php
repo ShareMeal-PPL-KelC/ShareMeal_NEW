@@ -18,16 +18,15 @@ class ConsumerController extends Controller
         app(AutoDonationService::class)->processProducts();
 
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
-        $completedOrders = Order::with('items')
+        $orders = Order::with('items')
             ->where('customer_id', $userId)
-            ->where('status', 'completed')
             ->get();
 
         $stats = (object) [
             'savedMeals' => OrderItem::whereHas('order', function($q) use ($userId) {
                 $q->where('customer_id', $userId)->where('status', 'completed');
             })->sum('quantity'),
-            'moneySaved' => $completedOrders->sum('savedAmount'),
+            'moneySaved' => $orders->sum('savedAmount'),
             'co2Reduced' => 6.5,
             'favoriteStores' => 8,
         ];

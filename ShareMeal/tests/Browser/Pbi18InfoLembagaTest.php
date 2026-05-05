@@ -3,12 +3,15 @@
 namespace Tests\Browser;
 
 use Laravel\Dusk\Browser;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\DuskTestCase;
 use App\Models\User;
 use App\Models\Donation;
 
 class Pbi18InfoLembagaTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+
     public function test_positive_mitra_melihat_informasi_lembaga_pada_donasi_diklaim(): void
     {
         $this->browse(function (Browser $browser) {
