@@ -257,4 +257,5 @@
         <input type="hidden" name="payment_method" :value="paymentMethod">
     </form>
 </div>
+
 @endsection
