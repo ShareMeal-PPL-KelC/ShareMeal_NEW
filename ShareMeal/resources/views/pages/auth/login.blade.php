@@ -1,6 +1,5 @@
 <x-layouts.app title="Masuk - ShareMeal">
     <div class="grid min-h-screen lg:grid-cols-2">
-        <!-- Kolom Kiri: Branding (Hanya Desktop) -->
         <div class="relative hidden overflow-hidden bg-[#174413] lg:flex">
             <img src="https://images.unsplash.com/photo-1563485571829-7032f428f3ce?auto=format&fit=crop&q=80&w=1200" alt="ShareMeal" class="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-screen">
             <div class="relative z-10 flex h-full w-full flex-col justify-between p-16 text-white">
@@ -15,11 +14,9 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Kolom Kanan: Form -->
+
         <div class="flex items-center justify-center bg-[#f9f9f8] px-6 py-10 lg:px-16">
             <div class="w-full max-w-xl">
-                <!-- Branding Mobile -->
                 <div class="mb-10 lg:hidden">
                     <a href="{{ route('home') }}" class="text-3xl font-extrabold text-[#174413]">ShareMeal</a>
                 </div>
@@ -29,7 +26,6 @@
                     <p class="mt-2 text-slate-600">Silakan masuk untuk melanjutkan perjalanan keberlanjutan Anda.</p>
                 </div>
 
-                <!-- Menampilkan Error Global Jika Ada -->
                 @if ($errors->any())
                     <div class="mb-6 rounded-xl bg-red-50 p-4 border border-red-200">
                         <ul class="list-inside list-disc text-sm text-red-600">
@@ -40,7 +36,7 @@
                     </div>
                 @endif
 
-                <form method="post" action="{{ route('login.submit') }}" class="space-y-5">
+                <form method="post" action="{{ route('login.submit') }}" class="space-y-5" x-data="{ showPassword: false }">
                     @csrf
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-800">Tipe Pengguna</label>
@@ -59,7 +55,13 @@
                     </div>
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-800">Kata Sandi</label>
-                        <input class="input @error('password') border-red-500 @enderror" type="password" name="password" placeholder="••••••••" required>
+                        <div class="relative">
+                            <input class="input pr-11 @error('password') border-red-500 @enderror" :type="showPassword ? 'text' : 'password'" name="password" placeholder="........" required>
+                            <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 z-10 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-slate-400 transition hover:text-slate-600" :aria-label="showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'">
+                                <i data-lucide="eye" class="h-5 w-5" x-show="!showPassword"></i>
+                                <i data-lucide="eye-off" class="h-5 w-5" x-show="showPassword" x-cloak></i>
+                            </button>
+                        </div>
                         @error('password') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div class="flex items-center justify-between">
@@ -76,12 +78,12 @@
                     <div class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Atau Masuk Dengan</div>
                     <div class="h-px flex-1 bg-slate-200"></div>
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" class="btn-secondary">Google</button>
                     <button type="button" class="btn-secondary">Apple</button>
                 </div>
-                
+
                 <p class="mt-8 text-center text-sm text-slate-600">
                     Belum punya akun? <a href="{{ route('register') }}" class="font-semibold text-[#174413] hover:underline">Daftar sekarang</a>
                 </p>

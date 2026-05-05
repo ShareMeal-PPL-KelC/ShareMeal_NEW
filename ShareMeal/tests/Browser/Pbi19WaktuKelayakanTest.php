@@ -3,12 +3,15 @@
 namespace Tests\Browser;
 
 use Laravel\Dusk\Browser;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\DuskTestCase;
 use App\Models\User;
 use App\Models\Donation;
 
 class Pbi19WaktuKelayakanTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+
     public function test_positive_lembaga_melihat_waktu_layak_konsumsi(): void
     {
         $this->browse(function (Browser $browser) {
