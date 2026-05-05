@@ -1,108 +1,173 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="min-h-screen pb-20" x-data="{ showModal: false, editMode: false, currentArticle: {} }">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-        <div class="space-y-1">
-            <div class="flex items-center gap-2 text-green-700 font-bold text-xs uppercase tracking-[0.2em]">
-                <span class="w-8 h-[2px] bg-green-700"></span>
-                Content Hub
-            </div>
-            <h1 class="text-4xl font-black text-gray-900 tracking-tight leading-none">
-                Edukasi <span class="text-green-700">Lingkungan</span>
-            </h1>
-            <p class="text-gray-500 font-medium">Kelola artikel, tips, dan panduan edukasi seputar food waste (PBI 27)</p>
+<div class="space-y-6" x-data="{ showModal: false, editMode: false, currentArticle: {} }">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">{{ $shell['title'] }}</h1>
+            <p class="text-gray-500 mt-1">{{ $shell['subtitle'] }}</p>
         </div>
         <button @click="showModal = true; editMode = false; currentArticle = { title: '', category: 'Tips', status: 'Draft', content: '' }" 
-                class="bg-[#1a4414] text-white px-6 py-4 rounded-2xl hover:shadow-lg transition-all flex items-center gap-2 font-bold text-sm">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            Tulis Artikel Baru
+                class="bg-[#174413] text-white px-5 py-2.5 rounded-xl shadow-sm hover:opacity-90 transition flex items-center gap-2 font-bold cursor-pointer">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+            Buat Artikel Baru
         </button>
     </div>
 
-    <!-- Stats Section -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div class="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Artikel</p>
-            <h3 class="text-3xl font-black text-gray-900 mt-1">{{ count($articles) }}</h3>
+    <!-- Filters & Stats -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div class="flex p-1 bg-gray-50 rounded-xl w-full sm:w-auto">
+            <a href="?tab=all" class="px-4 py-2 rounded-lg text-sm font-bold transition-all {{ $tab === 'all' ? 'bg-white text-[#174413] shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Semua</a>
+            <a href="?tab=published" class="px-4 py-2 rounded-lg text-sm font-bold transition-all {{ $tab === 'published' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Published</a>
+            <a href="?tab=draft" class="px-4 py-2 rounded-lg text-sm font-bold transition-all {{ $tab === 'draft' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">Draft</a>
         </div>
-        <div class="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Published</p>
-            <h3 class="text-3xl font-black text-green-600 mt-1">{{ count(array_filter($articles, fn($a) => $a['status'] === 'Published')) }}</h3>
-        </div>
-        <div class="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Drafts</p>
-            <h3 class="text-3xl font-black text-orange-600 mt-1">{{ count(array_filter($articles, fn($a) => $a['status'] === 'Draft')) }}</h3>
+        <div class="relative w-full sm:w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <form action="{{ route('admin.education') }}" method="GET">
+                <input type="hidden" name="tab" value="{{ $tab }}">
+                <input type="text" name="search" value="{{ $search }}" placeholder="Cari judul atau kategori..." 
+                       class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm">
+            </form>
         </div>
     </div>
 
-    <!-- Article List -->
-    <div class="space-y-6">
-        @foreach($articles as $article)
-        <div class="bg-white border border-gray-100 rounded-[32px] p-6 hover:shadow-md transition-all">
-            <div class="flex flex-col md:flex-row gap-8 items-center">
-                <div class="w-full md:w-48 h-32 rounded-2xl overflow-hidden bg-gray-100">
-                    <img src="{{ $article['image'] }}" class="w-full h-full object-cover" alt="Preview">
-                </div>
-                <div class="flex-1 space-y-2">
-                    <div class="flex items-center gap-3">
-                        <span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest">
-                            {{ $article['category'] }}
-                        </span>
-                        <span class="text-xs font-bold text-gray-400">{{ $article['date'] }}</span>
-                    </div>
-                    <h3 class="text-xl font-black text-gray-900">{{ $article['title'] }}</h3>
-                    <p class="text-sm text-gray-500 line-clamp-1">{{ $article['content'] }}</p>
-                </div>
-                <div class="flex gap-2">
-                    <button @click="showModal = true; editMode = true; currentArticle = {{ json_encode($article) }}" 
-                            class="p-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-green-50 hover:text-green-700 transition-colors">
-                        <i data-lucide="edit-3" class="w-4 h-4"></i>
-                    </button>
-                    <button class="p-3 bg-gray-50 text-red-600 rounded-xl hover:bg-red-50 transition-colors">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                </div>
+    <!-- Article Table -->
+    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-gray-50/50 text-gray-500 font-bold text-xs uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4">Judul Artikel</th>
+                        <th class="px-6 py-4">Kategori</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4">Tanggal</th>
+                        <th class="px-6 py-4 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($articles as $article)
+                    <tr class="hover:bg-gray-50/50 transition group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                                    <img src="{{ $article['image'] ?? 'https://via.placeholder.com/150' }}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-gray-900 group-hover:text-green-700 transition">{{ $article['title'] }}</span>
+                                    <span class="text-xs text-gray-500">Oleh {{ $article['author'] }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider">{{ $article['category'] }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if(strtolower($article['status']) === 'published')
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Published
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-100">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Draft
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-gray-500">
+                            {{ $article['date'] }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button @click="showModal = true; editMode = true; currentArticle = {{ json_encode($article) }}" 
+                                        class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer" title="Edit">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                </button>
+                                <form action="{{ route('admin.education.delete', $article['id']) }}" method="POST" onsubmit="return confirm('Hapus artikel ini?')">
+                                    @csrf
+                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer" title="Hapus">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                                    <i data-lucide="book-open" class="w-8 h-8 text-gray-300"></i>
+                                </div>
+                                <h3 class="text-gray-900 font-bold">Belum Ada Artikel</h3>
+                                <p class="text-sm text-gray-500 mt-1">Mulai buat konten edukasi untuk pengguna ShareMeal.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div x-show="showModal" class="fixed inset-0 z-[60] overflow-y-auto" x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" @click="showModal = false">
+                <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
             </div>
-        </div>
-        @endforeach
-    </div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>&#8203;
 
-    <!-- Modal Form (Hidden) -->
-    <div x-show="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm" x-cloak>
-        <div class="bg-white rounded-[40px] w-full max-w-2xl p-10 shadow-2xl">
-            <h3 class="text-2xl font-black text-gray-900 mb-8" x-text="editMode ? 'Edit Artikel' : 'Tulis Artikel Baru'"></h3>
-            <div class="space-y-6">
-                <div>
-                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Judul Artikel</label>
-                    <input type="text" x-model="currentArticle.title" class="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl mt-2">
-                </div>
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Kategori</label>
-                        <select x-model="currentArticle.category" class="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl mt-2">
-                            <option>Tips</option>
-                            <option>Artikel</option>
-                            <option>Panduan</option>
-                        </select>
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <form :action="editMode ? '{{ url('admin/education') }}/' + currentArticle.id : '{{ route('admin.education.store') }}'" method="POST">
+                    @csrf
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900" x-text="editMode ? 'Edit Artikel' : 'Buat Artikel Baru'"></h3>
+                        <button type="button" @click="showModal = false" class="text-gray-400 hover:text-gray-600">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
                     </div>
-                    <div>
-                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Status</label>
-                        <select x-model="currentArticle.status" class="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl mt-2">
-                            <option>Published</option>
-                            <option>Draft</option>
-                        </select>
+                    
+                    <div class="p-6 space-y-4">
+                        <div class="space-y-1">
+                            <label class="text-sm font-bold text-gray-700">Judul Artikel</label>
+                            <input type="text" name="title" x-model="currentArticle.title" required 
+                                   class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-sm font-bold text-gray-700">Kategori</label>
+                                <select name="category" x-model="currentArticle.category" required 
+                                        class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                    <option>Tips</option>
+                                    <option>Artikel</option>
+                                    <option>Panduan</option>
+                                    <option>Edukasi</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-sm font-bold text-gray-700">Status</label>
+                                <select name="status" x-model="currentArticle.status" required 
+                                        class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                    <option value="Published">Published</option>
+                                    <option value="Draft">Draft</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-sm font-bold text-gray-700">Konten Artikel</label>
+                            <textarea name="content" x-model="currentArticle.content" rows="8" required 
+                                      class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"></textarea>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Isi Konten</label>
-                    <textarea x-model="currentArticle.content" rows="6" class="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl mt-2"></textarea>
-                </div>
-                <div class="flex gap-4 pt-4">
-                    <button @click="showModal = false" class="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold">Batal</button>
-                    <button class="flex-1 py-4 bg-[#1a4414] text-white rounded-2xl font-bold shadow-lg">Simpan</button>
-                </div>
+
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                        <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition">Batal</button>
+                        <button type="submit" class="px-6 py-2 bg-[#174413] text-white font-bold rounded-xl hover:opacity-90 transition" x-text="editMode ? 'Simpan Perubahan' : 'Terbitkan Artikel'"></button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

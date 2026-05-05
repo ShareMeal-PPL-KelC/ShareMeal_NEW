@@ -45,7 +45,6 @@ class ShareMealController extends Controller
                 ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
                 ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'shopping-cart'],
                 ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart'],
-
                 ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'book-open'],
             ],
             default => [],
@@ -604,13 +603,13 @@ class ShareMealController extends Controller
     {
         $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         $userObj = User::query()->find($userId);
-        $donations = Donation::all();
+        $donations = ShareMealState::get('donations');
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => (object) ['totalDonations' => Donation::where('lembaga_id', $userId)->count(), 'activeDonations' => Donation::where('status', 'available')->count()],
+            'stats' => (object) ['totalDonations' => 156, 'activeDonations' => 8, 'beneficiaries' => 120, 'thisMonth' => 45],
             'donations' => $donations,
-            'availableDonations' => Donation::where('status', 'available')->get(),
-            'recentDonations' => Donation::whereIn('status', ['claimed', 'completed'])->latest('claimed_at')->take(5)->get(),
+            'availableDonations' => collect($donations)->where('status', 'available')->all(),
+            'recentDonations' => collect($donations)->whereIn('status', ['claimed', 'completed'])->sortByDesc('claimed_at')->take(5)->all(),
             'userObj' => $userObj,
         ]);
     }
@@ -618,32 +617,39 @@ class ShareMealController extends Controller
     public function lembagaDonations(): View
     {
         return view('pages.lembaga.donations', $this->dashboardData('lembaga', 'Kelola Donasi', 'Klaim & tracking donasi makanan') + [
-            'donations' => Donation::all(),
+            'donations' => ShareMealState::get('donations'),
             'activeTab' => request('tab', 'available'),
         ]);
     }
 
     public function lembagaClaimDonation(string $donationId): RedirectResponse
     {
-        $donation = Donation::findOrFail($donationId);
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         
-        if ($donation->status !== 'pending') {
-            return back()->with('error', 'Donasi sudah diklaim oleh lembaga lain.');
-        }
-
+        $donation = \App\Models\Donation::with('mitra')->findOrFail($donationId);
+        
         $donation->update([
-            'lembaga_id' => Auth::id(),
             'status' => 'claimed',
             'claimed_at' => now(),
+            'tracking_status' => 'confirmed',
+            'lembaga_id' => $userId
         ]);
-
-        return back()->with('success', 'Donasi berhasil diklaim. Silakan lakukan pengambilan sesuai jadwal.');
+        
+        // Notify the Mitra that their donation was claimed
+        if ($donation->mitra) {
+            $lembagaName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Lembaga Sosial';
+            \Illuminate\Support\Facades\Notification::send(
+                $donation->mitra, 
+                new \App\Notifications\DonationClaimedNotification($lembagaName, $donation->title, $donation->quantity . ' ' . $donation->unit)
+            );
+        }
+        
+        return back()->with('success', 'Donasi berhasil diklaim.');
     }
 
     public function lembagaCompleteDonation(string $donationId): RedirectResponse
     {
-        $donation = Donation::findOrFail($donationId);
-        $donation->update(['status' => 'completed']);
+        ShareMealState::completeDonation($donationId);
         return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
     }
 
@@ -917,6 +923,24 @@ class ShareMealController extends Controller
         return back()->with('success', 'Blokir user dibuka.');
     }
 
+    public function adminEducation(Request $request): View
+    {
+        $search = (string) $request->query('search', '');
+        $tab = (string) $request->query('tab', 'all');
+        $articles = collect(ShareMealState::get('articles'))->filter(function ($article) use ($search, $tab) {
+            $matchesSearch = $search === '' || str_contains(strtolower($article['title']), strtolower($search)) || str_contains(strtolower($article['category']), strtolower($search));
+            $matchesTab = $tab === 'all' || strtolower($article['status']) === $tab;
+            return $matchesSearch && $matchesTab;
+        })->values();
+
+        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola artikel, tips, dan panduan edukasi seputar food waste') + [
+            'articles' => $articles,
+            'allArticles' => ShareMealState::get('articles'),
+            'search' => $search,
+            'tab' => $tab,
+        ]);
+    }
+
     public function adminEducationStore(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -946,190 +970,4 @@ class ShareMealController extends Controller
         ShareMealState::deleteArticle($articleId);
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
-    public function adminEducation(Request $request): View
-    {
-        $articles = [
-            [
-                'id' => 1,
-                'title' => '5 Cara Mengurangi Food Waste di Rumah',
-                'category' => 'Tips',
-                'status' => 'Published',
-                'date' => '10 Apr 2024',
-                'image' => 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400',
-                'content' => 'Limbah makanan adalah masalah besar bagi lingkungan...'
-            ],
-            [
-                'id' => 2,
-                'title' => 'Panduan Donasi Makanan Aman',
-                'category' => 'Panduan',
-                'status' => 'Published',
-                'date' => '08 Apr 2024',
-                'image' => 'https://images.unsplash.com/photo-1488459711615-228239c83252?auto=format&fit=crop&q=80&w=400',
-                'content' => 'Pastikan makanan yang Anda donasikan masih layak konsumsi...'
-            ],
-        ];
-
-        return view('pages.admin.education', $this->dashboardData('admin', 'Edukasi Lingkungan', 'Kelola konten & edukasi food waste') + [
-            'articles' => $articles,
-        ]);
-    }
-
-    public function adminUsers(Request $request): View
-    {
-        $users = collect([
-            ['name' => 'Budi Santoso', 'email' => 'budi@example.com', 'type' => 'mitra', 'status' => 'active', 'joined_at' => '12 Apr 2024'],
-            ['name' => 'Siti Aminah', 'email' => 'siti@example.com', 'type' => 'konsumen', 'status' => 'active', 'joined_at' => '15 Apr 2024'],
-            ['name' => 'Yayasan Kasih Ibu', 'email' => 'kasihibu@example.com', 'type' => 'lembaga', 'status' => 'active', 'joined_at' => '20 Apr 2024'],
-            ['name' => 'Andi Wijaya', 'email' => 'andi@example.com', 'type' => 'mitra', 'status' => 'blocked', 'joined_at' => '05 Apr 2024'],
-        ]);
-
-        return view('pages.admin.users', $this->dashboardData('admin', 'Manajemen Data User', 'Kelola akun & moderasi pelanggaran') + [
-        ]);
-    }
-
-    public function adminTransactions(Request $request): View
-    {
-        $page = (int) $request->query('page', 1);
-        $transactions = collect([
-            (object)[
-                'id' => 5420,
-                'customer' => (object)['name' => 'Budi Santoso'],
-                'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
-                'total_amount' => 45000,
-                'status' => 'completed',
-                'created_at' => now()->subMinutes(15)
-            ],
-            (object)[
-                'id' => 5419,
-                'customer' => (object)['name' => 'Siti Aminah'],
-                'mitra' => (object)['name' => 'Warung Makan Ibu Rina'],
-                'total_amount' => 28500,
-                'status' => 'pending',
-                'created_at' => now()->subMinutes(30)
-            ],
-        ]);
-        
-        $stats = [
-            'total_transaksi' => 5420,
-            'total_selesai' => 4150,
-            'total_pending' => 1270,
-            'gmv' => 'Rp 189.7M'
-        ];
-
-        return view('pages.admin.transactions', $this->dashboardData('admin', 'Pemantauan Transaksi', 'Pantau seluruh aktivitas transaksi di platform ShareMeal') + [
-            'transactions' => $transactions,
-            'stats' => $stats,
-            'page' => $page
-        ]);
-    }
-
-    public function adminReports(Request $request): View
-    {
-        $stats = [
-            'total_food_saved' => '12.480 Kg',
-            'co2_reduction' => '31.200 Kg',
-            'meals_distributed' => '8.240',
-            'impact_value' => 'Rp 245.8M',
-            'waste_reduction_rate' => 24.5, // percentage
-        ];
-
-        $monthlyData = [
-            ['month' => 'Jan', 'saved' => 850, 'target' => 1000],
-            ['month' => 'Feb', 'saved' => 1200, 'target' => 1000],
-            ['month' => 'Mar', 'saved' => 1500, 'target' => 1000],
-            ['month' => 'Apr', 'saved' => 1800, 'target' => 1000],
-            ['month' => 'Mei', 'saved' => 2100, 'target' => 1000],
-        ];
-
-        $distributions = collect([
-            (object)[
-                'id' => 1,
-                'mitra' => 'Toko Roti Sejahtera',
-                'lembaga' => 'Yayasan Kasih Ibu',
-                'items' => 'Roti Manis, Brownies',
-                'quantity' => '25 Kg',
-                'type' => 'Donasi',
-                'status' => 'Diterima',
-                'date' => now()->subDays(1)->format('d M Y')
-            ],
-            (object)[
-                'id' => 2,
-                'mitra' => 'Warung Makan Barokah',
-                'lembaga' => 'Panti Asuhan Al-Falah',
-                'items' => 'Nasi Bungkus, Lauk Pauk',
-                'quantity' => '15 Kg',
-                'type' => 'Donasi',
-                'status' => 'Diterima',
-                'date' => now()->subDays(2)->format('d M Y')
-            ],
-            (object)[
-                'id' => 3,
-                'mitra' => 'Healthy Cafe',
-                'lembaga' => '-',
-                'items' => 'Salad Bowl, Juice',
-                'quantity' => '8 Kg',
-                'type' => 'Flash Sale',
-                'status' => 'Terjual',
-                'date' => now()->subDays(3)->format('d M Y')
-            ],
-            (object)[
-                'id' => 4,
-                'mitra' => 'Bakery Delight',
-                'lembaga' => 'Rumah Singgah',
-                'items' => 'Croissant, Danish',
-                'quantity' => '12 Kg',
-                'type' => 'Donasi',
-                'status' => 'Dalam Perjalanan',
-                'date' => now()->subDays(1)->format('d M Y')
-            ],
-            (object)[
-                'id' => 5,
-                'mitra' => 'Resto Sedap Malam',
-                'lembaga' => 'Yayasan Yatim Piatu',
-                'items' => 'Ayam Bakar, Nasi',
-                'quantity' => '30 Kg',
-                'type' => 'Donasi',
-                'status' => 'Diterima',
-                'date' => now()->subDays(4)->format('d M Y')
-            ],
-        ]);
-
-        return view('pages.admin.reports', $this->dashboardData('admin', 'Laporan Distribusi & Dampak', 'Evaluasi pengurangan food waste dan dampak sosial platform') + [
-            'stats' => $stats,
-            'monthlyData' => $monthlyData,
-            'distributions' => $distributions,
-
-        ]);
-    }
-
-
-    private function dashboardData(string $role, string $title, string $description): array
-    {
-        return [
-            'role' => $role,
-            'title' => $title,
-            'description' => $description,
-            'user' => \Illuminate\Support\Facades\Auth::user(),
-            'notifications' => [],
-            'nav' => $this->dashboardNavigation($role)
-        ];
-    }
-
-    private function dashboardNavigation(string $role): array
-    {
-        if ($role === 'admin') {
-            return [
-                ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
-                ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield-check'],
-                ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
-                ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'receipt'],
-                ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart-3'],
-                ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'graduation-cap'],
-            ];
-        }
-        return [];
-    }
-
 }
-
-
