@@ -8,19 +8,26 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\AutoDonationService;
 use Illuminate\Support\Str;
 
 class ConsumerController extends Controller
 {
     public function index()
     {
+        app(AutoDonationService::class)->processProducts();
+
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        $completedOrders = Order::with('items')
+            ->where('customer_id', $userId)
+            ->where('status', 'completed')
+            ->get();
 
         $stats = (object) [
             'savedMeals' => OrderItem::whereHas('order', function($q) use ($userId) {
                 $q->where('customer_id', $userId)->where('status', 'completed');
             })->sum('quantity'),
-            'moneySaved' => 0, // Placeholder
+            'moneySaved' => $completedOrders->sum('savedAmount'),
             'co2Reduced' => 6.5,
             'favoriteStores' => 8,
         ];
@@ -28,6 +35,7 @@ class ConsumerController extends Controller
         $flashSales = Product::with('user.profile')
             ->where('status', 'flash-sale')
             ->where('stock', '>', 0)
+            ->where('expires_at', '>', now())
             ->latest()
             ->take(3)
             ->get();
@@ -42,6 +50,8 @@ class ConsumerController extends Controller
 
     public function search(Request $request)
     {
+        app(AutoDonationService::class)->processProducts();
+
         $filters = collect([
             ['id' => "halal", 'label' => "Halal", 'icon' => "🕌"],
             ['id' => "bakery", 'label' => "Bakery", 'icon' => "🍞"],
@@ -50,7 +60,9 @@ class ConsumerController extends Controller
         ])->map(fn($i) => (object)$i);
 
         $storesQuery = User::where('role', 'mitra')->with(['profile', 'products' => function($q) {
-            $q->where('status', 'flash-sale')->where('stock', '>', 0);
+            $q->whereIn('status', ['flash-sale', 'normal'])
+                ->where('stock', '>', 0)
+                ->where('expires_at', '>', now());
         }]);
 
         if ($request->has('q')) {
@@ -75,8 +87,12 @@ class ConsumerController extends Controller
 
     public function favorites()
     {
+        app(AutoDonationService::class)->processProducts();
+
         $stores = User::where('role', 'mitra')->with(['profile', 'products' => function($q) {
-            $q->where('status', 'flash-sale')->where('stock', '>', 0);
+            $q->where('status', 'flash-sale')
+                ->where('stock', '>', 0)
+                ->where('expires_at', '>', now());
         }])->get();
 
         return view('consumer.favorites', compact('stores'));
@@ -84,7 +100,13 @@ class ConsumerController extends Controller
 
     public function checkout(Request $request)
     {
+        app(AutoDonationService::class)->processProducts();
+
         $product = Product::with('user.profile')->findOrFail($request->product_id);
+
+        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || $product->expires_at->isPast()) {
+            return redirect()->route('consumer.search')->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.']);
+        }
 
         $booking = (object) [
             'id' => "BK-" . strtoupper(Str::random(6)),
@@ -119,6 +141,19 @@ class ConsumerController extends Controller
             'price' => 'required|numeric',
         ]);
 
+        $product = Product::findOrFail($request->product_id);
+
+        app(AutoDonationService::class)->processProducts($product->user_id);
+        $product->refresh();
+        
+        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->expires_at->isPast()) {
+            return back()->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.'])->withInput();
+        }
+
+        if ($product->stock < $request->quantity) {
+            return back()->withErrors(['quantity' => 'Stok produk tidak mencukupi.'])->withInput();
+        }
+
         $order = Order::create([
             'customer_id' => Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1,
             'mitra_id' => $request->mitra_id,
@@ -133,6 +168,8 @@ class ConsumerController extends Controller
             'quantity' => $request->quantity,
             'price' => $request->price,
         ]);
+
+        $product->decrement('stock', $request->quantity);
 
         $mitra = User::find($request->mitra_id);
         if ($mitra) {

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\Donation;
+use App\Services\AutoDonationService;
 use App\Support\ShareMealState;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,6 +73,11 @@ class ShareMealController extends Controller
                 'navigation' => $this->dashboardNavigation($type),
             ],
         ];
+    }
+
+    protected function parseLocalDateTime(string $value): Carbon
+    {
+        return Carbon::createFromFormat('Y-m-d\TH:i', $value, config('app.timezone'));
     }
 
     public function landing(): View
@@ -384,7 +391,9 @@ class ShareMealController extends Controller
 
     public function mitraDashboard(): View
     {
-        $userId = Auth::id();
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        app(AutoDonationService::class)->processProducts($userId);
+
         $products = Product::where('user_id', $userId)->get();
         $donations = Donation::where('mitra_id', $userId)->get();
         $orders = \App\Models\Order::with('items')->where('mitra_id', $userId)->get();
@@ -392,6 +401,7 @@ class ShareMealController extends Controller
         $stats = (object) [
             'totalProducts' => $products->count(),
             'activeFlashSale' => $products->where('status', 'flash-sale')->count(),
+            'expiredProducts' => $products->where('status', 'expired')->count(),
             'pendingOrders' => $orders->where('status', 'pending')->count(),
             'totalRevenue' => $orders->where('status', 'completed')->sum('total_amount'),
             'foodSaved' => $orders->where('status', 'completed')->sum(function($order) {
@@ -407,6 +417,7 @@ class ShareMealController extends Controller
             ->get();
 
         $expiringItems = Product::where('user_id', $userId)
+            ->whereIn('status', ['normal', 'flash-sale'])
             ->whereNotNull('expires_at')
             ->where('expires_at', '>', now())
             ->orderBy('expires_at')
@@ -418,7 +429,17 @@ class ShareMealController extends Controller
 
     public function mitraInventory(): View
     {
-        $products = Product::where('user_id', Auth::id())->get();
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        app(AutoDonationService::class)->processProducts($userId);
+
+        $products = Product::where('user_id', $userId)->get()->map(function (Product $product) {
+            $expiresAt = $product->expires_at?->copy()->timezone(config('app.timezone'));
+
+            $product->expires_at_input = $expiresAt?->format('Y-m-d\TH:i');
+            $product->expires_at_display = $expiresAt?->format('d/m/Y H:i');
+
+            return $product;
+        });
 
         return view('pages.mitra.inventory', compact('products'));
     }
@@ -431,10 +452,12 @@ class ShareMealController extends Controller
             'price' => ['required', 'integer', 'min:0'],
             'discount_price' => ['nullable', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
-            'expires_at' => ['required', 'date'],
-            'status' => ['required', 'string', 'in:normal,flash-sale,donation'],
+            'expires_at' => ['required', 'date_format:Y-m-d\TH:i'],
+            'status' => ['required', 'string', 'in:normal,flash-sale,donation,expired'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
+
+        $expiresAt = $this->parseLocalDateTime($data['expires_at']);
 
         $product = Product::create([
             'user_id' => Auth::id() ?? \App\Models\User::where('role', 'mitra')->first()?->id,
@@ -443,7 +466,7 @@ class ShareMealController extends Controller
             'price' => $data['price'],
             'discount_price' => $data['discount_price'] ?? 0,
             'stock' => $data['stock'],
-            'expires_at' => $data['expires_at'],
+            'expires_at' => $expiresAt,
             'status' => $data['status'],
             'image' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080',
         ]);
@@ -464,7 +487,8 @@ class ShareMealController extends Controller
 
     public function mitraInventoryUpdate(Request $request, int $productId): RedirectResponse
     {
-        $product = Product::where('user_id', Auth::id())->findOrFail($productId);
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        $product = Product::where('user_id', $userId)->findOrFail($productId);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -472,12 +496,13 @@ class ShareMealController extends Controller
             'price' => ['required', 'integer', 'min:0'],
             'discount_price' => ['nullable', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
-            'expires_at' => ['required', 'date'],
-            'status' => ['required', 'string', 'in:normal,flash-sale,donation'],
+            'expires_at' => ['required', 'date_format:Y-m-d\TH:i'],
+            'status' => ['required', 'string', 'in:normal,flash-sale,donation,expired'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
         $wasNotFlashSale = $product->getOriginal('status') !== 'flash-sale';
+        $expiresAt = $this->parseLocalDateTime($data['expires_at']);
 
         $product->update([
             'name' => $data['name'],
@@ -485,7 +510,7 @@ class ShareMealController extends Controller
             'price' => $data['price'],
             'discount_price' => $data['discount_price'] ?? 0,
             'stock' => $data['stock'],
-            'expires_at' => $data['expires_at'],
+            'expires_at' => $expiresAt,
             'status' => $data['status'],
         ]);
 
@@ -508,7 +533,14 @@ class ShareMealController extends Controller
 
     public function mitraInventoryFlashSale(int $productId): RedirectResponse
     {
-        $product = Product::where('user_id', Auth::id())->findOrFail($productId);
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        app(AutoDonationService::class)->processProducts($userId);
+
+        $product = Product::where('user_id', $userId)->findOrFail($productId);
+
+        if ($product->status === 'expired' || $product->expires_at->isPast()) {
+            return back()->with('error', 'Produk sudah kedaluwarsa dan tidak bisa dijadikan flash sale.');
+        }
 
         $product->update([
             'status' => 'flash-sale',
@@ -559,10 +591,15 @@ class ShareMealController extends Controller
 
     public function mitraDonations(): View
     {
-        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id') ?? \App\Models\User::where('role', 'mitra')->value('id');
+        app(AutoDonationService::class)->processProducts($userId);
         
         $donations = Donation::with('lembaga')
             ->where('mitra_id', $userId)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
             ->latest()
             ->get();
 
@@ -571,7 +608,8 @@ class ShareMealController extends Controller
 
     public function mitraInventoryDelete(int $productId): RedirectResponse
     {
-        $product = Product::where('user_id', Auth::id())->findOrFail($productId);
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        $product = Product::where('user_id', $userId)->findOrFail($productId);
         $product->delete();
 
         return back()->with('success', 'Produk dihapus.');
@@ -579,8 +617,9 @@ class ShareMealController extends Controller
 
     public function mitraOrders(): View
     {
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         $orders = \App\Models\Order::with(['customer', 'items.product'])
-            ->where('mitra_id', Auth::id())
+            ->where('mitra_id', $userId)
             ->latest()
             ->get();
 
@@ -589,7 +628,7 @@ class ShareMealController extends Controller
 
     public function mitraOrdersConfirm(int $orderId): JsonResponse|RedirectResponse
     {
-        $userId = \Illuminate\Support\Facades\Auth::id();
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
         $order->update(['status' => 'completed']);
 
