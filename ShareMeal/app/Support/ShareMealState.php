@@ -75,7 +75,7 @@ class ShareMealState
                     'available_until' => $donation->expires_at ? \Carbon\Carbon::parse($donation->expires_at)->format('d M, H:i') : '18:00',
                     'claimed_at' => $donation->claimed_at ? \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') : null,
                     'delivered_at' => $donation->delivered_at ? \Carbon\Carbon::parse($donation->delivered_at)->format('d M, H:i') : null,
-                    'status' => $donation->status === 'pending' ? 'available' : $donation->status,
+                    'status' => ($donation->status === 'pending' && $donation->expires_at && \Carbon\Carbon::parse($donation->expires_at)->isPast()) ? 'expired' : ($donation->status === 'pending' ? 'available' : $donation->status),
                 ];
             })->all(),
             'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
