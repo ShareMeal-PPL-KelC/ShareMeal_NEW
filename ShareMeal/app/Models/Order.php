@@ -30,10 +30,16 @@ class Order extends Model
         'status',
         'pickup_code',
         'pickup_time',
+        'pickup_start_time',
+        'pickup_end_time',
+        'receiving_method',
+        'delivery_fee',
+        'delivery_time_slot',
     ];
 
     protected $casts = [
         'pickup_time' => 'datetime',
+        'delivery_fee' => 'integer',
     ];
 
     protected $appends = [
@@ -51,8 +57,26 @@ class Order extends Model
         'time',
         'items_string',
         'orderTime',
-        'completedTime'
+        'completedTime',
+        'pickupTime',
+        'expires_at',
     ];
+
+    public function getExpiresAtAttribute()
+    {
+        if ($this->relationLoaded('items') && $this->items->count() > 0) {
+            $minExpiresAt = $this->items->min(function($item) {
+                return $item->product ? $item->product->expires_at : null;
+            });
+            
+            if ($minExpiresAt) {
+                return \Carbon\Carbon::parse($minExpiresAt);
+            }
+        }
+        
+        // Fallback if relation not loaded or no product data
+        return $this->created_at ? $this->created_at->addHours(2) : now()->addHours(2);
+    }
 
     public function getAmountAttribute()
     {
@@ -91,6 +115,19 @@ class Order extends Model
     public function getPickupCodeAttribute()
     {
         return $this->attributes['pickup_code'] ?? '-';
+    }
+
+    public function getPickupTimeAttribute()
+    {
+        if (!empty($this->attributes['pickup_start_time']) && !empty($this->attributes['pickup_end_time'])) {
+            return substr($this->attributes['pickup_start_time'], 0, 5) . ' - ' . substr($this->attributes['pickup_end_time'], 0, 5);
+        }
+
+        $pickupTime = $this->attributes['pickup_time'] ?? null;
+
+        return $pickupTime
+            ? \Carbon\Carbon::parse($pickupTime)->format('H:i')
+            : '-';
     }
 
     public function getRatingAttribute()
@@ -134,7 +171,7 @@ class Order extends Model
 
     public function getStoreAttribute()
     {
-        return $this->mitra ? $this->mitra->name : 'Unknown Store';
+        return $this->mitra ? $this->mitra->displayName : 'Unknown Store';
     }
 
     public function getStoreAddressAttribute()
