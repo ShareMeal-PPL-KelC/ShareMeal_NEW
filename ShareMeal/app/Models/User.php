@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -49,6 +50,7 @@ class User extends Authenticatable
     ];
 
     protected $appends = [
+        'displayName',
         'image',
         'category',
         'rating',
@@ -57,8 +59,12 @@ class User extends Authenticatable
         'distance',
         'tags',
         'isFavorite',
-        'activeDeals'
     ];
+
+    public function getDisplayNameAttribute()
+    {
+        return $this->profile?->business_name ?? $this->organization_name ?? $this->name;
+    }
 
     public function getActiveDealsAttribute()
     {
@@ -68,7 +74,11 @@ class User extends Authenticatable
     public function getImageAttribute()
     {
         if ($this->profile && $this->profile->avatar) {
-            return $this->profile->avatar;
+            if (str_starts_with($this->profile->avatar, 'http://') || str_starts_with($this->profile->avatar, 'https://')) {
+                return $this->profile->avatar;
+            }
+
+            return Storage::url($this->profile->avatar);
         }
 
         $name = strtolower($this->name);
@@ -92,17 +102,35 @@ class User extends Authenticatable
 
     public function getRatingAttribute()
     {
-        return $this->profile ? ($this->profile->rating ?? 4.8) : 4.8;
+        // Check for eager-loaded average (from withAvg)
+        if (array_key_exists('reviews_as_mitra_avg_rating', $this->attributes)) {
+            $avg = $this->attributes['reviews_as_mitra_avg_rating'];
+            return $avg ? number_format($avg, 1) : '4.8';
+        }
+        
+        // Fallback to profile rating if profile is loaded
+        if ($this->relationLoaded('profile') && $this->profile) {
+            $profileRating = $this->profile->rating ?? 0;
+            if ($profileRating > 0) return number_format($profileRating, 1);
+        }
+        
+        return '4.8';
     }
 
     public function getReviewsAttribute()
     {
-        return $this->reviewsAsMitra()->count() ?: 125;
+        // Check for eager-loaded count (from withCount)
+        if (array_key_exists('reviews_as_mitra_count', $this->attributes)) {
+            return (int) $this->attributes['reviews_as_mitra_count'];
+        }
+
+        // Avoid query if relation is not loaded and we are in a serialization context
+        return 0;
     }
 
     public function getAddressAttribute()
     {
-        return $this->profile ? ($this->profile->address ?? 'Alamat tidak tersedia') : 'Alamat tidak tersedia';
+        return $this->profile ? ($this->profile->business_address ?? $this->profile->address ?? 'Alamat tidak tersedia') : 'Alamat tidak tersedia';
     }
 
     public function getDistanceAttribute()
