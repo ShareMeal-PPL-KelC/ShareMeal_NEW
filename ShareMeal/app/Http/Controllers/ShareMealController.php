@@ -9,10 +9,12 @@ use App\Services\AutoDonationService;
 use App\Support\ShareMealState;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
+use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
 class ShareMealController extends Controller
@@ -181,7 +183,7 @@ class ShareMealController extends Controller
 
     public function logout(): RedirectResponse
     {
-        \Illuminate\Support\Facades\Auth::logout();
+Auth::logout();
         ShareMealState::logout();
         return redirect()->route('login')->with('success', 'Anda telah keluar.');
     }
@@ -1014,3 +1016,7 @@ class ShareMealController extends Controller
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
 }
+
+
+
+

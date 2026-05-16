@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
 use App\Notifications\FlashSaleNotification;
 use Illuminate\Support\Facades\Notification;
+use App\Models\Article;
 
 class ShareMealState
 {
