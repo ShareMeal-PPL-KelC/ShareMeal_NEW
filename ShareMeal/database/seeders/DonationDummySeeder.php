@@ -10,16 +10,23 @@ class DonationDummySeeder extends Seeder
 {
     public function run(): void
     {
-        $mitra = User::firstOrCreate(
-            ['email' => 'mitra_donasi@example.com'],
-            [
-                'name' => 'Resto Makanan Sehat',
+        $mitra = User::where('email', 'mitra@example.com')->first();
+        
+        if (!$mitra) {
+            $mitra = User::create([
+                'name' => 'Toko Roti Makmur',
+                'email' => 'mitra@example.com',
                 'password' => bcrypt('password'),
                 'role' => 'mitra',
-                'phone' => '08123456789',
-                'is_verified' => true
-            ]
-        );
+                'phone' => '089876543210',
+                'is_verified' => true,
+            ]);
+        }
+
+        $lembaga = User::where('email', 'lembaga@example.com')->first();
+
+        // Clear existing dummy donations to avoid duplicates during re-seeding
+        Donation::where('mitra_id', $mitra->id)->delete();
 
         Donation::create([
             'mitra_id' => $mitra->id,
@@ -41,6 +48,7 @@ class DonationDummySeeder extends Seeder
 
         Donation::create([
             'mitra_id' => $mitra->id,
+            'lembaga_id' => $lembaga?->id,
             'title' => 'Sayur Sop Sisa Etalase',
             'quantity' => 10,
             'unit' => 'porsi',
@@ -53,6 +61,7 @@ class DonationDummySeeder extends Seeder
         
         Donation::create([
             'mitra_id' => $mitra->id,
+            'lembaga_id' => $lembaga?->id,
             'title' => 'Sayur Lodeh',
             'quantity' => 5,
             'unit' => 'porsi',

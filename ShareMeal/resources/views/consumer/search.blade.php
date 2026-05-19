@@ -183,7 +183,7 @@
                         <div class="bg-gray-50 rounded-2xl p-5 space-y-4">
                             <h4 class="text-sm font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-orange-500"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                                Flash Sale Aktif
+                                Menu Tersedia
                             </h4>
                             
                             <template x-for="deal in store.products" :key="deal.id">
@@ -200,8 +200,8 @@
                                     </div>
                                     <div class="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto mt-2 md:mt-0 border-t md:border-t-0 pt-2 md:pt-0">
                                         <div class="text-left md:text-right">
-                                            <div class="text-lg font-black text-green-600 leading-none" x-text="'Rp ' + deal.discountPrice.toLocaleString('id-ID')"></div>
-                                            <div class="text-[10px] text-gray-400 line-through mt-1" x-text="'Rp ' + deal.originalPrice.toLocaleString('id-ID')"></div>
+                                            <div class="text-lg font-black text-green-600 leading-none" x-text="'Rp ' + (deal.discountPrice > 0 ? deal.discountPrice : deal.originalPrice).toLocaleString('id-ID')"></div>
+                                            <div class="text-[10px] text-gray-400 line-through mt-1" x-show="deal.discountPrice > 0 && deal.discountPrice != deal.originalPrice" x-text="'Rp ' + deal.originalPrice.toLocaleString('id-ID')"></div>
                                         </div>
                                         <button 
                                             @click="window.location.href = '{{ route('consumer.checkout') }}?product_id=' + deal.id"

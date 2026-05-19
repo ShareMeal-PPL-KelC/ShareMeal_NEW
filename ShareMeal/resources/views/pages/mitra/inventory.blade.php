@@ -7,20 +7,50 @@
             <h1 class="text-3xl font-bold text-gray-900">Manajemen Inventaris Surplus</h1>
             <p class="text-gray-600 mt-1">Kelola stok makanan near-expired</p>
         </div>
-        <button @click="openAddDialog()" class="bg-[#174413] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#256020] transition shadow-lg shadow-green-100">
+        <button @click="openAddDialog()" dusk="tambah-produk-btn" class="bg-[#174413] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#256020] transition shadow-lg shadow-green-100">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Tambah Produk
         </button>
     </div>
 
+    @if(session('success'))
+    <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        {{ session('error') }}
+    </div>
+    @endif
+
+    @if($errors->any())
+    <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl">
+        <ul class="list-disc list-inside text-sm">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <!-- Products Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <template x-for="product in products" :key="product.id">
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition duration-300">
+            <div class="rounded-3xl border shadow-sm overflow-hidden group hover:shadow-md transition duration-300" :class="product.status === 'expired' ? 'bg-red-50/40 border-red-200' : (product.status === 'donation' ? 'bg-emerald-50/30 border-emerald-200' : 'bg-white border-gray-100')">
                 <div class="relative h-48 overflow-hidden">
-                    <img :src="product.image" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <img :src="product.image" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" :class="['donation', 'expired'].includes(product.status) ? 'opacity-70 grayscale' : ''">
                     <template x-if="product.status === 'flash-sale'">
                         <span class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Flash Sale</span>
+                    </template>
+                    <template x-if="product.status === 'donation'">
+                        <span class="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Sudah Didonasikan</span>
+                    </template>
+                    <template x-if="product.status === 'expired'">
+                        <span class="absolute top-4 right-4 bg-red-700 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">Kedaluwarsa</span>
                     </template>
                 </div>
                 <div class="p-6">
@@ -31,7 +61,7 @@
 
                     <div class="flex items-center gap-2 text-sm mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-orange-600"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        <span class="text-orange-600 font-black uppercase text-[10px] tracking-wider" x-text="'Expired: ' + new Date(product.expires_at).toLocaleString('id-ID')"></span>
+                        <span class="text-orange-600 font-black uppercase text-[10px] tracking-wider" x-text="'Expired: ' + product.expires_at_display"></span>
                     </div>
 
                     <div class="flex items-end justify-between border-t border-gray-50 pt-4 mb-6">
@@ -63,8 +93,22 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Aktif
                             </div>
                         </template>
+                        <template x-if="product.status === 'donation'">
+                            <div class="flex-1 bg-emerald-100 text-emerald-700 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><path d="M12 22V7"></path><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg> Masuk Donasi
+                            </div>
+                        </template>
+                        <template x-if="product.status === 'expired'">
+                            <div class="flex-1 min-h-12 bg-red-100 text-red-700 px-3 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 text-center leading-tight">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Tidak Layak
+                            </div>
+                        </template>
+
+                        <button @click="toggleDonation(product.id)" :class="product.donatable ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'" class="w-12 h-12 rounded-xl flex items-center justify-center hover:opacity-80 transition" title="Toggle Donasi Otomatis">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        </button>
                         
-                        <button @click="openEditDialog(product)" class="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition">
+                        <button @click="openEditDialog(product)" :disabled="product.status === 'expired'" class="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-50 disabled:hover:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
 
@@ -146,6 +190,17 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-2 gap-5">
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Mulai Pengambilan</label>
+                        <input type="time" name="pickup_start_time" x-model="formData.pickup_start_time" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Akhir Pengambilan</label>
+                        <input type="time" name="pickup_end_time" x-model="formData.pickup_end_time" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                    </div>
+                </div>
+
                 <div class="pt-4 flex gap-4">
                     <button type="button" @click="isDialogOpen = false" class="flex-1 border border-gray-100 py-4 rounded-xl font-bold text-gray-400 hover:bg-gray-50 transition">Batal</button>
                     <button type="submit" class="flex-1 bg-[#174413] text-white py-4 rounded-xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition">Simpan Produk</button>
@@ -159,6 +214,10 @@
         @csrf
     </form>
 
+    <form id="toggle-donation-form" method="POST" class="hidden">
+        @csrf
+    </form>
+
     <form id="delete-form" method="POST" class="hidden">
         @csrf
     </form>
@@ -168,7 +227,7 @@
     function inventoryData() {
         return {
             products: @json($products),
-            isDialogOpen: false,
+            isDialogOpen: {{ $errors->any() ? 'true' : 'false' }},
             isEditing: false,
             formData: {
                 id: null,
@@ -178,6 +237,8 @@
                 discount_price: 0,
                 stock: '',
                 expires_at: '',
+                pickup_start_time: '18:00',
+                pickup_end_time: '20:00',
                 status: 'normal',
                 image: 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080'
             },
@@ -192,6 +253,8 @@
                     discount_price: 0,
                     stock: '',
                     expires_at: '',
+                    pickup_start_time: '18:00',
+                    pickup_end_time: '20:00',
                     status: 'normal',
                     image: 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080'
                 };
@@ -201,11 +264,9 @@
             openEditDialog(product) {
                 this.isEditing = true;
                 this.formData = { ...product };
-                if (product.expires_at) {
-                    const date = new Date(product.expires_at);
-                    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-                    this.formData.expires_at = date.toISOString().slice(0, 16);
-                }
+                this.formData.expires_at = product.expires_at_input || '';
+                this.formData.pickup_start_time = product.pickup_start_time_input || '18:00';
+                this.formData.pickup_end_time = product.pickup_end_time_input || '20:00';
                 this.isDialogOpen = true;
             },
             
@@ -215,6 +276,12 @@
                     form.action = `/mitra/inventory/${id}/flash-sale`;
                     form.submit();
                 }
+            },
+
+            toggleDonation(id) {
+                const form = document.getElementById('toggle-donation-form');
+                form.action = `/mitra/inventory/${id}/toggle-donation`;
+                form.submit();
             },
             
             deleteProduct(id) {
