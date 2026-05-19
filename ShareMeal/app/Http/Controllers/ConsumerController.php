@@ -17,7 +17,6 @@ class ConsumerController extends Controller
     public function index()
     {
         app(AutoDonationService::class)->processProducts();
-        #\
 
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
         $orders = Order::with('items')
@@ -112,7 +111,7 @@ class ConsumerController extends Controller
         if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || $product->expires_at->isPast()) {
             return redirect()->route('consumer.search')->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.']);
         }
-        #test
+
         $pickupStart = $product->pickup_start_time ?? '18:00';
         $pickupEnd = $product->pickup_end_time ?? '20:00';
 

@@ -38,6 +38,20 @@
         <p class="text-gray-600 mt-1">Pantau status pesanan dan berikan ulasan Anda</p>
     </div>
 
+    @if(session('success'))
+    <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        {{ session('error') }}
+    </div>
+    @endif
+
     <!-- Summary Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
@@ -94,9 +108,13 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                             {{ $t->storeAddress }}
                         </div>
+                        <div class="flex items-center gap-1.5 mt-1.5 text-sm text-green-600 font-bold">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            Jadwal Ambil: {{ $t->pickupTime }}
+                        </div>
                         @if($t->status === 'pending')
                         <div x-data="{
-                            endTime: new Date('{{ $t->created_at ? $t->created_at->addHours(2)->toIso8601String() : now()->addHours(2)->toIso8601String() }}').getTime(),
+                            endTime: new Date('{{ $t->expires_at->toIso8601String() }}').getTime(),
                             timeRemaining: '',
                             isExpired: false,
                             init() {
@@ -187,7 +205,7 @@
                 </div>
                 @elseif($t->status === 'completed')
                 <div class="border-t border-gray-50 pt-6">
-                    <button @click="openReviewModal('{{ $t->orderId }}')" class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 py-3 rounded-2xl text-gray-400 font-bold text-sm hover:border-green-600 hover:text-green-600 transition group">
+                    <button @click="openReviewModal('{{ $t->id }}')" class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 py-3 rounded-2xl text-gray-400 font-bold text-sm hover:border-green-600 hover:text-green-600 transition group">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 group-hover:fill-green-600"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                         Berikan Rating & Ulasan
                     </button>
@@ -199,6 +217,7 @@
                         id: '{{ $t->orderId }}',
                         store: '{{ $t->store }}',
                         date: '{{ $t->orderTime }}',
+                        pickupTime: '{{ $t->pickupTime }}',
                         status: '{{ $t->status }}',
                         subtotal: {{ $t->subtotal }},
                         savedAmount: {{ $t->savedAmount }},
@@ -230,28 +249,34 @@
                 <p class="text-gray-500 text-sm mt-1">Bagikan pengalaman belanja Anda</p>
             </div>
 
-            <div class="space-y-4">
+            <form action="{{ route('consumer.review.submit') }}" method="POST" class="space-y-4">
+                @csrf
+                <input type="hidden" name="order_id" :value="selectedOrderId">
+                <input type="hidden" name="rating" :value="rating">
+
                 <div class="text-center">
                     <label class="text-sm font-bold text-gray-400 uppercase tracking-widest block mb-3">Rating</label>
                     <div class="flex justify-center gap-2">
                         <template x-for="i in 5">
-                            <button @click="rating = i" class="transition transform hover:scale-125">
+                            <button type="button" @click="rating = i" class="transition transform hover:scale-125">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10" :class="i <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200 fill-transparent'"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                             </button>
                         </template>
                     </div>
+                    @error('rating') <p class="text-xs text-red-600 mt-2">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">Ulasan</label>
-                    <textarea x-model="review" rows="4" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-green-600 transition" placeholder="Ceritakan rasa makanannya..."></textarea>
+                    <textarea name="comment" x-model="review" rows="4" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-green-600 transition" placeholder="Ceritakan rasa makanannya..."></textarea>
+                    @error('comment') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="pt-4 flex gap-3">
-                    <button @click="isReviewDialogOpen = false" class="flex-1 border border-gray-100 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 transition">Batal</button>
-                    <button @click="submitReview()" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition">Kirim Review</button>
+                    <button type="button" @click="isReviewDialogOpen = false" class="flex-1 border border-gray-100 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 transition">Batal</button>
+                    <button type="submit" :disabled="rating === 0" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Kirim Review</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -305,6 +330,11 @@
                 <div class="border-t border-gray-200 pt-4 flex justify-between items-center" x-show="receiptData">
                     <span class="font-black text-gray-900">Total Bayar</span>
                     <span class="text-xl font-black text-gray-900" x-text="'Rp ' + receiptData.total.toLocaleString('id-ID')"></span>
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 mt-4" x-show="receiptData">
+                    <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Jadwal Pengambilan</div>
+                    <div class="text-sm font-bold text-gray-800" x-text="receiptData.pickupTime"></div>
                 </div>
 
                 <div class="text-center pt-4" x-show="receiptData">
