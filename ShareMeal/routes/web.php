@@ -40,6 +40,7 @@ Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function
     Route::post('/inventory', [ShareMealController::class, 'mitraInventoryStore'])->name('inventory.store');
     Route::post('/inventory/{productId}', [ShareMealController::class, 'mitraInventoryUpdate'])->name('inventory.update');
     Route::post('/inventory/{productId}/flash-sale', [ShareMealController::class, 'mitraInventoryFlashSale'])->name('inventory.flash-sale');
+    Route::post('/inventory/{productId}/toggle-donation', [ShareMealController::class, 'mitraInventoryToggleDonation'])->name('inventory.toggle-donation');
     Route::post('/inventory/{productId}/delete', [ShareMealController::class, 'mitraInventoryDelete'])->name('inventory.delete');
     Route::get('/orders', [ShareMealController::class, 'mitraOrders'])->name('orders');
     Route::post('/orders/{orderId}/update-status', [ShareMealController::class, 'updateOrderStatus'])->name('orders.update-status');

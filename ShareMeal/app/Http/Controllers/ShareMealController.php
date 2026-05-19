@@ -930,6 +930,19 @@ class ShareMealController extends Controller
         return back()->with('success', 'Flash sale diaktifkan.');
     }
 
+    public function mitraInventoryToggleDonation(int $productId): RedirectResponse
+    {
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        $product = Product::where('user_id', $userId)->findOrFail($productId);
+
+        $product->update([
+            'donatable' => !$product->donatable,
+        ]);
+
+        $status = $product->donatable ? 'diaktifkan' : 'dinonaktifkan';
+        return back()->with('success', 'Donasi otomatis untuk "' . $product->name . '" berhasil ' . $status . '.');
+    }
+
     public function mitraDonationStore(Request $request): RedirectResponse
     {
         $data = $request->validate([
