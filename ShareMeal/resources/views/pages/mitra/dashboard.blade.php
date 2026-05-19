@@ -65,37 +65,85 @@
             <div class="text-2xl font-bold text-purple-600">{{ $stats->donationsGiven }}</div>
             <p class="text-xs text-gray-500 mt-1">Ke lembaga sosial</p>
         </div>
+
+        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-600">Rating Toko</span>
+                <i data-lucide="star" class="w-4 h-4 text-yellow-500"></i>
+            </div>
+            <div class="text-2xl font-bold text-yellow-500">{{ $stats->averageRating }} <span class="text-sm text-gray-400 font-normal">/ 5.0</span></div>
+            <p class="text-xs text-gray-500 mt-1">Berdasarkan {{ $stats->totalReviews }} ulasan</p>
+        </div>
     </div>
 
-    <!-- Expiring Items Alert -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-gray-50 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i data-lucide="alert-circle" class="w-5 h-5 text-orange-600"></i>
-                <h2 class="text-xl font-bold text-gray-900">Produk Mendekati Expired</h2>
-            </div>
-            <a href="{{ route('mitra.inventory') }}" class="text-sm font-semibold text-[#174413] hover:underline flex items-center gap-1">
-                Kelola Stok
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </a>
-        </div>
-        <div class="p-6 space-y-4">
-            @forelse($expiringItems as $item)
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                <div>
-                    <div class="font-bold text-gray-900">{{ $item->name }}</div>
-                    <div class="text-sm text-gray-500">Stok: {{ $item->quantity }} unit</div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Expiring Items Alert -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-orange-600"></i>
+                    <h2 class="text-xl font-bold text-gray-900">Mendekati Expired</h2>
                 </div>
-                <div class="text-right">
-                    <div class="font-bold {{ $item->status === 'urgent' ? 'text-red-600' : ($item->status === 'warning' ? 'text-orange-600' : 'text-yellow-600') }}">
-                        {{ $item->expiresIn }}
+                <a href="{{ route('mitra.inventory') }}" class="text-sm font-semibold text-[#174413] hover:underline flex items-center gap-1">
+                    Kelola
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            <div class="p-6 space-y-4">
+                @forelse($expiringItems as $item)
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div>
+                        <div class="font-bold text-gray-900">{{ $item->name }}</div>
+                        <div class="text-sm text-gray-500">Stok: {{ $item->stock }}</div>
                     </div>
-                    <div class="text-xs text-gray-500">sisa waktu</div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-orange-600">{{ $item->expires_at->diffForHumans() }}</div>
+                        <div class="text-[10px] text-gray-400">sisa waktu</div>
+                    </div>
                 </div>
+                @empty
+                <div class="text-center py-4 text-gray-500 italic">Tidak ada produk kritis.</div>
+                @endforelse
             </div>
-            @empty
-            <div class="text-center py-4 text-gray-500 italic">Tidak ada produk mendekati kadaluarsa.</div>
-            @endforelse
+        </div>
+
+        <!-- Recent Reviews -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-50 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="star" class="w-5 h-5 text-yellow-500"></i>
+                    <h2 class="text-xl font-bold text-gray-900">Ulasan Terbaru</h2>
+                </div>
+                <a href="{{ route('mitra.reviews') }}" class="text-sm font-semibold text-[#174413] hover:underline flex items-center gap-1">
+                    Semua Ulasan
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            <div class="p-6 space-y-4">
+                @forelse($recentReviews as $review)
+                <div class="p-4 bg-yellow-50/30 rounded-xl border border-yellow-100/50">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="font-bold text-sm text-gray-900">{{ $review->customer->name }}</div>
+                        <div class="flex gap-0.5">
+                            @for($i = 1; $i <= 5; $i++)
+                            <i data-lucide="star" class="w-3 h-3 {{ $i <= $review->rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200' }}"></i>
+                            @endfor
+                        </div>
+                    </div>
+                    @if($review->comment)
+                    <p class="text-xs text-gray-600 italic line-clamp-2">"{{ $review->comment }}"</p>
+                    @else
+                    <p class="text-xs text-gray-400 italic">Tidak ada komentar.</p>
+                    @endif
+                    <div class="text-[10px] text-gray-400 mt-2">{{ $review->created_at->diffForHumans() }}</div>
+                </div>
+                @empty
+                <div class="text-center py-8 text-gray-400 italic">
+                    <i data-lucide="message-square" class="w-8 h-8 mx-auto mb-2 opacity-20"></i>
+                    Belum ada ulasan.
+                </div>
+                @endforelse
+            </div>
         </div>
     </div>
 

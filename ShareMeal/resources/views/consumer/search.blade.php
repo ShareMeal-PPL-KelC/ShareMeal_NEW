@@ -77,8 +77,8 @@
     get filteredStores() {
         return this.stores.filter(store => {
             const matchesSearch = this.searchQuery === "" || 
-                store.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                store.category.toLowerCase().includes(this.searchQuery.toLowerCase());
+                (store.profile?.business_name || store.organization_name || store.name).toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                (store.profile?.business_type || store.category).toLowerCase().includes(this.searchQuery.toLowerCase());
             
             const matchesFilters = this.selectedFilters.length === 0 ||
                 this.selectedFilters.every(f => store.tags.includes(f));
@@ -159,12 +159,12 @@
                         <div class="flex items-start justify-between mb-4">
                             <div>
                                 <div class="flex items-center gap-3">
-                                    <h3 class="text-2xl font-black text-gray-900 leading-tight" x-text="store.name"></h3>
+                                    <h3 class="text-2xl font-black text-gray-900 leading-tight" x-text="store.profile?.business_name || store.organization_name || store.name"></h3>
                                     <button @click="toggleFavoriteStore(store)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition text-gray-300 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-100">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 transition-colors" :class="store.isFavorite ? 'fill-red-500 text-red-500' : 'fill-transparent'"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                                     </button>
                                 </div>
-                                <p class="text-gray-500 font-medium mt-1" x-text="store.category"></p>
+                                <p class="text-gray-500 font-medium mt-1" x-text="store.profile?.business_type || store.category"></p>
                             </div>
                             <div class="bg-yellow-50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-yellow-100">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
@@ -178,6 +178,19 @@
                             <span x-text="store.address"></span>
                             <span class="font-black text-green-600" x-text="'• ' + store.distance"></span>
                         </div>
+
+                        <div class="grid gap-3 md:grid-cols-2 mb-6">
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                                <div class="text-[10px] font-black uppercase tracking-widest text-gray-400">Kontak Usaha</div>
+                                <div class="mt-1 text-sm font-bold text-gray-800" x-text="store.profile?.business_contact || store.phone || '-'"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                                <div class="text-[10px] font-black uppercase tracking-widest text-gray-400">Jam Operasional</div>
+                                <div class="mt-1 text-sm font-bold text-gray-800" x-text="store.profile?.business_opening_hours || store.profile?.opening_hours || '-'"></div>
+                            </div>
+                        </div>
+
+                        <p class="text-sm leading-6 text-gray-600 mb-6" x-show="store.profile?.business_description || store.profile?.description" x-text="store.profile?.business_description || store.profile?.description"></p>
 
                         <!-- Flash Sales List -->
                         <div class="bg-gray-50 rounded-2xl p-5 space-y-4">
@@ -194,6 +207,10 @@
                                             <span class="text-xs font-bold text-orange-600 flex items-center gap-1">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                                 <span x-text="deal.expiresIn"></span>
+                                            </span>
+                                            <span class="text-xs font-bold text-green-600 flex items-center gap-1">
+                                                <i data-lucide="calendar" class="w-3 h-3"></i>
+                                                <span x-text="deal.pickupTime"></span>
                                             </span>
                                             <span class="text-xs text-gray-400 font-medium" x-text="'Stok: ' + deal.stock"></span>
                                         </div>

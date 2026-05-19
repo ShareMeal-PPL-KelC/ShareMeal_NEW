@@ -3,20 +3,27 @@
 @section('content')
 <div class="space-y-6" x-data="{
     openManage: false, 
-    allStores: [
-        {id: 1, name: 'Toko Roti Makmur', category: 'Bakery', distance: '0.5 km', rating: 4.8, activeDeals: 2, isFavorite: true},
-        {id: 2, name: 'Healthy Cafe', category: 'Healthy Food', distance: '1.2 km', rating: 4.5, activeDeals: 1, isFavorite: true},
-        {id: 3, name: 'Warung Ibu Rina', category: 'Indonesian', distance: '0.8 km', rating: 4.7, activeDeals: 5, isFavorite: false},
-        {id: 4, name: 'Bakery Delight', category: 'Bakery', distance: '2.1 km', rating: 4.2, activeDeals: 1, isFavorite: false},
-        {id: 5, name: 'Fresh Salads', category: 'Healthy Food', distance: '1.5 km', rating: 4.6, activeDeals: 3, isFavorite: true},
-        {id: 6, name: 'Kedai Kopi Janji', category: 'Coffee', distance: '0.3 km', rating: 4.4, activeDeals: 0, isFavorite: false},
-    ],
-    get favorites() {
+    allStores: {{ $favoriteStores->toJson() }},
+    favorites: JSON.parse(localStorage.getItem('favoriteStores') || '[]'),
+    init() {
+        this.allStores.forEach(store => {
+            store.isFavorite = this.favorites.includes(store.id);
+        });
+    },
+    get favoriteList() {
         return this.allStores.filter(s => s.isFavorite);
     },
     toggleFavorite(id) {
         const store = this.allStores.find(s => s.id === id);
-        if (store) store.isFavorite = !store.isFavorite;
+        if (store) {
+            store.isFavorite = !store.isFavorite;
+            if (store.isFavorite) {
+                if (!this.favorites.includes(id)) this.favorites.push(id);
+            } else {
+                this.favorites = this.favorites.filter(fid => fid !== id);
+            }
+            localStorage.setItem('favoriteStores', JSON.stringify(this.favorites));
+        }
     }
 }">
     <div>
@@ -117,10 +124,10 @@
             <button @click="openManage = true" class="text-sm font-semibold text-[#174413] hover:text-[#256020] transition-colors px-3 py-1 bg-green-50 rounded-md">Kelola</button>
         </div>
         <div class="divide-y divide-gray-50">
-            <template x-for="store in favorites" :key="store.id">
+            <template x-for="store in favoriteList" :key="store.id">
                 <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition cursor-pointer group">
                     <div class="flex-1">
-                        <div class="font-bold text-gray-900 text-lg" x-text="store.name"></div>
+                        <div class="font-bold text-gray-900 text-lg" x-text="store.displayName || store.name"></div>
                         <div class="text-sm text-gray-500 flex flex-wrap items-center gap-4 mt-2">
                             <span class="font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded text-xs" x-text="store.category"></span>
                             <span class="flex items-center gap-1">
@@ -143,7 +150,7 @@
                     </div>
                 </div>
             </template>
-            <div x-show="favorites.length === 0" class="p-10 text-center text-gray-500">
+            <div x-show="favoriteList.length === 0" class="p-10 text-center text-gray-500">
                 Belum ada toko favorit. Klik Kelola untuk menambah.
             </div>
         </div>
@@ -191,7 +198,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                                 </div>
                                 <div>
-                                    <div class="font-bold text-gray-900" x-text="store.name"></div>
+                                    <div class="font-bold text-gray-900" x-text="store.displayName || store.name"></div>
                                     <div class="text-sm text-gray-500" x-text="store.category + ' • ' + store.distance"></div>
                                 </div>
                             </div>

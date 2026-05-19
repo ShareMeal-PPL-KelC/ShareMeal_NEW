@@ -171,6 +171,7 @@
                                         Diklaim pada: <span x-text="donation.claimed_at"></span>
                                     </p>
                                     <p class="text-[11px] text-blue-600 mt-2 font-medium">Silakan hubungi mitra untuk koordinasi pengambilan donasi.</p>
+                                    <p class="text-[11px] text-green-600 mt-1 font-bold">Jadwal Ambil: <span x-text="donation.pickup_time_window"></span></p>
                                 </div>
                             </div>
                             
@@ -270,6 +271,22 @@
             },
             completedDonations() {
                 return this.donations.filter(d => d.status === 'completed');
+            },
+
+            init() {
+                this.$watch('activeTab', () => {
+                    setTimeout(() => {
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
+                    }, 50);
+                });
+            }
+        }))
+    });
+</script>
+@endsection
+donations.filter(d => d.status === 'completed');
             },
 
             init() {

@@ -10,13 +10,10 @@
                     <a href="#eksplorasi" class="text-sm font-medium text-slate-700 hover:text-[#174413]">Eksplorasi</a>
                     <a href="#fitur" class="text-sm font-medium text-slate-700 hover:text-[#174413]">Fitur</a>
                     <a href="#bergabung" class="text-sm font-medium text-slate-700 hover:text-[#174413]">Bergabung</a>
-                    <a href="{{ route('consumer.dashboard') }}" class="flex items-center gap-3 border-l border-slate-200 pl-6">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#174413] text-sm font-bold text-white">KS</div>
-                        <div>
-                            <div class="text-sm font-bold text-slate-900">Konsumen</div>
-                            <div class="text-xs text-slate-500">Dashboard</div>
-                        </div>
-                    </a>
+                    <div class="flex items-center gap-3 border-l border-slate-200 pl-6">
+                        <a href="{{ route('login') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#174413] transition">Masuk</a>
+                        <a href="{{ route('register') }}" class="rounded-xl bg-[#174413] px-4 py-2 text-sm font-semibold text-white hover:bg-green-900 transition">Daftar</a>
+                    </div>
                 </nav>
             </div>
         </header>

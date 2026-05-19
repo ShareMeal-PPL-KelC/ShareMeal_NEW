@@ -16,6 +16,9 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
+@php
+    $navUser = Auth::user() ?? \App\Models\User::with('profile')->find(session('sharemeal.current_user_id'));
+@endphp
 <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
     <!-- Top Navigation -->
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -102,19 +105,55 @@
                         </div>
                     </div>
 
-                    <div class="hidden md:block text-right">
-                        @if(Auth::check())
-                            <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
-                            <div class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</div>
-                        @endif
-                    </div>
-                    <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop" class="hidden md:flex">
-                        @csrf
-                        <button type="submit" class="flex items-center gap-2 border border-gray-300 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors">
-                            <i data-lucide="log-out" class="w-4 h-4"></i>
-                            Keluar
-                        </button>
-                    </form>
+                    @if($navUser)
+                        <div class="relative" x-data="{ open: false }">
+                            <button type="button"
+                                    @click="open = !open"
+                                    class="flex items-center gap-3 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-100 transition-colors"
+                                    :aria-expanded="open.toString()">
+                                <img src="{{ $navUser->image }}" alt="Foto profil {{ $navUser->name }}" class="h-9 w-9 rounded-full object-cover border border-green-100">
+                                <span class="hidden md:block text-right">
+                                    <span class="block text-sm font-medium text-gray-900 leading-tight">{{ $navUser->name }}</span>
+                                    <span class="block text-xs text-gray-500 capitalize leading-tight">{{ $navUser->role }}</span>
+                                </span>
+                                <i data-lucide="chevron-down" class="hidden md:block w-4 h-4 text-gray-400"></i>
+                            </button>
+
+                            <div x-show="open"
+                                 @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg z-50"
+                                 x-cloak>
+                                <div class="px-4 py-4 border-b border-gray-50">
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ $navUser->image }}" alt="Foto profil {{ $navUser->name }}" class="h-11 w-11 rounded-full object-cover border border-green-100">
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm font-bold text-gray-900">{{ $navUser->name }}</div>
+                                            <div class="truncate text-xs text-gray-500">{{ $navUser->email }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="py-2">
+                                    <a href="{{ $navUser->role === 'mitra' ? route('mitra.profile') : route('profile.edit') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors">
+                                        <i data-lucide="{{ $navUser->role === 'mitra' ? 'store' : 'user-round-cog' }}" class="w-4 h-4"></i>
+                                        {{ $navUser->role === 'mitra' ? 'Pengaturan Profil Usaha' : 'Pengaturan Profil' }}
+                                    </a>
+                                    <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop">
+                                        @csrf
+                                        <button type="submit" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                                            Keluar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <button class="md:hidden text-gray-600" @click="mobileMenuOpen = !mobileMenuOpen">
                         <i x-show="!mobileMenuOpen" data-lucide="menu" class="w-6 h-6"></i>
                         <i x-show="mobileMenuOpen" data-lucide="x" class="w-6 h-6"></i>
@@ -179,6 +218,10 @@
                             <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                                 <span>Pesanan</span>
+                            </a>
+                            <a href="{{ route('mitra.reviews') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.reviews') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="star" class="w-5 h-5"></i>
+                                <span>Ulasan</span>
                             </a>
                             <a href="{{ route('mitra.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="heart" class="w-5 h-5"></i>
@@ -254,6 +297,9 @@
                             </a>
                             <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Pesanan</span>
+                            </a>
+                            <a href="{{ route('mitra.reviews') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.reviews') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="star" class="w-5 h-5"></i><span>Ulasan</span>
                             </a>
                             <a href="{{ route('mitra.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="heart" class="w-5 h-5"></i><span>Donasi</span>
