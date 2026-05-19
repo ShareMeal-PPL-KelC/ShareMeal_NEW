@@ -30,16 +30,23 @@ class Order extends Model
         'status',
         'pickup_code',
         'pickup_time',
+        'pickup_start_time',
+        'pickup_end_time',
+        'receiving_method',
+        'delivery_fee',
+        'delivery_time_slot',
     ];
 
     protected $casts = [
         'pickup_time' => 'datetime',
+        'delivery_fee' => 'integer',
     ];
 
     protected $appends = [
         'total',
         'subtotal',
         'discount',
+        'savedAmount',
         'store',
         'storeAddress',
         'orderId',
@@ -50,8 +57,26 @@ class Order extends Model
         'time',
         'items_string',
         'orderTime',
-        'completedTime'
+        'completedTime',
+        'pickupTime',
+        'expires_at',
     ];
+
+    public function getExpiresAtAttribute()
+    {
+        if ($this->relationLoaded('items') && $this->items->count() > 0) {
+            $minExpiresAt = $this->items->min(function($item) {
+                return $item->product ? $item->product->expires_at : null;
+            });
+            
+            if ($minExpiresAt) {
+                return \Carbon\Carbon::parse($minExpiresAt);
+            }
+        }
+        
+        // Fallback if relation not loaded or no product data
+        return $this->created_at ? $this->created_at->addHours(2) : now()->addHours(2);
+    }
 
     public function getAmountAttribute()
     {
@@ -92,6 +117,19 @@ class Order extends Model
         return $this->attributes['pickup_code'] ?? '-';
     }
 
+    public function getPickupTimeAttribute()
+    {
+        if (!empty($this->attributes['pickup_start_time']) && !empty($this->attributes['pickup_end_time'])) {
+            return substr($this->attributes['pickup_start_time'], 0, 5) . ' - ' . substr($this->attributes['pickup_end_time'], 0, 5);
+        }
+
+        $pickupTime = $this->attributes['pickup_time'] ?? null;
+
+        return $pickupTime
+            ? \Carbon\Carbon::parse($pickupTime)->format('H:i')
+            : '-';
+    }
+
     public function getRatingAttribute()
     {
         return $this->reviewRelation ? $this->reviewRelation->rating : 0;
@@ -111,21 +149,29 @@ class Order extends Model
     {
         if ($this->relationLoaded('items')) {
             return $this->items->sum(function($item) {
-                $originalPrice = $item->product ? ($item->product->getRawOriginal('price') ?? $item->price) : $item->price;
-                return $originalPrice * $item->quantity;
+                $currentOriginalPrice = $item->product ? ($item->product->getRawOriginal('price') ?? $item->price) : $item->price;
+                $effectiveOriginalPrice = max((int) $currentOriginalPrice, (int) $item->price);
+
+                return $effectiveOriginalPrice * $item->quantity;
             });
         }
-        return $this->attributes['total_amount'] ?? 0;
+
+        return $this->getTotalAttribute();
     }
 
     public function getDiscountAttribute()
     {
-        return $this->getSubtotalAttribute() - $this->getTotalAttribute();
+        return max(0, $this->getSubtotalAttribute() - $this->getTotalAttribute());
+    }
+
+    public function getSavedAmountAttribute()
+    {
+        return $this->getTotalAttribute();
     }
 
     public function getStoreAttribute()
     {
-        return $this->mitra ? $this->mitra->name : 'Unknown Store';
+        return $this->mitra ? $this->mitra->displayName : 'Unknown Store';
     }
 
     public function getStoreAddressAttribute()

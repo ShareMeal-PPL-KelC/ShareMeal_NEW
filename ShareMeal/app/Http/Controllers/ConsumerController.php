@@ -8,33 +8,43 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Review;
+use App\Services\AutoDonationService;
 use Illuminate\Support\Str;
 
 class ConsumerController extends Controller
 {
     public function index()
     {
+        app(AutoDonationService::class)->processProducts();
+
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        $orders = Order::with('items')
+            ->where('customer_id', $userId)
+            ->get();
 
         $stats = (object) [
             'savedMeals' => OrderItem::whereHas('order', function($q) use ($userId) {
                 $q->where('customer_id', $userId)->where('status', 'completed');
             })->sum('quantity'),
-            'moneySaved' => 0, // Placeholder
+            'moneySaved' => $orders->sum('savedAmount'),
             'co2Reduced' => 6.5,
             'favoriteStores' => 8,
         ];
 
-        $flashSales = Product::with('user.profile')
+        $flashSales = Product::with(['user' => function($q) {
+                $q->withAvg('reviewsAsMitra', 'rating')->with('profile');
+            }])
             ->where('status', 'flash-sale')
             ->where('stock', '>', 0)
+            ->where('expires_at', '>', now())
             ->latest()
             ->take(3)
             ->get();
 
         $favoriteStores = User::where('role', 'mitra')
             ->with('profile')
-            ->take(3)
+            ->withAvg('reviewsAsMitra', 'rating')
             ->get();
 
         return view('consumer.dashboard', compact('stats', 'flashSales', 'favoriteStores'));
@@ -42,6 +52,8 @@ class ConsumerController extends Controller
 
     public function search(Request $request)
     {
+        app(AutoDonationService::class)->processProducts();
+
         $filters = collect([
             ['id' => "halal", 'label' => "Halal", 'icon' => "🕌"],
             ['id' => "bakery", 'label' => "Bakery", 'icon' => "🍞"],
@@ -49,9 +61,13 @@ class ConsumerController extends Controller
             ['id' => "indonesian", 'label' => "Indonesian", 'icon' => "🍜"],
         ])->map(fn($i) => (object)$i);
 
-        $storesQuery = User::where('role', 'mitra')->with(['profile', 'products' => function($q) {
-            $q->where('status', 'flash-sale')->where('stock', '>', 0);
-        }]);
+        $storesQuery = User::where('role', 'mitra')
+            ->with(['profile', 'products' => function($q) {
+                $q->whereIn('status', ['flash-sale', 'normal'])
+                    ->where('stock', '>', 0)
+                    ->where('expires_at', '>', now());
+            }])
+            ->withAvg('reviewsAsMitra', 'rating');
 
         if ($request->has('q')) {
             $storesQuery->where('name', 'like', '%' . $request->q . '%');
@@ -75,8 +91,12 @@ class ConsumerController extends Controller
 
     public function favorites()
     {
+        app(AutoDonationService::class)->processProducts();
+
         $stores = User::where('role', 'mitra')->with(['profile', 'products' => function($q) {
-            $q->where('status', 'flash-sale')->where('stock', '>', 0);
+            $q->where('status', 'flash-sale')
+                ->where('stock', '>', 0)
+                ->where('expires_at', '>', now());
         }])->get();
 
         return view('consumer.favorites', compact('stores'));
@@ -84,20 +104,47 @@ class ConsumerController extends Controller
 
     public function checkout(Request $request)
     {
+        app(AutoDonationService::class)->processProducts();
+
         $product = Product::with('user.profile')->findOrFail($request->product_id);
+
+        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || $product->expires_at->isPast()) {
+            return redirect()->route('consumer.search')->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.']);
+        }
+
+        $pickupStart = $product->pickup_start_time ?? '18:00';
+        $pickupEnd = $product->pickup_end_time ?? '20:00';
+
+        // Generate 30-min slots within window
+        $slots = [];
+        $start = \Carbon\Carbon::createFromFormat('H:i:s', $pickupStart);
+        $end = \Carbon\Carbon::createFromFormat('H:i:s', $pickupEnd);
+        
+        while ($start->lt($end)) {
+            $slotStart = $start->format('H:i');
+            $start->addMinutes(30);
+            if ($start->gt($end)) break;
+            $slotEnd = $start->format('H:i');
+            $slots[] = "$slotStart - $slotEnd";
+        }
 
         $booking = (object) [
             'id' => "BK-" . strtoupper(Str::random(6)),
-            'storeName' => $product->user->name,
+            'storeName' => $product->user->displayName,
             'dealItem' => $product->name,
             'quantity' => $request->quantity ?? 1,
             'price' => $product->discount_price > 0 ? $product->discount_price : $product->price,
             'status' => 'pending',
-            'pickupTime' => "18:00 - 20:00", // Default logic or get from store profile
+            'pickupTime' => $product->pickupTime,
+            'pickupStart' => $pickupStart,
+            'pickupEnd' => $pickupEnd,
             'distance' => "0.5 km",
-            'address' => $product->user->profile->address ?? 'Alamat tidak tersedia',
+            'address' => $product->user->profile?->business_address ?? $product->user->profile?->address ?? 'Alamat tidak tersedia',
             'product_id' => $product->id,
             'mitra_id' => $product->user_id,
+            'canDelivery' => (bool) ($product->user->profile?->can_delivery ?? false),
+            'deliveryFee' => (int) ($product->user->profile?->delivery_fee ?? 0),
+            'deliverySlots' => $slots,
         ];
 
         $paymentMethods = collect([
@@ -117,14 +164,46 @@ class ConsumerController extends Controller
             'mitra_id' => 'required|exists:users,id',
             'quantity' => 'required|integer|min:1',
             'price' => 'required|numeric',
+            'receiving_method' => 'required|in:pickup,delivery',
+            'delivery_time_slot' => 'required_if:receiving_method,delivery|string|nullable',
         ]);
+
+        $product = Product::findOrFail($request->product_id);
+        $mitra = User::with('profile')->findOrFail($request->mitra_id);
+
+        app(AutoDonationService::class)->processProducts($product->user_id);
+        $product->refresh();
+        
+        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->expires_at->isPast()) {
+            return back()->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.'])->withInput();
+        }
+
+        if ($product->stock < $request->quantity) {
+            return back()->withErrors(['quantity' => 'Stok produk tidak mencukupi.'])->withInput();
+        }
+
+        $receivingMethod = $request->receiving_method;
+        $deliveryFee = 0;
+        $deliveryTimeSlot = $request->delivery_time_slot;
+
+        if ($receivingMethod === 'delivery') {
+            if (!$mitra->profile || !$mitra->profile->can_delivery) {
+                return back()->withErrors(['receiving_method' => 'Mitra ini tidak menyediakan jasa pengiriman.'])->withInput();
+            }
+            $deliveryFee = $mitra->profile->delivery_fee;
+        }
 
         $order = Order::create([
             'customer_id' => Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1,
             'mitra_id' => $request->mitra_id,
-            'total_amount' => $request->price * $request->quantity,
+            'total_amount' => ($request->price * $request->quantity) + $deliveryFee,
             'status' => 'pending',
             'pickup_code' => 'PICK-' . strtoupper(Str::random(4)),
+            'pickup_start_time' => $product->pickup_start_time,
+            'pickup_end_time' => $product->pickup_end_time,
+            'receiving_method' => $receivingMethod,
+            'delivery_fee' => $deliveryFee,
+            'delivery_time_slot' => $deliveryTimeSlot,
         ]);
 
         OrderItem::create([
@@ -134,12 +213,74 @@ class ConsumerController extends Controller
             'price' => $request->price,
         ]);
 
+        $product->decrement('stock', $request->quantity);
+
         $mitra = User::find($request->mitra_id);
         if ($mitra) {
             $mitra->notify(new \App\Notifications\IncomingOrderNotification($order));
         }
 
         return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
+    }
+
+    public function submitReview(Request $request)
+    {
+        $data = $request->validate([
+            'order_id' => ['required', 'exists:orders,id'],
+            'rating' => ['required', 'numeric', 'min:1', 'max:5'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        $order = Order::where('id', $data['order_id'])
+            ->where('customer_id', $userId)
+            ->firstOrFail();
+
+        // Prevent multiple reviews for the same order
+        if ($order->reviewRelation) {
+            return back()->with('error', 'Anda sudah memberikan ulasan untuk pesanan ini.');
+        }
+
+        Review::create([
+            'order_id' => $order->id,
+            'customer_id' => $userId,
+            'mitra_id' => $order->mitra_id,
+            'rating' => $data['rating'],
+            'comment' => $data['comment'],
+        ]);
+
+        return back()->with('success', 'Terima kasih atas ulasan Anda!');
+    }
+
+    public function updateReview(Request $request, Review $review)
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        
+        if ($review->customer_id !== $userId) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah ulasan ini.');
+        }
+
+        $data = $request->validate([
+            'rating' => ['required', 'numeric', 'min:1', 'max:5'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $review->update($data);
+
+        return back()->with('success', 'Ulasan Anda berhasil diperbarui.');
+    }
+
+    public function deleteReview(Review $review)
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+
+        if ($review->customer_id !== $userId) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus ulasan ini.');
+        }
+
+        $review->delete();
+
+        return back()->with('success', 'Ulasan Anda telah dihapus.');
     }
 
     public function education()
