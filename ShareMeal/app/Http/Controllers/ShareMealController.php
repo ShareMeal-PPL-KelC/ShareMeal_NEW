@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\Donation;
+use App\Models\Review;
 use App\Services\AutoDonationService;
 use App\Support\ShareMealState;
 use Carbon\Carbon;
@@ -13,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ShareMealController extends Controller
@@ -82,6 +84,9 @@ class ShareMealController extends Controller
 
     public function landing(): View
     {
+        Auth::logout();
+        ShareMealState::logout();
+
         return view('pages.landing');
     }
 
@@ -192,6 +197,150 @@ class ShareMealController extends Controller
             Auth::user()->unreadNotifications->markAsRead();
         }
         return back();
+    }
+
+    public function editProfile(): View|RedirectResponse
+    {
+        $user = Auth::user()?->load('profile');
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login untuk mengelola profil.');
+        }
+
+        return view('pages.profile.edit', [
+            'user' => $user,
+            'profile' => $user->profile,
+        ]);
+    }
+
+    protected function normalizePhone(?string $phone): ?string
+    {
+        return $phone === null ? null : preg_replace('/\D+/', '', $phone);
+    }
+
+    protected function profilePhoneOtpSessionKey(int $userId): string
+    {
+        return 'profile_phone_otp.' . $userId;
+    }
+
+    protected function businessContactOtpSessionKey(int $userId): string
+    {
+        return 'business_contact_otp.' . $userId;
+    }
+
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $user = Auth::user()?->load('profile');
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login untuk mengelola profil.');
+        }
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s]+$/u'],
+            'phone' => ['required', 'string', 'regex:/^(08|62)\d{8,13}$/'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ], [
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
+            'phone.required' => 'Nomor telepon wajib diisi.',
+            'phone.regex' => 'Nomor telepon harus berupa angka valid dengan awalan 08 atau 62 dan panjang 10-15 digit.',
+            'avatar.image' => 'Foto profil harus berupa gambar.',
+            'avatar.mimes' => 'Foto profil harus berformat JPG, JPEG, atau PNG.',
+            'avatar.max' => 'Ukuran foto profil maksimal 2 MB.',
+        ]);
+
+        $phone = $this->normalizePhone($data['phone'] ?? null);
+        $profile = $user->profile ?: $user->profile()->create([]);
+        $currentPhone = $this->normalizePhone($profile->phone ?? $user->phone);
+        $phoneChanged = $phone !== $currentPhone;
+
+        if ($phoneChanged && $profile->phone_change_available_at && $profile->phone_change_available_at->isFuture()) {
+            return back()
+                ->withErrors(['phone' => 'Nomor telepon baru bisa diganti lagi pada ' . $profile->phone_change_available_at->format('H:i:s') . '.'])
+                ->withInput();
+        }
+
+        $profileData = [
+            'address' => $data['address'] ?? null,
+        ];
+
+        if ($request->hasFile('avatar')) {
+            $oldAvatar = $user->profile?->avatar;
+            $profileData['avatar'] = $request->file('avatar')->store('avatars', 'public');
+
+            if ($oldAvatar && !str_starts_with($oldAvatar, 'http://') && !str_starts_with($oldAvatar, 'https://')) {
+                Storage::disk('public')->delete($oldAvatar);
+            }
+        }
+
+        if ($phoneChanged) {
+            $otp = (string) random_int(100000, 999999);
+            $profileData['pending_phone'] = $phone;
+            $profileData['phone_otp_hash'] = Hash::make($otp);
+            $profileData['phone_otp_expires_at'] = now()->addMinutes(5);
+            $request->session()->put($this->profilePhoneOtpSessionKey($user->id), $otp);
+        }
+
+        $user->update(['name' => $data['name']]);
+        $profile->update($profileData);
+
+        ShareMealState::login($user->id);
+
+        if ($phoneChanged) {
+            return back()
+                ->with('success', 'Profil berhasil diperbarui. Masukkan kode OTP untuk memverifikasi nomor telepon baru.');
+        }
+
+        return back()->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    public function verifyProfilePhone(Request $request): RedirectResponse
+    {
+        $user = Auth::user()?->load('profile');
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login untuk mengelola profil.');
+        }
+
+        $data = $request->validate([
+            'otp' => ['required', 'digits:6'],
+        ], [
+            'otp.required' => 'Kode OTP wajib diisi.',
+            'otp.digits' => 'Kode OTP harus 6 digit angka.',
+        ]);
+
+        $profile = $user->profile;
+
+        if (!$profile || !$profile->pending_phone || !$profile->phone_otp_hash) {
+            return back()->with('error', 'Tidak ada nomor telepon yang menunggu verifikasi.');
+        }
+
+        if (!$profile->phone_otp_expires_at || $profile->phone_otp_expires_at->isPast()) {
+            $request->session()->forget($this->profilePhoneOtpSessionKey($user->id));
+            return back()->with('error', 'Kode OTP sudah kedaluwarsa. Simpan ulang profil untuk meminta kode baru.');
+        }
+
+        if (!Hash::check($data['otp'], $profile->phone_otp_hash)) {
+            return back()->withErrors(['otp' => 'Kode OTP tidak sesuai.']);
+        }
+
+        $phone = $profile->pending_phone;
+
+        $user->update(['phone' => $phone]);
+        $profile->update([
+            'phone' => $phone,
+            'pending_phone' => null,
+            'phone_otp_hash' => null,
+            'phone_otp_expires_at' => null,
+            'phone_verified_at' => now(),
+            'phone_change_available_at' => now()->addMinute(),
+        ]);
+
+        $request->session()->forget($this->profilePhoneOtpSessionKey($user->id));
+        ShareMealState::login($user->id);
+
+        return back()->with('success', 'Nomor telepon berhasil diverifikasi.');
     }
 
     public function uploadBusinessDocument(Request $request): RedirectResponse
@@ -395,8 +544,9 @@ class ShareMealController extends Controller
         app(AutoDonationService::class)->processProducts($userId);
 
         $products = Product::where('user_id', $userId)->get();
-        $donations = Donation::where('mitra_id', $userId)->get();
-        $orders = \App\Models\Order::with('items')->where('mitra_id', $userId)->get();
+        $donationsCount = Donation::where('mitra_id', $userId)->count();
+        $orders = \App\Models\Order::where('mitra_id', $userId)->get();
+        $reviews = Review::where('mitra_id', $userId)->get();
 
         $stats = (object) [
             'totalProducts' => $products->count(),
@@ -404,16 +554,22 @@ class ShareMealController extends Controller
             'expiredProducts' => $products->where('status', 'expired')->count(),
             'pendingOrders' => $orders->where('status', 'pending')->count(),
             'totalRevenue' => $orders->where('status', 'completed')->sum('total_amount'),
-            'foodSaved' => $orders->where('status', 'completed')->sum(function($order) {
-                return $order->items->sum('quantity');
-            }),
-            'donationsGiven' => $donations->count(),
+            'foodSaved' => \App\Models\OrderItem::whereIn('order_id', $orders->where('status', 'completed')->pluck('id'))->sum('quantity'),
+            'donationsGiven' => $donationsCount,
+            'averageRating' => round($reviews->avg('rating') ?? 0, 1),
+            'totalReviews' => $reviews->count(),
         ];
 
         $recentOrders = \App\Models\Order::with(['customer', 'items.product'])
             ->where('mitra_id', $userId)
             ->latest()
             ->take(5)
+            ->get();
+
+        $recentReviews = Review::with(['customer', 'order'])
+            ->where('mitra_id', $userId)
+            ->latest()
+            ->take(3)
             ->get();
 
         $expiringItems = Product::where('user_id', $userId)
@@ -424,7 +580,168 @@ class ShareMealController extends Controller
             ->take(5)
             ->get();
 
-        return view('pages.mitra.dashboard', compact('stats', 'recentOrders', 'expiringItems'));
+        return view('pages.mitra.dashboard', compact('stats', 'recentOrders', 'expiringItems', 'recentReviews'));
+    }
+
+    public function editMitraBusinessProfile(): View|RedirectResponse
+    {
+        $user = Auth::user()?->load('profile');
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login untuk mengelola profil usaha.');
+        }
+
+        if ($user->role !== 'mitra') {
+            return redirect()->route($user->role . '.dashboard')->with('error', 'Profil usaha hanya tersedia untuk mitra.');
+        }
+
+        return view('pages.mitra.profile', [
+            'user' => $user,
+            'profile' => $user->profile,
+        ]);
+    }
+
+    public function updateMitraBusinessProfile(Request $request): RedirectResponse
+    {
+        $user = Auth::user()?->load('profile');
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login untuk mengelola profil usaha.');
+        }
+
+        if ($user->role !== 'mitra') {
+            return redirect()->route($user->role . '.dashboard')->with('error', 'Profil usaha hanya tersedia untuk mitra.');
+        }
+
+        $data = $request->validate([
+            'business_name' => ['required', 'string', 'max:255'],
+            'business_type' => ['required', 'string', 'max:100'],
+            'business_address' => ['required', 'string', 'max:1000'],
+            'business_contact' => ['required', 'string', 'regex:/^(08|62)\d{8,13}$/'],
+            'opening_start' => ['required', 'date_format:H:i'],
+            'opening_end' => ['required', 'date_format:H:i', 'after:opening_start'],
+            'business_description' => ['required', 'string', 'max:1000'],
+            'store_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'can_delivery' => ['nullable', 'boolean'],
+            'delivery_fee' => ['nullable', 'required_if:can_delivery,1', 'integer', 'min:0'],
+        ], [
+            'business_name.required' => 'Nama usaha wajib diisi.',
+            'business_type.required' => 'Kategori usaha wajib diisi.',
+            'business_address.required' => 'Alamat usaha wajib diisi.',
+            'business_contact.required' => 'Kontak usaha wajib diisi.',
+            'business_contact.regex' => 'Kontak usaha harus berupa angka valid dengan awalan 08 atau 62 dan panjang 10-15 digit.',
+            'opening_start.required' => 'Jam buka wajib diisi.',
+            'opening_end.required' => 'Jam tutup wajib diisi.',
+            'opening_end.after' => 'Jam tutup harus lebih akhir dari jam buka.',
+            'business_description.required' => 'Deskripsi usaha wajib diisi.',
+            'store_image.image' => 'Gambar toko harus berupa gambar.',
+            'store_image.mimes' => 'Gambar toko harus berformat JPG, JPEG, atau PNG.',
+            'store_image.max' => 'Ukuran gambar toko maksimal 2 MB.',
+            'delivery_fee.required_if' => 'Biaya ongkir wajib diisi jika jasa kirim diaktifkan.',
+        ]);
+
+        $openingHours = $data['opening_start'] . ' - ' . $data['opening_end'];
+        $profile = $user->profile ?: $user->profile()->create([]);
+        $businessContact = $this->normalizePhone($data['business_contact']);
+        $currentBusinessContact = $this->normalizePhone($profile->business_contact);
+        $businessContactChanged = $businessContact !== $currentBusinessContact;
+
+        if ($businessContactChanged && $profile->business_contact_change_available_at && $profile->business_contact_change_available_at->isFuture()) {
+            return back()
+                ->withErrors(['business_contact' => 'Kontak usaha baru bisa diganti lagi pada ' . $profile->business_contact_change_available_at->format('H:i:s') . '.'])
+                ->withInput();
+        }
+
+        $profileData = [
+            'business_name' => $data['business_name'],
+            'business_type' => $data['business_type'],
+            'business_address' => $data['business_address'],
+            'business_opening_hours' => $openingHours,
+            'business_description' => $data['business_description'],
+            'opening_hours' => $openingHours,
+            'description' => $data['business_description'],
+            'can_delivery' => (bool) ($data['can_delivery'] ?? false),
+            'delivery_fee' => (int) ($data['delivery_fee'] ?? 0),
+        ];
+
+        if ($businessContactChanged) {
+            $otp = (string) random_int(100000, 999999);
+            $profileData['business_pending_contact'] = $businessContact;
+            $profileData['business_contact_otp_hash'] = Hash::make($otp);
+            $profileData['business_contact_otp_expires_at'] = now()->addMinutes(5);
+            $request->session()->put($this->businessContactOtpSessionKey($user->id), $otp);
+        } else {
+            $profileData['business_contact'] = $businessContact;
+        }
+
+        if ($request->hasFile('store_image')) {
+            $oldImage = $profile->avatar;
+            $profileData['avatar'] = $request->file('store_image')->store('stores', 'public');
+
+            if ($oldImage && !str_starts_with($oldImage, 'http://') && !str_starts_with($oldImage, 'https://')) {
+                Storage::disk('public')->delete($oldImage);
+            }
+        }
+
+        $user->update([
+            'organization_name' => $data['business_name'],
+        ]);
+
+        $profile->update($profileData);
+
+        if ($businessContactChanged) {
+            return back()->with('success', 'Profil usaha berhasil diperbarui. Masukkan kode OTP untuk memverifikasi kontak usaha baru.');
+        }
+
+        return back()->with('success', 'Profil usaha berhasil diperbarui.');
+    }
+
+    public function verifyMitraBusinessContact(Request $request): RedirectResponse
+    {
+        $user = Auth::user()?->load('profile');
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login untuk mengelola profil usaha.');
+        }
+
+        if ($user->role !== 'mitra') {
+            return redirect()->route($user->role . '.dashboard')->with('error', 'Profil usaha hanya tersedia untuk mitra.');
+        }
+
+        $data = $request->validate([
+            'otp' => ['required', 'digits:6'],
+        ], [
+            'otp.required' => 'Kode OTP wajib diisi.',
+            'otp.digits' => 'Kode OTP harus 6 digit angka.',
+        ]);
+
+        $profile = $user->profile;
+
+        if (!$profile || !$profile->business_pending_contact || !$profile->business_contact_otp_hash) {
+            return back()->with('error', 'Tidak ada kontak usaha yang menunggu verifikasi.');
+        }
+
+        if (!$profile->business_contact_otp_expires_at || $profile->business_contact_otp_expires_at->isPast()) {
+            $request->session()->forget($this->businessContactOtpSessionKey($user->id));
+            return back()->with('error', 'Kode OTP sudah kedaluwarsa. Simpan ulang profil usaha untuk meminta kode baru.');
+        }
+
+        if (!Hash::check($data['otp'], $profile->business_contact_otp_hash)) {
+            return back()->withErrors(['otp' => 'Kode OTP tidak sesuai.']);
+        }
+
+        $profile->update([
+            'business_contact' => $profile->business_pending_contact,
+            'business_pending_contact' => null,
+            'business_contact_otp_hash' => null,
+            'business_contact_otp_expires_at' => null,
+            'business_contact_verified_at' => now(),
+            'business_contact_change_available_at' => now()->addMinute(),
+        ]);
+
+        $request->session()->forget($this->businessContactOtpSessionKey($user->id));
+
+        return back()->with('success', 'Kontak usaha berhasil diverifikasi.');
     }
 
     public function mitraInventory(): View
@@ -432,14 +749,23 @@ class ShareMealController extends Controller
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         app(AutoDonationService::class)->processProducts($userId);
 
-        $products = Product::where('user_id', $userId)->get()->map(function (Product $product) {
-            $expiresAt = $product->expires_at?->copy()->timezone(config('app.timezone'));
+        $products = Product::with(['user' => function($q) {
+                $q->withAvg('reviewsAsMitra', 'rating')
+                  ->withCount('reviewsAsMitra')
+                  ->with('profile');
+            }])
+            ->where('user_id', $userId)
+            ->get()
+            ->map(function (Product $product) {
+                $expiresAt = $product->expires_at?->copy()->timezone(config('app.timezone'));
 
-            $product->expires_at_input = $expiresAt?->format('Y-m-d\TH:i');
-            $product->expires_at_display = $expiresAt?->format('d/m/Y H:i');
+                $product->expires_at_input = $expiresAt?->format('Y-m-d\TH:i');
+                $product->expires_at_display = $expiresAt?->format('d/m/Y H:i');
+                $product->pickup_start_time_input = $product->pickup_start_time ? substr((string) $product->pickup_start_time, 0, 5) : '';
+                $product->pickup_end_time_input = $product->pickup_end_time ? substr((string) $product->pickup_end_time, 0, 5) : '';
 
-            return $product;
-        });
+                return $product;
+            });
 
         return view('pages.mitra.inventory', compact('products'));
     }
@@ -453,9 +779,30 @@ class ShareMealController extends Controller
             'discount_price' => ['nullable', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'expires_at' => ['required', 'date_format:Y-m-d\TH:i'],
+            'pickup_start_time' => ['required', 'date_format:H:i'],
+            'pickup_end_time' => ['required', 'date_format:H:i', 'after:pickup_start_time'],
             'status' => ['required', 'string', 'in:normal,flash-sale,donation,expired'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ], [
+            'pickup_start_time.required' => 'Jam mulai pengambilan wajib diisi.',
+            'pickup_end_time.required' => 'Jam akhir pengambilan wajib diisi.',
+            'pickup_end_time.after' => 'Jam akhir pengambilan harus lebih akhir dari jam mulai.',
         ]);
+
+        $user = Auth::user()?->load('profile');
+        $profile = $user->profile;
+        
+        $openingHours = $profile?->business_opening_hours ?? $profile?->opening_hours;
+        if ($openingHours && str_contains($openingHours, ' - ')) {
+            [$opStart, $opEnd] = explode(' - ', $openingHours, 2);
+            
+            if ($data['pickup_start_time'] < $opStart || $data['pickup_start_time'] > $opEnd) {
+                return back()->withErrors(['pickup_start_time' => "Jam mulai pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
+            }
+            if ($data['pickup_end_time'] > $opEnd) {
+                return back()->withErrors(['pickup_end_time' => "Jam akhir pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
+            }
+        }
 
         $expiresAt = $this->parseLocalDateTime($data['expires_at']);
 
@@ -467,6 +814,8 @@ class ShareMealController extends Controller
             'discount_price' => $data['discount_price'] ?? 0,
             'stock' => $data['stock'],
             'expires_at' => $expiresAt,
+            'pickup_start_time' => $data['pickup_start_time'],
+            'pickup_end_time' => $data['pickup_end_time'],
             'status' => $data['status'],
             'image' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080',
         ]);
@@ -497,9 +846,30 @@ class ShareMealController extends Controller
             'discount_price' => ['nullable', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'expires_at' => ['required', 'date_format:Y-m-d\TH:i'],
+            'pickup_start_time' => ['required', 'date_format:H:i'],
+            'pickup_end_time' => ['required', 'date_format:H:i', 'after:pickup_start_time'],
             'status' => ['required', 'string', 'in:normal,flash-sale,donation,expired'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ], [
+            'pickup_start_time.required' => 'Jam mulai pengambilan wajib diisi.',
+            'pickup_end_time.required' => 'Jam akhir pengambilan wajib diisi.',
+            'pickup_end_time.after' => 'Jam akhir pengambilan harus lebih akhir dari jam mulai.',
         ]);
+
+        $user = Auth::user()?->load('profile');
+        $profile = $user->profile;
+        
+        $openingHours = $profile?->business_opening_hours ?? $profile?->opening_hours;
+        if ($openingHours && str_contains($openingHours, ' - ')) {
+            [$opStart, $opEnd] = explode(' - ', $openingHours, 2);
+            
+            if ($data['pickup_start_time'] < $opStart || $data['pickup_start_time'] > $opEnd) {
+                return back()->withErrors(['pickup_start_time' => "Jam mulai pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
+            }
+            if ($data['pickup_end_time'] > $opEnd) {
+                return back()->withErrors(['pickup_end_time' => "Jam akhir pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
+            }
+        }
 
         $wasNotFlashSale = $product->getOriginal('status') !== 'flash-sale';
         $expiresAt = $this->parseLocalDateTime($data['expires_at']);
@@ -511,6 +881,8 @@ class ShareMealController extends Controller
             'discount_price' => $data['discount_price'] ?? 0,
             'stock' => $data['stock'],
             'expires_at' => $expiresAt,
+            'pickup_start_time' => $data['pickup_start_time'],
+            'pickup_end_time' => $data['pickup_end_time'],
             'status' => $data['status'],
         ]);
 
@@ -558,6 +930,19 @@ class ShareMealController extends Controller
         return back()->with('success', 'Flash sale diaktifkan.');
     }
 
+    public function mitraInventoryToggleDonation(int $productId): RedirectResponse
+    {
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        $product = Product::where('user_id', $userId)->findOrFail($productId);
+
+        $product->update([
+            'donatable' => !$product->donatable,
+        ]);
+
+        $status = $product->donatable ? 'diaktifkan' : 'dinonaktifkan';
+        return back()->with('success', 'Donasi otomatis untuk "' . $product->name . '" berhasil ' . $status . '.');
+    }
+
     public function mitraDonationStore(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -565,8 +950,29 @@ class ShareMealController extends Controller
             'quantity' => ['required', 'integer', 'min:1'],
             'unit' => ['required', 'string'],
             'expires_at' => ['required', 'date'],
+            'pickup_start_time' => ['required', 'date_format:H:i'],
+            'pickup_end_time' => ['required', 'date_format:H:i', 'after:pickup_start_time'],
             'description' => ['nullable', 'string'],
+        ], [
+            'pickup_start_time.required' => 'Jam mulai pengambilan wajib diisi.',
+            'pickup_end_time.required' => 'Jam akhir pengambilan wajib diisi.',
+            'pickup_end_time.after' => 'Jam akhir pengambilan harus lebih akhir dari jam mulai.',
         ]);
+
+        $user = Auth::user()?->load('profile');
+        $profile = $user->profile;
+        
+        $openingHours = $profile?->business_opening_hours ?? $profile?->opening_hours;
+        if ($openingHours && str_contains($openingHours, ' - ')) {
+            [$opStart, $opEnd] = explode(' - ', $openingHours, 2);
+            
+            if ($data['pickup_start_time'] < $opStart || $data['pickup_start_time'] > $opEnd) {
+                return back()->withErrors(['pickup_start_time' => "Jam mulai pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
+            }
+            if ($data['pickup_end_time'] > $opEnd) {
+                return back()->withErrors(['pickup_end_time' => "Jam akhir pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
+            }
+        }
 
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
 
@@ -576,6 +982,8 @@ class ShareMealController extends Controller
             'quantity' => $data['quantity'],
             'unit' => $data['unit'],
             'expires_at' => $data['expires_at'],
+            'pickup_start_time' => $data['pickup_start_time'],
+            'pickup_end_time' => $data['pickup_end_time'],
             'description' => $data['description'],
             'status' => 'pending',
         ]);
@@ -618,12 +1026,45 @@ class ShareMealController extends Controller
     public function mitraOrders(): View
     {
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
-        $orders = \App\Models\Order::with(['customer', 'items.product'])
+        $orders = \App\Models\Order::with(['customer', 'items.product', 'reviewRelation'])
             ->where('mitra_id', $userId)
             ->latest()
             ->get();
 
         return view('pages.mitra.orders', compact('orders'));
+    }
+
+    public function mitraReviews(): View
+    {
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        $reviews = Review::with(['customer', 'order.items.product'])
+            ->where('mitra_id', $userId)
+            ->latest()
+            ->paginate(10);
+
+        return view('pages.mitra.reviews', compact('reviews'));
+    }
+
+    public function updateOrderStatus(Request $request, int $orderId): JsonResponse|RedirectResponse
+    {
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
+
+        $request->validate([
+            'status' => ['required', 'in:pending,ready,shipping,completed,cancelled'],
+        ]);
+
+        $order->update(['status' => $request->status]);
+
+        if ($request->wantsJson() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'status' => $order->status,
+                'completed_time' => $order->completedTime,
+            ]);
+        }
+
+        return back()->with('success', 'Status pesanan berhasil diperbarui.');
     }
 
     public function mitraOrdersConfirm(int $orderId): JsonResponse|RedirectResponse
@@ -632,8 +1073,16 @@ class ShareMealController extends Controller
         $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
         $order->update(['status' => 'completed']);
 
-        if (request()->expectsJson()) {
-            return response()->json(['success' => true]);
+        // Send notification to consumer (Diva's PBI #43)
+        if ($order->customer) {
+            $order->customer->notify(new \App\Notifications\OrderStatusUpdated($order));
+        }
+
+        if (request()->wantsJson() || request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'completed_time' => $order->completedTime,
+            ]);
         }
         return back()->with('success', 'Pesanan dikonfirmasi sebagai sudah diambil.');
     }
@@ -866,6 +1315,24 @@ class ShareMealController extends Controller
             'transactions' => $transactions,
             'stats' => $stats,
             'page' => $page
+        ]);
+    }
+
+    public function adminReviews(): View
+    {
+        $reviews = Review::with(['customer', 'mitra.profile', 'order.items.product'])
+            ->latest()
+            ->paginate(15);
+
+        $stats = [
+            'total_reviews' => Review::count(),
+            'avg_rating' => round(Review::avg('rating'), 1) ?: 0,
+            'recent_reviews_count' => Review::where('created_at', '>=', now()->subDays(7))->count(),
+        ];
+
+        return view('pages.admin.reviews', $this->dashboardData('admin', 'Pemantauan Ulasan', 'Pantau kualitas layanan mitra melalui ulasan konsumen') + [
+            'reviews' => $reviews,
+            'stats' => $stats,
         ]);
     }
 
