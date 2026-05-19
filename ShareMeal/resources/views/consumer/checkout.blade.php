@@ -11,6 +11,9 @@
         setInterval(() => {
             if (this.countdown > 0 && !this.paymentComplete) {
                 this.countdown--;
+                if (this.countdown === 0) {
+                    window.location.href = '{{ route('consumer.dashboard') }}';
+                }
             }
         }, 1000);
     },
