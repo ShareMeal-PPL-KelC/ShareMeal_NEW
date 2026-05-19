@@ -1073,6 +1073,11 @@ class ShareMealController extends Controller
         $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
         $order->update(['status' => 'completed']);
 
+        // Send notification to consumer (Diva's PBI #43)
+        if ($order->customer) {
+            $order->customer->notify(new \App\Notifications\OrderStatusUpdated($order));
+        }
+
         if (request()->wantsJson() || request()->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -1310,6 +1315,24 @@ class ShareMealController extends Controller
             'transactions' => $transactions,
             'stats' => $stats,
             'page' => $page
+        ]);
+    }
+
+    public function adminReviews(): View
+    {
+        $reviews = Review::with(['customer', 'mitra.profile', 'order.items.product'])
+            ->latest()
+            ->paginate(15);
+
+        $stats = [
+            'total_reviews' => Review::count(),
+            'avg_rating' => round(Review::avg('rating'), 1) ?: 0,
+            'recent_reviews_count' => Review::where('created_at', '>=', now()->subDays(7))->count(),
+        ];
+
+        return view('pages.admin.reviews', $this->dashboardData('admin', 'Pemantauan Ulasan', 'Pantau kualitas layanan mitra melalui ulasan konsumen') + [
+            'reviews' => $reviews,
+            'stats' => $stats,
         ]);
     }
 

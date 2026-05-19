@@ -64,6 +64,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/verification/{applicationId}/approve', [ShareMealController::class, 'adminApproveApplication'])->name('verification.approve');
     Route::post('/verification/{applicationId}/reject', [ShareMealController::class, 'adminRejectApplication'])->name('verification.reject');
     Route::get('/users', [ShareMealController::class, 'adminUsers'])->name('users');
+    Route::get('/reviews', [ShareMealController::class, 'adminReviews'])->name('reviews');
     Route::post('/users/{userId}/warn', [ShareMealController::class, 'adminWarnUser'])->name('users.warn');
     Route::post('/users/{userId}/block', [ShareMealController::class, 'adminBlockUser'])->name('users.block');
     Route::post('/users/{userId}/unblock', [ShareMealController::class, 'adminUnblockUser'])->name('users.unblock');
