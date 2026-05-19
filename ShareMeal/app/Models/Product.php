@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Product extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'name',
@@ -15,7 +18,10 @@ class Product extends Model
         'discount_price',
         'stock',
         'expires_at',
+        'pickup_start_time',
+        'pickup_end_time',
         'status',
+        'donatable',
         'image',
     ];
 
@@ -33,6 +39,7 @@ class Product extends Model
         'store',
         'distance',
         'rating',
+        'pickupTime',
         ];
 
         public function getItemAttribute()
@@ -42,7 +49,7 @@ class Product extends Model
 
         public function getStoreAttribute()
         {
-        return $this->user ? $this->user->name : 'Unknown Store';
+        return $this->user ? $this->user->displayName : 'Unknown Store';
         }
 
         public function getDistanceAttribute()
@@ -98,6 +105,14 @@ class Product extends Model
             return $this->expires_at->diffForHumans();
         }
         return '2 jam';
+        }
+
+        public function getPickupTimeAttribute()
+        {
+        if (!empty($this->attributes['pickup_start_time']) && !empty($this->attributes['pickup_end_time'])) {
+            return substr($this->attributes['pickup_start_time'], 0, 5) . ' - ' . substr($this->attributes['pickup_end_time'], 0, 5);
+        }
+        return 'Belum ditentukan';
         }
     public function user(): BelongsTo
     {
