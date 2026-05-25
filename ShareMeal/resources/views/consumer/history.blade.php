@@ -4,10 +4,23 @@
 <div class="space-y-6" x-data="{
     isReviewDialogOpen: false,
     selectedOrderId: null,
+    editingReviewId: null,
+    isEditMode: false,
     rating: 0,
     review: '',
     openReviewModal(id) {
+        this.isEditMode = false;
         this.selectedOrderId = id;
+        this.editingReviewId = null;
+        this.rating = 0;
+        this.review = '';
+        this.isReviewDialogOpen = true;
+    },
+    openEditReviewModal(reviewId, currentRating, currentComment) {
+        this.isEditMode = true;
+        this.editingReviewId = reviewId;
+        this.rating = currentRating;
+        this.review = currentComment;
         this.isReviewDialogOpen = true;
     },
     submitReview() {
@@ -15,10 +28,7 @@
             alert('Pilih rating terlebih dahulu');
             return;
         }
-        alert('Review untuk ' + this.selectedOrderId + ' berhasil dikirim!');
-        this.isReviewDialogOpen = false;
-        this.rating = 0;
-        this.review = '';
+        // This method is now handled by standard form submission
     },
     isReceiptDialogOpen: false,
     receiptData: null,
@@ -196,7 +206,23 @@
                             @endfor
                         </div>
                         <div class="flex-1">
-                            <div class="text-xs font-black uppercase text-yellow-700 mb-1">Rating Anda</div>
+                            <div class="flex items-center justify-between mb-1">
+                                <div class="text-xs font-black uppercase text-yellow-700">Rating Anda</div>
+                                <div class="flex items-center gap-3">
+                                    <button @click="openEditReviewModal(@js($t->reviewRelation->id), @js($t->rating), @js($t->review))" class="text-blue-600 hover:text-blue-800 text-[10px] font-black uppercase flex items-center gap-1">
+                                        <i data-lucide="edit-3" class="w-3 h-3"></i>
+                                        Edit
+                                    </button>
+                                    <form action="{{ route('consumer.review.delete', $t->reviewRelation->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ulasan ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-800 text-[10px] font-black uppercase flex items-center gap-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                             @if($t->review)
                             <p class="text-sm text-gray-700 italic font-medium">"{{ $t->review }}"</p>
                             @endif
@@ -249,8 +275,11 @@
                 <p class="text-gray-500 text-sm mt-1">Bagikan pengalaman belanja Anda</p>
             </div>
 
-            <form action="{{ route('consumer.review.submit') }}" method="POST" class="space-y-4">
+            <form :action="isEditMode ? '{{ url('/consumer/review') }}/' + editingReviewId : '{{ route('consumer.review.submit') }}'" method="POST" class="space-y-4">
                 @csrf
+                <template x-if="isEditMode">
+                    <input type="hidden" name="_method" value="PUT">
+                </template>
                 <input type="hidden" name="order_id" :value="selectedOrderId">
                 <input type="hidden" name="rating" :value="rating">
 
@@ -274,7 +303,7 @@
 
                 <div class="pt-4 flex gap-3">
                     <button type="button" @click="isReviewDialogOpen = false" class="flex-1 border border-gray-100 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 transition">Batal</button>
-                    <button type="submit" :disabled="rating === 0" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Kirim Review</button>
+                    <button type="submit" :disabled="rating === 0" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed" x-text="isEditMode ? 'Update Review' : 'Kirim Review'"></button>
                 </div>
             </form>
         </div>
