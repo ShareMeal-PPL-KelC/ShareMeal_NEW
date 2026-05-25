@@ -21,6 +21,7 @@ class Product extends Model
         'pickup_start_time',
         'pickup_end_time',
         'status',
+        'donatable',
         'image',
     ];
 

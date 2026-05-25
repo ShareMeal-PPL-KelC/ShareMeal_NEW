@@ -41,8 +41,18 @@
         setTimeout(() => {
             this.isReceiptDialogOpen = false;
         }, 500);
+    },
+    isReportDialogOpen: false,
+    selectedOrderForReport: null,
+    issueType: '',
+    description: '',
+    openReportModal(order) {
+        this.selectedOrderForReport = order;
+        this.issueType = 'bad_quality';
+        this.description = '';
+        this.isReportDialogOpen = true;
     }
-}">
+}">,old_string:
     <div>
         <h1 class="text-3xl font-bold text-gray-900">Riwayat Transaksi</h1>
         <p class="text-gray-600 mt-1">Pantau status pesanan dan berikan ulasan Anda</p>
@@ -257,6 +267,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         Lihat Bukti
                     </button>
+                    <button @click="openReportModal({
+                        id: '{{ $t->id }}',
+                        store: '{{ $t->store }}'
+                    })" class="bg-red-50 text-red-600 border border-red-100 px-4 py-3 rounded-2xl font-bold text-sm hover:bg-red-100 transition flex items-center justify-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        Laporkan
+                    </button>
                     <a href="{{ route('consumer.search') }}" class="flex-1 bg-[#174413] text-white px-4 py-3 rounded-2xl font-bold text-sm hover:bg-[#256020] transition flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                         Pesan Lagi
@@ -382,6 +399,49 @@
                     Unduh PDF
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Report Modal Overlay -->
+    <div x-show="isReportDialogOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl space-y-6" @click.away="isReportDialogOpen = false">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-2xl font-black text-gray-900">Laporkan Masalah</h3>
+                <p class="text-gray-500 text-sm mt-1">Bantu kami menjaga kualitas makanan dengan melaporkan masalah yang Anda alami.</p>
+            </div>
+
+            <form action="{{ route('consumer.report.submit') }}" method="POST" enctype="multipart/form-data" class="space-y-4" @submit="isReportDialogOpen = false">
+                @csrf
+                <input type="hidden" name="order_id" :value="selectedOrderForReport?.id">
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jenis Masalah</label>
+                    <select name="issue_type" x-model="issueType" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-red-600 transition">
+                        <option value="bad_quality">Kualitas Buruk / Basi</option>
+                        <option value="expired">Sudah Kedaluwarsa</option>
+                        <option value="mismatch">Tidak Sesuai Deskripsi</option>
+                        <option value="other">Lainnya</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Deskripsi Kejadian</label>
+                    <textarea name="description" x-model="description" rows="3" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-red-600 transition" placeholder="Ceritakan detail masalah yang terjadi..."></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Foto Bukti (Opsional)</label>
+                    <input type="file" name="evidence_image" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button type="button" @click="isReportDialogOpen = false" class="flex-1 border border-gray-100 py-4 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 transition">Batal</button>
+                    <button type="submit" class="flex-1 bg-red-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-700 transition active:scale-95">Kirim Laporan</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

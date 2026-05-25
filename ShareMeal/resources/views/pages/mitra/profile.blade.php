@@ -156,16 +156,33 @@
                     </div>
 
                     <div x-show="canDelivery" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="pt-4 border-t border-gray-100">
-                        <label for="delivery_fee" class="block text-sm font-semibold text-gray-700 mb-2">Biaya Ongkir (Flat)</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <span class="text-gray-500 text-sm">Rp</span>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label for="delivery_fee" class="block text-sm font-semibold text-gray-700 mb-2">Biaya Ongkir (Flat)</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 text-sm">Rp</span>
+                                    </div>
+                                    <input id="delivery_fee" name="delivery_fee" type="number" value="{{ old('delivery_fee', $profile?->delivery_fee ?? 0) }}" min="0" class="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-3 text-sm focus:border-[#174413] focus:ring-2 focus:ring-green-100 outline-none transition" placeholder="0">
+                                </div>
+                                @error('delivery_fee')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
-                            <input id="delivery_fee" name="delivery_fee" type="number" value="{{ old('delivery_fee', $profile?->delivery_fee ?? 0) }}" min="0" class="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-3 text-sm focus:border-[#174413] focus:ring-2 focus:ring-green-100 outline-none transition" placeholder="0">
+                            <div>
+                                <label for="delivery_slot_limit" class="block text-sm font-semibold text-gray-700 mb-2">Limit Pesanan per Slot</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i data-lucide="users" class="w-4 h-4 text-gray-400"></i>
+                                    </div>
+                                    <input id="delivery_slot_limit" name="delivery_slot_limit" type="number" value="{{ old('delivery_slot_limit', $profile?->delivery_slot_limit ?? 10) }}" min="1" class="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-3 text-sm focus:border-[#174413] focus:ring-2 focus:ring-green-100 outline-none transition" placeholder="10">
+                                </div>
+                                <p class="mt-2 text-xs text-gray-500">Jumlah maksimal pesanan (delivery/pickup) dalam satu jendela 30 menit.</p>
+                                @error('delivery_slot_limit')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
-                        @error('delivery_fee')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                 </div>
 

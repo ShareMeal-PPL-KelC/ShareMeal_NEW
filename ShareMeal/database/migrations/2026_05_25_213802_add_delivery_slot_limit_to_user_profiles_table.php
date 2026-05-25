@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->boolean('donatable')->default(true)->after('status');
+        Schema::table('user_profiles', function (Blueprint $table) {
+            $table->integer('delivery_slot_limit')->default(10)->after('delivery_fee');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn('donatable');
+        Schema::table('user_profiles', function (Blueprint $table) {
+            $table->dropColumn('delivery_slot_limit');
         });
     }
 };

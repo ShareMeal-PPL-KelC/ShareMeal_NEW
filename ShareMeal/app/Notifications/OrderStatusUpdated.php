@@ -42,7 +42,8 @@ class OrderStatusUpdated extends Notification
         $statusMessages = [
             'pending' => 'Pesanan Anda sedang diproses.',
             'ready' => 'Pesanan Anda siap diambil!',
-            'completed' => 'Pesanan Anda telah selesai diambil. Terima kasih!',
+            'shipping' => 'Pesanan Anda sedang dalam perjalanan oleh kurir mitra.',
+            'completed' => 'Pesanan Anda telah selesai. Terima kasih!',
             'cancelled' => 'Mohon maaf, pesanan Anda telah dibatalkan.',
         ];
 

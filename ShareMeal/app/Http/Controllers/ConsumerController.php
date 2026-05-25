@@ -115,6 +115,16 @@ class ConsumerController extends Controller
         $pickupStart = $product->pickup_start_time ?? '18:00';
         $pickupEnd = $product->pickup_end_time ?? '20:00';
 
+        $slotLimit = $product->user->profile?->delivery_slot_limit ?? 10;
+        
+        // Count orders per slot for today
+        $orderCounts = Order::where('mitra_id', $product->user_id)
+            ->whereDate('created_at', now()->toDateString())
+            ->whereNotNull('delivery_time_slot')
+            ->groupBy('delivery_time_slot')
+            ->select('delivery_time_slot', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->pluck('count', 'delivery_time_slot');
+
         // Generate 30-min slots within window
         $slots = [];
         $start = \Carbon\Carbon::createFromFormat('H:i:s', $pickupStart);
@@ -125,7 +135,16 @@ class ConsumerController extends Controller
             $start->addMinutes(30);
             if ($start->gt($end)) break;
             $slotEnd = $start->format('H:i');
-            $slots[] = "$slotStart - $slotEnd";
+            $slotLabel = "$slotStart - $slotEnd";
+            
+            $currentCount = $orderCounts[$slotLabel] ?? 0;
+            $isFull = $currentCount >= $slotLimit;
+            
+            $slots[] = (object) [
+                'label' => $slotLabel,
+                'is_full' => $isFull,
+                'remaining' => max(0, $slotLimit - $currentCount)
+            ];
         }
 
         $booking = (object) [
@@ -191,6 +210,19 @@ class ConsumerController extends Controller
                 return back()->withErrors(['receiving_method' => 'Mitra ini tidak menyediakan jasa pengiriman.'])->withInput();
             }
             $deliveryFee = $mitra->profile->delivery_fee;
+
+            // PBI #38: Delivery Slot Limits
+            if ($deliveryTimeSlot) {
+                $slotLimit = $mitra->profile->delivery_slot_limit ?? 10;
+                $currentSlotCount = Order::where('mitra_id', $request->mitra_id)
+                    ->whereDate('created_at', now()->toDateString())
+                    ->where('delivery_time_slot', $deliveryTimeSlot)
+                    ->count();
+
+                if ($currentSlotCount >= $slotLimit) {
+                    return back()->withErrors(['delivery_time_slot' => 'Slot waktu pengantaran ini sudah penuh. Silakan pilih waktu lain.'])->withInput();
+                }
+            }
         }
 
         $order = Order::create([
@@ -252,10 +284,46 @@ class ConsumerController extends Controller
         return back()->with('success', 'Terima kasih atas ulasan Anda!');
     }
 
+    public function submitProblemReport(Request $request)
+    {
+        $data = $request->validate([
+            'order_id' => ['required', 'exists:orders,id'],
+            'issue_type' => ['required', 'string', 'in:expired,bad_quality,mismatch,other'],
+            'description' => ['required', 'string', 'max:2000'],
+            'evidence_image' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        $order = Order::where('id', $data['order_id'])
+            ->where('customer_id', $userId)
+            ->firstOrFail();
+
+        $evidencePath = null;
+        if ($request->hasFile('evidence_image')) {
+            $evidencePath = $request->file('evidence_image')->store('reports', 'public');
+        }
+
+        \App\Models\ProblemReport::create([
+            'reporter_id' => $userId,
+            'mitra_id' => $order->mitra_id,
+            'order_id' => $order->id,
+            'issue_type' => $data['issue_type'],
+            'description' => $data['description'],
+            'evidence_image' => $evidencePath,
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'Laporan masalah berhasil dikirim. Admin akan segera meninjau laporan Anda.');
+    }
+
+    /**
+     * PBI #32: Update Existing Review
+     * Dikerjakan oleh: Muh Irfan Ubaidillah
+     */
     public function updateReview(Request $request, Review $review)
     {
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
-        
+
         if ($review->customer_id !== $userId) {
             abort(403, 'Anda tidak memiliki akses untuk mengubah ulasan ini.');
         }
@@ -267,9 +335,13 @@ class ConsumerController extends Controller
 
         $review->update($data);
 
-        return back()->with('success', 'Ulasan Anda berhasil diperbarui.');
+        return back()->with('success', 'Ulasan berhasil diperbarui!');
     }
 
+    /**
+     * PBI #32: Delete Review
+     * Dikerjakan oleh: Muh Irfan Ubaidillah
+     */
     public function deleteReview(Review $review)
     {
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
@@ -280,7 +352,7 @@ class ConsumerController extends Controller
 
         $review->delete();
 
-        return back()->with('success', 'Ulasan Anda telah dihapus.');
+        return back()->with('success', 'Ulasan berhasil dihapus!');
     }
 
     public function education()
