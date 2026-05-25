@@ -20,9 +20,12 @@ Route::prefix('consumer')->name('consumer.')->group(function () {
     Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
     Route::get('/search', [ConsumerController::class, 'search'])->name('search');
     Route::get('/history', [ConsumerController::class, 'history'])->name('history');
+    
+    // PBI #32: Edit & Delete Review - Dikerjakan oleh: Muh Irfan Ubaidillah
     Route::post('/review', [ConsumerController::class, 'submitReview'])->name('review.submit');
     Route::put('/review/{review}', [ConsumerController::class, 'updateReview'])->name('review.update');
     Route::delete('/review/{review}', [ConsumerController::class, 'deleteReview'])->name('review.delete');
+    
     Route::get('/education', [ConsumerController::class, 'education'])->name('education');
     Route::get('/education/{id}', [ConsumerController::class, 'showArticle'])->name('education.show');
     Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');
@@ -40,6 +43,7 @@ Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function
     Route::post('/inventory', [ShareMealController::class, 'mitraInventoryStore'])->name('inventory.store');
     Route::post('/inventory/{productId}', [ShareMealController::class, 'mitraInventoryUpdate'])->name('inventory.update');
     Route::post('/inventory/{productId}/flash-sale', [ShareMealController::class, 'mitraInventoryFlashSale'])->name('inventory.flash-sale');
+    Route::post('/inventory/{productId}/toggle-donation', [ShareMealController::class, 'mitraInventoryToggleDonation'])->name('inventory.toggle-donation');
     Route::post('/inventory/{productId}/delete', [ShareMealController::class, 'mitraInventoryDelete'])->name('inventory.delete');
     Route::get('/orders', [ShareMealController::class, 'mitraOrders'])->name('orders');
     Route::post('/orders/{orderId}/update-status', [ShareMealController::class, 'updateOrderStatus'])->name('orders.update-status');
@@ -47,6 +51,8 @@ Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function
     Route::get('/reviews', [ShareMealController::class, 'mitraReviews'])->name('reviews');
     Route::get('/donations', [ShareMealController::class, 'mitraDonations'])->name('donations');
     Route::post('/donations', [ShareMealController::class, 'mitraDonationStore'])->name('donations.store');
+    Route::post('/donations/{donationId}/complete', [ShareMealController::class, 'mitraDonationComplete'])->name('donations.complete');
+    Route::post('/donations/{donationId}/cancel', [ShareMealController::class, 'mitraDonationCancel'])->name('donations.cancel');
 });
 
 Route::prefix('lembaga')->name('lembaga.')->group(function () {
@@ -63,6 +69,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/verification/{applicationId}/approve', [ShareMealController::class, 'adminApproveApplication'])->name('verification.approve');
     Route::post('/verification/{applicationId}/reject', [ShareMealController::class, 'adminRejectApplication'])->name('verification.reject');
     Route::get('/users', [ShareMealController::class, 'adminUsers'])->name('users');
+    Route::get('/reviews', [ShareMealController::class, 'adminReviews'])->name('reviews');
     Route::post('/users/{userId}/warn', [ShareMealController::class, 'adminWarnUser'])->name('users.warn');
     Route::post('/users/{userId}/block', [ShareMealController::class, 'adminBlockUser'])->name('users.block');
     Route::post('/users/{userId}/unblock', [ShareMealController::class, 'adminUnblockUser'])->name('users.unblock');
