@@ -624,6 +624,7 @@ class ShareMealController extends Controller
             'store_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'can_delivery' => ['nullable', 'boolean'],
             'delivery_fee' => ['nullable', 'required_if:can_delivery,1', 'integer', 'min:0'],
+            'delivery_slot_limit' => ['nullable', 'required_if:can_delivery,1', 'integer', 'min:1'],
         ], [
             'business_name.required' => 'Nama usaha wajib diisi.',
             'business_type.required' => 'Kategori usaha wajib diisi.',
@@ -638,6 +639,7 @@ class ShareMealController extends Controller
             'store_image.mimes' => 'Gambar toko harus berformat JPG, JPEG, atau PNG.',
             'store_image.max' => 'Ukuran gambar toko maksimal 2 MB.',
             'delivery_fee.required_if' => 'Biaya ongkir wajib diisi jika jasa kirim diaktifkan.',
+            'delivery_slot_limit.required_if' => 'Limit slot wajib diisi jika jasa kirim diaktifkan.',
         ]);
 
         $openingHours = $data['opening_start'] . ' - ' . $data['opening_end'];
@@ -645,7 +647,7 @@ class ShareMealController extends Controller
         $businessContact = $this->normalizePhone($data['business_contact']);
         $currentBusinessContact = $this->normalizePhone($profile->business_contact);
         $businessContactChanged = $businessContact !== $currentBusinessContact;
-
+        
         if ($businessContactChanged && $profile->business_contact_change_available_at && $profile->business_contact_change_available_at->isFuture()) {
             return back()
                 ->withErrors(['business_contact' => 'Kontak usaha baru bisa diganti lagi pada ' . $profile->business_contact_change_available_at->format('H:i:s') . '.'])
@@ -662,6 +664,7 @@ class ShareMealController extends Controller
             'description' => $data['business_description'],
             'can_delivery' => (bool) ($data['can_delivery'] ?? false),
             'delivery_fee' => (int) ($data['delivery_fee'] ?? 0),
+            'delivery_slot_limit' => (int) ($data['delivery_slot_limit'] ?? 10),
         ];
 
         if ($businessContactChanged) {
@@ -961,11 +964,11 @@ class ShareMealController extends Controller
 
         $user = Auth::user()?->load('profile');
         $profile = $user->profile;
-        
+
         $openingHours = $profile?->business_opening_hours ?? $profile?->opening_hours;
         if ($openingHours && str_contains($openingHours, ' - ')) {
             [$opStart, $opEnd] = explode(' - ', $openingHours, 2);
-            
+
             if ($data['pickup_start_time'] < $opStart || $data['pickup_start_time'] > $opEnd) {
                 return back()->withErrors(['pickup_start_time' => "Jam mulai pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
             }
@@ -997,6 +1000,41 @@ class ShareMealController extends Controller
         return back()->with('success', 'Donasi berhasil didaftarkan.');
     }
 
+    public function mitraDonationComplete(int $donationId): RedirectResponse
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = Donation::where('mitra_id', $userId)->findOrFail($donationId);
+
+        if ($donation->status !== 'claimed') {
+            return back()->with('error', 'Hanya donasi yang sudah diklaim yang bisa diselesaikan.');
+        }
+
+        $donation->update([
+            'status' => 'completed',
+            'delivered_at' => now(),
+            'tracking_status' => 'delivered',
+        ]);
+
+        return back()->with('success', 'Donasi dikonfirmasi telah diserahkan.');
+    }
+
+    public function mitraDonationCancel(int $donationId): RedirectResponse
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = Donation::where('mitra_id', $userId)->findOrFail($donationId);
+
+        if ($donation->status === 'completed') {
+            return back()->with('error', 'Donasi yang sudah selesai tidak bisa dibatalkan.');
+        }
+
+        if ($donation->status === 'claimed') {
+            // Optional: notify lembaga if needed
+        }
+
+        $donation->delete();
+
+        return back()->with('success', 'Donasi berhasil dibatalkan/dihapus.');
+    }
     public function mitraDonations(): View
     {
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id') ?? \App\Models\User::where('role', 'mitra')->value('id');
@@ -1110,39 +1148,78 @@ class ShareMealController extends Controller
         ]);
     }
 
-    public function lembagaClaimDonation(string $donationId): RedirectResponse
+    public function lembagaClaimDonation(Request $request, string $donationId): RedirectResponse
     {
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
-        
+
+        $request->validate([
+            'pickup_time' => ['required', 'string'],
+        ]);
+
         $donation = \App\Models\Donation::with('mitra')->findOrFail($donationId);
-        
+
         if ($donation->status !== 'pending' || ($donation->expires_at && \Carbon\Carbon::parse($donation->expires_at)->isPast())) {
             return back()->with('error', 'Donasi sudah tidak tersedia atau telah kedaluwarsa.');
         }
-        
+
+        // Combine current date with selected time
+        $pickupTime = \Carbon\Carbon::today()->setTimeFromTimeString($request->pickup_time);
+
         $donation->update([
             'status' => 'claimed',
             'claimed_at' => now(),
+            'pickup_time' => $pickupTime,
             'tracking_status' => 'confirmed',
             'lembaga_id' => $userId
         ]);
-        
+
         // Notify the Mitra that their donation was claimed
         if ($donation->mitra) {
             $lembagaName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Lembaga Sosial';
             \Illuminate\Support\Facades\Notification::send(
-                $donation->mitra, 
+                $donation->mitra,
                 new \App\Notifications\DonationClaimedNotification($lembagaName, $donation->title, $donation->quantity . ' ' . $donation->unit)
             );
         }
-        
-        return back()->with('success', 'Donasi berhasil diklaim.');
-    }
 
+        return back()->with('success', 'Donasi berhasil diklaim. Jadwal penjemputan: ' . $pickupTime->format('H:i'));
+    }
     public function lembagaCompleteDonation(string $donationId): RedirectResponse
     {
         ShareMealState::completeDonation($donationId);
         return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
+    }
+
+    public function lembagaSubmitProblemReport(Request $request)
+    {
+        $data = $request->validate([
+            'donation_id' => ['required', 'exists:donations,id'],
+            'issue_type' => ['required', 'string', 'in:expired,bad_quality,mismatch,other'],
+            'description' => ['required', 'string', 'max:2000'],
+            'evidence_image' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = \App\Models\Donation::where('id', $data['donation_id'])
+            ->where('lembaga_id', $userId)
+            ->firstOrFail();
+
+        $evidencePath = null;
+        if ($request->hasFile('evidence_image')) {
+            $evidencePath = $request->file('evidence_image')->store('reports', 'public');
+        }
+
+        \App\Models\ProblemReport::create([
+            'reporter_id' => $userId,
+            'mitra_id' => $donation->mitra_id,
+            'donation_id' => $donation->id,
+            'issue_type' => $data['issue_type'],
+            'description' => $data['description'],
+            'evidence_image' => $evidencePath,
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'Laporan masalah donasi berhasil dikirim.');
     }
 
     public function adminDashboard(): View
@@ -1315,6 +1392,24 @@ class ShareMealController extends Controller
             'transactions' => $transactions,
             'stats' => $stats,
             'page' => $page
+        ]);
+    }
+
+    public function adminReviews(): View
+    {
+        $reviews = Review::with(['customer', 'mitra.profile', 'order.items.product'])
+            ->latest()
+            ->paginate(15);
+
+        $stats = [
+            'total_reviews' => Review::count(),
+            'avg_rating' => round(Review::avg('rating'), 1) ?: 0,
+            'recent_reviews_count' => Review::where('created_at', '>=', now()->subDays(7))->count(),
+        ];
+
+        return view('pages.admin.reviews', $this->dashboardData('admin', 'Pemantauan Ulasan', 'Pantau kualitas layanan mitra melalui ulasan konsumen') + [
+            'reviews' => $reviews,
+            'stats' => $stats,
         ]);
     }
 
