@@ -36,6 +36,7 @@ class UserProfile extends Model
         'is_verified',
         'can_delivery',
         'delivery_fee',
+        'delivery_slot_limit',
     ];
 
     protected $casts = [
@@ -48,6 +49,7 @@ class UserProfile extends Model
         'is_verified' => 'boolean',
         'can_delivery' => 'boolean',
         'delivery_fee' => 'integer',
+        'delivery_slot_limit' => 'integer',
     ];
 
     public function user(): BelongsTo

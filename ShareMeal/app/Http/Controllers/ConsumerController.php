@@ -17,7 +17,6 @@ class ConsumerController extends Controller
     public function index()
     {
         app(AutoDonationService::class)->processProducts();
-        #\
 
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
         $orders = Order::with('items')
@@ -112,9 +111,19 @@ class ConsumerController extends Controller
         if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || $product->expires_at->isPast()) {
             return redirect()->route('consumer.search')->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.']);
         }
-        #test
+
         $pickupStart = $product->pickup_start_time ?? '18:00';
         $pickupEnd = $product->pickup_end_time ?? '20:00';
+
+        $slotLimit = $product->user->profile?->delivery_slot_limit ?? 10;
+        
+        // Count orders per slot for today
+        $orderCounts = Order::where('mitra_id', $product->user_id)
+            ->whereDate('created_at', now()->toDateString())
+            ->whereNotNull('delivery_time_slot')
+            ->groupBy('delivery_time_slot')
+            ->select('delivery_time_slot', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->pluck('count', 'delivery_time_slot');
 
         // Generate 30-min slots within window
         $slots = [];
@@ -126,7 +135,16 @@ class ConsumerController extends Controller
             $start->addMinutes(30);
             if ($start->gt($end)) break;
             $slotEnd = $start->format('H:i');
-            $slots[] = "$slotStart - $slotEnd";
+            $slotLabel = "$slotStart - $slotEnd";
+            
+            $currentCount = $orderCounts[$slotLabel] ?? 0;
+            $isFull = $currentCount >= $slotLimit;
+            
+            $slots[] = (object) [
+                'label' => $slotLabel,
+                'is_full' => $isFull,
+                'remaining' => max(0, $slotLimit - $currentCount)
+            ];
         }
 
         $booking = (object) [
@@ -192,6 +210,19 @@ class ConsumerController extends Controller
                 return back()->withErrors(['receiving_method' => 'Mitra ini tidak menyediakan jasa pengiriman.'])->withInput();
             }
             $deliveryFee = $mitra->profile->delivery_fee;
+
+            // PBI #38: Delivery Slot Limits
+            if ($deliveryTimeSlot) {
+                $slotLimit = $mitra->profile->delivery_slot_limit ?? 10;
+                $currentSlotCount = Order::where('mitra_id', $request->mitra_id)
+                    ->whereDate('created_at', now()->toDateString())
+                    ->where('delivery_time_slot', $deliveryTimeSlot)
+                    ->count();
+
+                if ($currentSlotCount >= $slotLimit) {
+                    return back()->withErrors(['delivery_time_slot' => 'Slot waktu pengantaran ini sudah penuh. Silakan pilih waktu lain.'])->withInput();
+                }
+            }
         }
 
         $order = Order::create([
