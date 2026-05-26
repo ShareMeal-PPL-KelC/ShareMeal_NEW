@@ -43,6 +43,9 @@
                                     <i data-lucide="clock" class="w-4 h-4"></i> Layak Konsumsi s/d: {{ \Carbon\Carbon::parse($donation->expires_at)->format('d M Y, H:i') }}
                                 </p>
                                 @endif
+                                <p class="text-sm text-green-600 font-bold flex items-center gap-1">
+                                    <i data-lucide="calendar" class="w-4 h-4"></i> Jam Ambil: {{ $donation->pickup_time_window }}
+                                </p>
                             </div>
                         </div>
                         <div class="text-right">
@@ -146,6 +149,17 @@
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Batas Waktu Layak Konsumsi</label>
                     <input type="datetime-local" name="expires_at" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
                     <p class="text-[10px] text-gray-400 mt-1 italic">Tentukan batas akhir waktu makanan ini aman dan layak untuk dikonsumsi.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Mulai Ambil</label>
+                        <input type="time" name="pickup_start_time" value="18:00" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Akhir Ambil</label>
+                        <input type="time" name="pickup_end_time" value="20:00" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                    </div>
                 </div>
 
                 <div class="space-y-2">
