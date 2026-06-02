@@ -66,7 +66,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Manajemen Data User</h1>
-                        <p class="text-gray-500 mt-1">Kelola akun & moderasi pelanggaran (FR-20, FR-21)</p>
+                        <p class="text-gray-500 mt-1">Kelola akun & moderasi pelanggaran</p>
                     </div>
                 </div>
 

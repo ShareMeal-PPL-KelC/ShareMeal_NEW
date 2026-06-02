@@ -103,7 +103,8 @@
             ['route' => 'admin.users', 'label' => 'Kelola User', 'icon' => 'users'],
             ['route' => 'admin.transactions', 'label' => 'Transaksi', 'icon' => 'receipt'],
             ['route' => 'admin.education', 'label' => 'Edukasi', 'icon' => 'book-open'],
-            ['route' => 'admin.problem-reports.index', 'label' => 'Laporan', 'icon' => 'alert-triangle'],
+            ['route' => 'admin.problem-reports.index', 'label' => 'Laporan Masalah', 'icon' => 'alert-triangle'],
+            ['route' => 'admin.reports', 'label' => 'Dampak & Distribusi', 'icon' => 'bar-chart-3'],
         ];
     } elseif(request()->is('lembaga*')) {
         $routes = [
@@ -142,7 +143,7 @@
                 $criticalAlerts[] = [
                     'type' => 'warning',
                     'message' => 'Peringatan: Akun Anda mendapatkan peringatan karena pelanggaran kebijakan. Mohon patuhi aturan platform.',
-                    'link' => '#',
+                    'link' => route('mitra.profile'),
                     'link_text' => 'Pelajari Selengkapnya'
                 ];
             }
@@ -156,16 +157,28 @@
         @endphp
 
         @foreach($criticalAlerts as $alert)
-            <div class="{{ ($alert['type'] ?? '') === 'danger' ? 'bg-red-600' : 'bg-orange-600' }} text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60] animate-in slide-in-from-top duration-300">
-                <i data-lucide="{{ ($alert['type'] ?? '') === 'danger' ? 'shield-off' : 'alert-circle' }}" class="w-4 h-4"></i>
+            @if(($alert['type'] ?? '') === 'warning')
+            <div x-data="{ dismissed: localStorage.getItem('warning_banner_dismissed_{{ Auth::id() }}') === 'true' }"
+                 x-show="!dismissed"
+                 class="bg-orange-600 text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60] animate-in slide-in-from-top duration-300"
+                 x-cloak>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
                 <span>{{ $alert['message'] }}</span>
                 @if(isset($alert['link']))
-                    <a href="{{ $alert['link'] }}" class="underline ml-2">{{ $alert['link_text'] ?? 'Detail' }}</a>
-                @endif
-                @if(isset($alert['action']))
-                    <button class="bg-white {{ ($alert['type'] ?? '') === 'danger' ? 'text-red-600' : 'text-orange-600' }} px-2 py-0.5 rounded ml-2 uppercase text-[10px]">{{ $alert['action'] }}</button>
+                    <a href="{{ $alert['link'] }}" 
+                       @click="localStorage.setItem('warning_banner_dismissed_{{ Auth::id() }}', 'true'); dismissed = true;" 
+                       class="underline ml-2 hover:text-orange-100 transition-colors">{{ $alert['link_text'] ?? 'Detail' }}</a>
                 @endif
             </div>
+            @else
+            <div class="bg-red-600 text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60] animate-in slide-in-from-top duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9.5" x2="14.5" y1="14.5" y2="9.5"/><line x1="14.5" x2="9.5" y1="14.5" y2="9.5"/></svg>
+                <span>{{ $alert['message'] }}</span>
+                @if(isset($alert['action']))
+                    <button class="bg-white text-red-600 px-2 py-0.5 rounded ml-2 uppercase text-[10px]">{{ $alert['action'] }}</button>
+                @endif
+            </div>
+            @endif
         @endforeach
     @endif
 
@@ -307,11 +320,11 @@
                                         class="flex items-center gap-4 rounded-2xl border border-luxury-alabas bg-white/60 p-1.5 pr-4 hover:bg-white focus:outline-none transition-all duration-300"
                                         :aria-expanded="open.toString()">
                                     <div class="relative">
-                                        <img src="{{ $navUser->image }}" alt="Foto profil {{ $navUser->name }}" class="h-10 w-10 rounded-[0.8rem] object-cover border border-luxury-alabas">
+                                        <img src="{{ $navUser->image }}" alt="Foto profil {{ $navUser->displayName }}" class="h-10 w-10 rounded-[0.8rem] object-cover border border-luxury-alabas">
                                         <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-luxury-forest border-2 ring-white rounded-full"></div>
                                     </div>
                                     <span class="hidden md:block text-left">
-                                        <span class="block text-sm font-bold text-luxury-forest leading-tight">{{ $navUser->name }}</span>
+                                        <span class="block text-sm font-bold text-luxury-forest leading-tight">{{ $navUser->displayName }}</span>
                                         <span class="block text-[10px] text-luxury-gold uppercase font-black tracking-tighter leading-tight">{{ $navUser->role }}</span>
                                     </span>
                                     <i data-lucide="chevron-down" class="hidden md:block w-4 h-4 text-luxury-alabas transition-transform duration-300" :class="open ? 'rotate-180' : ''"></i>
@@ -326,9 +339,9 @@
                                      x-cloak>
                                     <div class="px-6 py-6 border-b border-luxury-alabas bg-luxury-forest/5">
                                         <div class="flex items-center gap-4">
-                                            <img src="{{ $navUser->image }}" alt="Foto profil {{ $navUser->name }}" class="h-12 w-12 rounded-[1rem] object-cover border-2 border-white shadow-sm">
+                                            <img src="{{ $navUser->image }}" alt="Foto profil {{ $navUser->displayName }}" class="h-12 w-12 rounded-[1rem] object-cover border-2 border-white shadow-sm">
                                             <div class="min-w-0">
-                                                <div class="truncate text-sm font-bold text-luxury-forest">{{ $navUser->name }}</div>
+                                                <div class="truncate text-sm font-bold text-luxury-forest">{{ $navUser->displayName }}</div>
                                                 <div class="truncate text-[11px] text-luxury-slate font-medium">{{ $navUser->email }}</div>
                                             </div>
                                         </div>
@@ -389,7 +402,7 @@
                             <div class="flex items-center gap-3">
                                 <img src="{{ Auth::user()->image }}" class="h-10 w-10 rounded-xl object-cover">
                                 <div class="min-w-0">
-                                    <div class="text-sm font-bold text-luxury-forest truncate">{{ Auth::user()->name }}</div>
+                                    <div class="text-sm font-bold text-luxury-forest truncate">{{ Auth::user()->displayName }}</div>
                                     <div class="text-[10px] text-luxury-gold uppercase font-black tracking-widest">{{ Auth::user()->role }}</div>
                                 </div>
                             </div>

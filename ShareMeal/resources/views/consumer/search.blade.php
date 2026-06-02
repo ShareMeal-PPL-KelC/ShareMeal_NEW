@@ -94,7 +94,9 @@
         </div>
         <div class="flex items-center gap-4 bg-white/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-luxury-alabas/80 shadow-sm self-center md:self-auto">
             <div class="w-8 h-8 bg-luxury-forest rounded-lg flex items-center justify-center">
-                <i data-lucide="map-pin" class="w-4 h-4 text-luxury-gold"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-luxury-gold">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
             </div>
             <span class="text-xs font-black uppercase tracking-widest text-luxury-forest" x-text="selectedAddress"></span>
         </div>
@@ -104,7 +106,9 @@
     <div class="glass-card p-10 rounded-[3rem] space-y-10 mb-16 reveal">
         <div class="flex flex-col md:flex-row gap-6">
             <div class="relative flex-1 group">
-                <i data-lucide="search" class="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-luxury-gold transition-transform group-focus-within:scale-110"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-luxury-gold transition-transform group-focus-within:scale-110">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                </svg>
                 <input 
                     type="text" 
                     placeholder="Apa yang ingin Anda selamatkan hari ini?" 
@@ -113,7 +117,9 @@
                 >
             </div>
             <button @click="openMap = true; initMap()" class="bg-luxury-forest text-white px-10 py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-luxury-gold transition-all duration-500 luxury-shadow group active:scale-95">
-                <i data-lucide="crosshair" class="w-4 h-4 group-hover:rotate-90 transition-transform duration-500 text-luxury-gold"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 group-hover:rotate-90 transition-transform duration-500 text-luxury-gold">
+                    <circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/>
+                </svg>
                 Ganti Lokasi
             </button>
         </div>
@@ -148,98 +154,112 @@
             Sorted by proximity
         </div>
     </div>
-
     <!-- Store Results -->
     <div class="space-y-16">
         <template x-for="(store, index) in filteredStores" :key="store.id">
-            <div class="glass-card glass-card-hover rounded-[3.5rem] overflow-hidden group hover:border-luxury-gold/30 reveal">
-                <div class="grid lg:grid-cols-[400px_1fr] gap-0">
-                    <!-- Store Image -->
-                    <div class="relative h-80 lg:h-auto overflow-hidden">
-                        <img :src="store.image" :alt="store.name" class="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-tr from-luxury-forest/40 to-transparent"></div>
-                        <div class="absolute bottom-8 left-8">
-                            <div class="glass-panel px-6 py-2.5 rounded-full text-[10px] font-black text-luxury-forest uppercase tracking-[0.2em] border border-white/40 shadow-xl">
+            <div class="glass-card glass-card-hover rounded-[2.5rem] overflow-hidden group hover:border-luxury-gold/30 reveal p-6 md:p-8 space-y-8">
+                <!-- Store Info Header (Image & Meta details side-by-side) -->
+                <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                    <!-- Store Image (Not too large, beautifully proportioned) -->
+                    <div class="relative w-full lg:w-72 h-56 lg:h-44 shrink-0 rounded-2xl overflow-hidden border border-white/20 shadow-sm bg-white/5">
+                        <img :src="store.image" :alt="store.name" class="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-105">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                        <div class="absolute bottom-4 left-4">
+                            <div class="bg-black/45 backdrop-blur-md px-3.5 py-1.5 rounded-full text-[9px] font-black text-white uppercase tracking-[0.2em] border border-white/20 shadow-md">
                                 <span x-text="store.distance"></span> away
                             </div>
                         </div>
                     </div>
 
                     <!-- Store Details -->
-                    <div class="p-12 lg:p-16 bg-white/10">
-                        <div class="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-10">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-6 mb-4">
-                                    <h3 class="text-4xl font-serif font-bold text-luxury-forest leading-none group-hover:text-luxury-gold transition-colors duration-700" x-text="store.displayName || store.name"></h3>
-                                    <button @click="toggleFavoriteStore(store)" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/60 border border-luxury-alabas/80 transition-all duration-500 text-luxury-alabas hover:text-red-500 hover:shadow-sm active:scale-90">
-                                        <i data-lucide="heart" class="w-6 h-6 transition-colors" :class="store.isFavorite ? 'fill-red-500 text-red-500' : ''"></i>
-                                    </button>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] bg-luxury-gold/5 px-4 py-1.5 rounded-full border border-luxury-gold/10" x-text="store.profile?.business_type || store.category"></span>
-                                    <div class="h-1 w-1 bg-luxury-alabas/60 rounded-full"></div>
-                                    <p class="text-xs font-medium text-luxury-slate italic" x-text="store.address"></p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3 bg-white/70 border border-luxury-alabas px-6 py-3 rounded-2xl shadow-sm self-start">
-                                <i data-lucide="star" class="w-5 h-5 text-luxury-gold fill-luxury-gold"></i>
-                                <span class="text-lg font-serif font-black text-luxury-forest" x-text="store.rating"></span>
-                                <span class="text-[10px] text-luxury-slate font-bold uppercase tracking-widest" x-text="'(' + store.reviews + ')'"></span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                            <div class="p-6 rounded-[1.5rem] bg-white/30 border border-luxury-alabas/85 hover:bg-white/60 hover:shadow-sm transition-all duration-500">
-                                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-2">Operating Hours</div>
-                                <div class="text-sm font-bold text-luxury-forest" x-text="store.profile?.business_opening_hours || store.profile?.opening_hours || '-'"></div>
-                            </div>
-                            <div class="p-6 rounded-[1.5rem] bg-white/30 border border-luxury-alabas/85 hover:bg-white/60 hover:shadow-sm transition-all duration-500">
-                                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-2">Contact</div>
-                                <div class="text-sm font-bold text-luxury-forest" x-text="store.profile?.business_contact || store.phone || '-'"></div>
-                            </div>
-                        </div>
-
-                        <p class="text-base leading-relaxed text-luxury-slate mb-12 font-medium italic opacity-85" x-show="store.profile?.business_description || store.profile?.description" x-text="'&ldquo;' + (store.profile?.business_description || store.profile?.description) + '&rdquo;'"></p>
-
-                        <!-- Available Items -->
-                        <div class="space-y-6">
-                            <div class="flex items-center gap-4 mb-8">
-                                <span class="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold whitespace-nowrap">Daily Selection</span>
-                                <div class="h-px w-full bg-luxury-alabas/60"></div>
-                            </div>
-                            
-                            <template x-for="deal in store.products" :key="deal.id">
-                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 p-8 bg-white/40 border border-luxury-alabas/80 rounded-[2rem] hover:bg-white/80 hover:shadow-md hover:border-luxury-gold/20 transition-all duration-700">
-                                    <div class="flex-1">
-                                        <div class="font-serif text-2xl font-bold text-luxury-forest group-hover/item:text-luxury-gold transition-colors duration-500" x-text="deal.item"></div>
-                                        <div class="flex flex-wrap items-center gap-6 mt-4">
-                                            <div class="flex items-center gap-2 text-[10px] font-black text-orange-600 uppercase tracking-widest bg-orange-50/80 px-3 py-1 rounded-lg">
-                                                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-                                                <span x-text="deal.expiresIn"></span>
-                                            </div>
-                                            <div class="flex items-center gap-2 text-[10px] font-black text-luxury-emerald uppercase tracking-widest bg-luxury-emerald/5 px-3 py-1 rounded-lg">
-                                                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                                                <span x-text="deal.pickupTime"></span>
-                                            </div>
-                                            <span class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em]" x-text="'Stock: ' + deal.stock"></span>
-                                        </div>
+                    <div class="flex-1 min-w-0 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-3.5 flex-wrap">
+                                        <h3 class="text-3xl font-serif font-bold text-luxury-forest leading-tight group-hover:text-luxury-gold transition-colors duration-700 truncate" x-text="store.displayName || store.name"></h3>
+                                        <button @click="toggleFavoriteStore(store)" class="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl bg-white/60 border border-luxury-alabas/80 transition-all duration-500 text-luxury-alabas hover:text-red-500 hover:shadow-sm active:scale-90">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 transition-all duration-300" :class="store.isFavorite ? 'fill-red-500 text-red-500 stroke-red-500' : 'text-luxury-slate'">
+                                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                            </svg>
+                                        </button>
                                     </div>
-                                    <div class="flex items-center justify-between md:justify-end gap-10 w-full md:w-auto pt-8 md:pt-0 border-t md:border-t-0 border-luxury-alabas/60">
-                                        <div class="text-left md:text-right">
-                                            <div class="text-3xl font-serif font-black text-luxury-forest leading-none" x-text="'Rp ' + (deal.discountPrice > 0 ? deal.discountPrice : deal.originalPrice).toLocaleString('id-ID')"></div>
-                                            <div class="text-[11px] text-luxury-slate line-through mt-2 font-bold tracking-widest" x-show="deal.discountPrice > 0 && deal.discountPrice != deal.originalPrice" x-text="'Rp ' + deal.originalPrice.toLocaleString('id-ID')"></div>
-                                        </div>
-                                        <button 
-                                            @click="window.location.href = '{{ route('consumer.checkout') }}?product_id=' + deal.id"
-                                            :disabled="deal.stock === 0"
-                                            :class="deal.stock === 0 ? 'bg-luxury-alabas/60 text-luxury-slate cursor-not-allowed opacity-40' : 'bg-luxury-forest text-white hover:bg-luxury-gold'"
-                                            class="h-16 px-10 rounded-[1.2rem] font-black uppercase tracking-[0.3em] text-[10px] transition-all duration-700 luxury-shadow active:scale-95 whitespace-nowrap"
-                                            x-text="deal.stock === 0 ? 'Sold' : 'Reserve Now'"
-                                        ></button>
+                                    <div class="flex items-center gap-2.5 mt-2 flex-wrap text-luxury-slate">
+                                        <span class="text-[8px] font-black text-luxury-gold uppercase tracking-[0.3em] bg-luxury-gold/5 px-3 py-1 rounded-full border border-luxury-gold/10" x-text="store.profile?.business_type || store.category"></span>
+                                        <div class="h-1.5 w-1.5 bg-luxury-alabas/60 rounded-full"></div>
+                                        <p class="text-xs font-semibold italic truncate" x-text="store.address"></p>
                                     </div>
                                 </div>
-                            </template>
+                                <div class="flex items-center gap-2 bg-white/70 border border-luxury-alabas px-4 py-2 rounded-xl shadow-sm self-start shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-luxury-gold mr-1">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                    </svg>
+                                    <span class="text-base font-serif font-black text-luxury-forest" x-text="store.rating"></span>
+                                    <span class="text-[9px] text-luxury-slate font-bold uppercase tracking-widest" x-text="'(' + store.reviews + ')'"></span>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Operational Details Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-3.5 rounded-xl bg-white/30 border border-luxury-alabas/85 hover:bg-white/60 hover:shadow-sm transition-all duration-500 flex flex-col justify-center">
+                                <div class="text-[9px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-0.5">Operating Hours</div>
+                                <div class="text-xs font-bold text-luxury-forest" x-text="store.profile?.business_opening_hours || store.profile?.opening_hours || '-'"></div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-white/30 border border-luxury-alabas/85 hover:bg-white/60 hover:shadow-sm transition-all duration-500 flex flex-col justify-center">
+                                <div class="text-[9px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-0.5">Contact</div>
+                                <div class="text-xs font-bold text-luxury-forest" x-text="store.profile?.business_contact || store.phone || '-'"></div>
+                            </div>
+                        </div>
+
+                        <!-- Description Quote -->
+                        <p class="text-xs leading-relaxed text-luxury-slate font-medium italic opacity-85 border-l-2 border-luxury-gold/30 pl-3.5" x-show="store.profile?.business_description || store.profile?.description" x-text="'&ldquo;' + (store.profile?.business_description || store.profile?.description) + '&rdquo;'"></p>
+                    </div>
+                </div>
+
+                <!-- Products Selection (Daily Selection spanning full width below) -->
+                <div class="space-y-6 pt-6 border-t border-luxury-alabas/60">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold whitespace-nowrap">Daily Selection</span>
+                        <div class="h-px w-full bg-luxury-alabas/60"></div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <template x-for="deal in store.products" :key="deal.id">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-white/40 border border-luxury-alabas/80 rounded-[2rem] hover:bg-white/80 hover:shadow-md hover:border-luxury-gold/20 transition-all duration-700">
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-serif text-2xl font-bold text-luxury-forest truncate" x-text="deal.item"></div>
+                                    <div class="flex flex-wrap items-center gap-4 mt-3">
+                                        <div class="flex items-center gap-2 text-[10px] font-black text-orange-600 uppercase tracking-widest bg-orange-50/80 px-3 py-1 rounded-lg shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                                                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                            </svg>
+                                            <span x-text="deal.expiresIn"></span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-[10px] font-black text-luxury-emerald uppercase tracking-widest bg-luxury-emerald/5 px-3 py-1 rounded-lg shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
+                                            </svg>
+                                            <span x-text="deal.pickupTime"></span>
+                                        </div>
+                                        <span class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em] shrink-0" x-text="'Stock: ' + deal.stock"></span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto pt-6 md:pt-0 border-t md:border-t-0 border-luxury-alabas/60">
+                                    <div class="text-left md:text-right shrink-0">
+                                        <div class="text-3xl font-serif font-black text-luxury-forest leading-none" x-text="'Rp ' + (deal.discountPrice > 0 ? deal.discountPrice : deal.originalPrice).toLocaleString('id-ID')"></div>
+                                        <div class="text-[11px] text-luxury-slate line-through mt-2 font-bold tracking-widest" x-show="deal.discountPrice > 0 && deal.discountPrice != deal.originalPrice" x-text="'Rp ' + deal.originalPrice.toLocaleString('id-ID')"></div>
+                                    </div>
+                                    <button 
+                                        @click="window.location.href = '{{ route('consumer.checkout') }}?product_id=' + deal.id"
+                                        :disabled="deal.stock === 0"
+                                        :class="deal.stock === 0 ? 'bg-luxury-alabas/60 text-luxury-slate cursor-not-allowed opacity-40' : 'bg-luxury-forest text-white hover:bg-luxury-gold'"
+                                        class="h-14 px-8 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] transition-all duration-700 luxury-shadow active:scale-95 whitespace-nowrap"
+                                        x-text="deal.stock === 0 ? 'Sold' : 'Reserve Now'"
+                                    ></button>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -248,13 +268,14 @@
         <!-- No Results -->
         <div x-show="filteredStores.length === 0" class="glass-card p-32 rounded-[4rem] text-center" style="display: none;">
             <div class="bg-white/60 w-28 h-28 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 border border-luxury-alabas/80 luxury-shadow">
-                <i data-lucide="search-x" class="w-12 h-12 text-luxury-slate opacity-40"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-luxury-slate opacity-40 mx-auto">
+                    <path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                </svg>
             </div>
             <h3 class="text-4xl font-serif font-bold text-luxury-forest mb-4 italic">No matching treasures.</h3>
             <p class="text-luxury-slate font-medium max-w-sm mx-auto leading-relaxed">Adjust your selection to explore other exceptional surplus opportunities waiting to be rescued.</p>
         </div>
     </div>
-</div>
 
 <!-- Map Picker Modal -->
 <div x-show="openMap" 
@@ -319,5 +340,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 @endsection

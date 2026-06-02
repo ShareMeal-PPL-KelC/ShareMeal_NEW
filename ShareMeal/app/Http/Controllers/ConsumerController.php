@@ -146,7 +146,7 @@ class ConsumerController extends Controller
             ->select('delivery_time_slot', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
             ->pluck('count', 'delivery_time_slot');
 
-        // Generate 30-min slots within window
+        // Generate 1-hour slots within window
         $slots = [];
         try {
             $startStr = !empty($pickupStart) ? $pickupStart : '18:00';
@@ -159,10 +159,10 @@ class ConsumerController extends Controller
                 $end->addDay();
             }
             
-            $maxSlots = 48;
+            $maxSlots = 24;
             while ($start->lt($end) && $maxSlots > 0) {
                 $slotStart = $start->format('H:i');
-                $start->addMinutes(30);
+                $start->addHours(1);
                 if ($start->gt($end)) break;
                 $slotEnd = $start->format('H:i');
                 $slotLabel = "$slotStart - $slotEnd";
@@ -349,7 +349,7 @@ class ConsumerController extends Controller
             $evidencePath = $request->file('evidence_image')->store('reports', 'public');
         }
 
-        \App\Models\ProblemReport::create([
+        $report = \App\Models\ProblemReport::create([
             'reporter_id' => $userId,
             'mitra_id' => $order->mitra_id,
             'order_id' => $order->id,
@@ -358,6 +358,12 @@ class ConsumerController extends Controller
             'evidence_image' => $evidencePath,
             'status' => 'pending',
         ]);
+
+        // Notify Admins
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\NewProblemReportNotification($report));
+        }
 
         return back()->with('success', 'Laporan masalah berhasil dikirim. Admin akan segera meninjau laporan Anda.');
     }
@@ -381,7 +387,7 @@ class ConsumerController extends Controller
 
         $review->update($data);
 
-        return back()->with('success', 'Ulasan berhasil diperbarui!');
+        return back()->with('success', 'Ulasan Anda berhasil diperbarui.');
     }
 
     /**
@@ -398,19 +404,35 @@ class ConsumerController extends Controller
 
         $review->delete();
 
-        return back()->with('success', 'Ulasan berhasil dihapus!');
+        return back()->with('success', 'Ulasan Anda telah dihapus.');
     }
 
     public function education()
     {
-        $articles = $this->getDummyArticles();
+        // Ambil artikel published dari DB, jadikan plain array untuk Alpine.js
+        $articles = collect(\App\Support\ShareMealState::get('articles'))
+            ->filter(fn($a) => strtolower($a['status']) === 'published')
+            ->values()
+            ->map(fn($a) => [
+                'id'       => $a['id'],
+                'title'    => $a['title'],
+                'category' => $a['category'],
+                'readTime' => $a['read_time'] ?? '4 min read',
+                'date'     => $a['date'],
+                'author'   => $a['author'],
+                'image'    => $a['image'] ?? '',
+                'content'  => $a['content'],
+            ])
+            ->values();
 
-        $categories = ["Semua", "Tips", "Artikel Edukasi", "Panduan Praktis"];
+        $categories = array_values(array_unique(
+            array_merge(['Semua'], $articles->pluck('category')->toArray())
+        ));
 
         $stats = (object) [
             'readCount' => 12,
-            'level' => "Eco Warrior",
-            'points' => 450,
+            'level'     => 'Eco Warrior',
+            'points'    => 450,
         ];
 
         return view('consumer.education', compact('articles', 'categories', 'stats'));
@@ -418,50 +440,32 @@ class ConsumerController extends Controller
 
     public function showArticle($id)
     {
-        $article = $this->getDummyArticles()->firstWhere('id', (int)$id);
+        $allArticles = collect(\App\Support\ShareMealState::get('articles'))
+            ->filter(fn($a) => strtolower($a['status']) === 'published');
 
-        if (!$article) {
+        $raw = $allArticles->firstWhere('id', (int) $id);
+
+        if (!$raw) {
             abort(404);
         }
 
-        $relatedArticles = $this->getDummyArticles()->where('id', '!=', (int)$id)->take(2);
+        $article = (object) [
+            'id'       => $raw['id'],
+            'title'    => $raw['title'],
+            'category' => $raw['category'],
+            'readTime' => $raw['read_time'] ?? '4 min read',
+            'date'     => $raw['date'],
+            'author'   => $raw['author'],
+            'image'    => $raw['image'],
+            'content'  => $raw['content'],
+        ];
+
+        $relatedArticles = $allArticles
+            ->filter(fn($a) => $a['id'] !== (int) $id)
+            ->take(2)
+            ->map(fn($a) => (object) $a);
 
         return view('consumer.article', compact('article', 'relatedArticles'));
     }
 
-    protected function getDummyArticles()
-    {
-        return collect([
-            [
-                'id' => 1,
-                'title' => "Cara Cerdas Menyimpan Makanan agar Tahan Lama",
-                'category' => "Tips",
-                'readTime' => "5 min read",
-                'date' => "2026-03-25",
-                'author' => "System",
-                'image' => "https://images.unsplash.com/photo-1737363625103-de62618722e8?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                'content' => "Ketahui cara yang benar menyimpan sayur, daging, dan produk dairy agar tidak cepat busuk dan terbuang sia-sia. Menyimpan makanan dengan cara yang benar tidak hanya membantu Anda menghemat uang, tetapi juga secara signifikan mengurangi jumlah sampah makanan yang dihasilkan oleh rumah tangga Anda. Misalnya, tahukah Anda bahwa kentang sebaiknya disimpan di tempat yang gelap dan sejuk, tetapi tidak di dalam lemari es? Lemari es dapat mengubah pati kentang menjadi gula, yang dapat mempengaruhi rasa dan teksturnya saat dimasak.",
-            ],
-            [
-                'id' => 2,
-                'title' => "Dampak Sampah Makanan Terhadap Perubahan Iklim",
-                'category' => "Artikel Edukasi",
-                'readTime' => "8 min read",
-                'date' => "2026-03-20",
-                'author' => "System",
-                'image' => "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=500&h=300&fit=crop",
-                'content' => "Tahukah Anda bahwa sampah makanan berkontribusi sebesar 8% terhadap total emisi gas rumah kaca global? Mari kita bahas lebih lanjut tentang bagaimana membuang makanan berarti kita juga membuang semua sumber daya yang digunakan untuk memproduksinya—termasuk air, tanah, energi, tenaga kerja, dan modal. Ketika sampah makanan menumpuk di tempat pembuangan akhir, ia membusuk dan melepaskan metana, gas rumah kaca yang jauh lebih kuat daripada karbon dioksida.",
-            ],
-            [
-                'id' => 3,
-                'title' => "Mengolah Sisa Bahan Makanan Menjadi Kompos",
-                'category' => "Panduan Praktis",
-                'readTime' => "6 min read",
-                'date' => "2026-03-15",
-                'author' => "System",
-                'image' => "https://images.unsplash.com/photo-1492496913980-501348b61469?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                'content' => "Panduan langkah demi langkah membuat kompos sendiri di rumah menggunakan sisa-sisa sayuran dan buah. Membuat kompos adalah cara yang luar biasa untuk mendaur ulang nutrisi kembali ke tanah dan mengurangi ketergantungan kita pada pupuk kimia. Anda tidak memerlukan halaman yang luas untuk memulai; pengomposan dalam ruangan atau sistem bokashi bisa menjadi solusi bagi mereka yang tinggal di apartemen atau rumah dengan lahan terbatas.",
-            ],
-        ])->map(fn($i) => (object)$i);
-    }
 }

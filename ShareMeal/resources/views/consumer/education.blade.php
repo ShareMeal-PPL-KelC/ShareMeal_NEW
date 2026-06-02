@@ -1,22 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="space-y-6" x-data="{ 
-    searchQuery: '', 
-    activeCategory: 'Semua',
-    articles: {{ json_encode($articles) }},
-    get filteredArticles() {
-        return this.articles.filter(article => {
-            const matchesSearch = article.title.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                                 article.content.toLowerCase().includes(this.searchQuery.toLowerCase());
-            const matchesCategory = this.activeCategory === 'Semua' || article.category === this.activeCategory;
-            return matchesSearch && matchesCategory;
-        });
-    },
-    handleShare(title) {
-        alert('Tautan untuk \'' + title + '\' berhasil disalin!');
-    }
-}">
+<div class="space-y-6" x-data="educationPage()">
     <!-- Header Hero Section -->
     <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#12360f] to-[#1c5317] p-8 md:p-12 text-white border border-white/10 shadow-2xl reveal">
         <!-- Internal Blobs -->
@@ -85,11 +70,10 @@
     <!-- Categories Filter -->
     <div class="flex gap-3 overflow-x-auto pb-4 no-scrollbar reveal">
         @foreach($categories as $category)
-        <button 
-            @click="activeCategory = '{{ $category }}'"
-            :class="activeCategory === '{{ $category }}' ? 'bg-[#174413] text-white shadow-md' : 'bg-white/60 text-gray-600 border border-luxury-alabas/80 hover:bg-white hover:text-[#174413]'"
-            class="px-8 py-3 rounded-2xl font-black text-sm transition-all flex-shrink-0"
-        >
+        <button
+            @click="activeCategory = '{{ addslashes($category) }}'"
+            :class="activeCategory === '{{ addslashes($category) }}' ? 'bg-[#174413] text-white shadow-md' : 'bg-white/60 text-gray-600 border border-luxury-alabas/80 hover:bg-white hover:text-[#174413]'"
+            class="px-8 py-3 rounded-2xl font-black text-sm transition-all flex-shrink-0">
             {{ $category }}
         </button>
         @endforeach
@@ -153,4 +137,45 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
+
+<script>
+function educationPage() {
+    var source = @json($articles);
+
+    function doFilter(articles, query, category) {
+        var q   = query.trim().toLowerCase();
+        var cat = category.trim().toLowerCase();
+        return articles.filter(function(a) {
+            if (!a) return false;
+            var title   = String(a.title    || '').toLowerCase();
+            var content = String(a.content  || '').toLowerCase();
+            var artCat  = String(a.category || '').trim().toLowerCase();
+            var okSearch = q === '' || title.indexOf(q) !== -1 || content.indexOf(q) !== -1;
+            var okCat    = cat === 'semua' || artCat === cat;
+            return okSearch && okCat;
+        });
+    }
+
+    return {
+        searchQuery:      '',
+        activeCategory:   'Semua',
+        allArticles:      source,
+        filteredArticles: source.slice(),
+
+        init: function() {
+            var self = this;
+            this.$watch('searchQuery', function() {
+                self.filteredArticles = doFilter(self.allArticles, self.searchQuery, self.activeCategory);
+            });
+            this.$watch('activeCategory', function() {
+                self.filteredArticles = doFilter(self.allArticles, self.searchQuery, self.activeCategory);
+            });
+        },
+
+        handleShare: function(title) {
+            alert('Tautan untuk \'' + title + '\' berhasil disalin!');
+        }
+    };
+}
+</script>
 @endsection

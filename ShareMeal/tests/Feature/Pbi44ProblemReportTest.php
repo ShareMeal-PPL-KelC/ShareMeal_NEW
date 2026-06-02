@@ -21,6 +21,7 @@ class Pbi44ProblemReportTest extends TestCase
 
         $consumer = User::factory()->create(['role' => 'consumer']);
         $mitra = User::factory()->create(['role' => 'mitra']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         $order = Order::create([
             'customer_id' => $consumer->id,
@@ -50,12 +51,18 @@ class Pbi44ProblemReportTest extends TestCase
         $report = ProblemReport::first();
         $this->assertNotNull($report->evidence_image);
         Storage::disk('public')->assertExists($report->evidence_image);
+
+        // Assert admin received notification
+        $this->assertEquals(1, $admin->notifications->count());
+        $notification = $admin->notifications->first();
+        $this->assertEquals('Laporan Masalah Baru', $notification->data['title']);
     }
 
     public function test_lembaga_can_report_donation_problem(): void
     {
         $lembaga = User::factory()->create(['role' => 'lembaga']);
         $mitra = User::factory()->create(['role' => 'mitra']);
+        $admin = User::factory()->create(['role' => 'admin']);
         
         $donation = Donation::create([
             'mitra_id' => $mitra->id,
@@ -80,5 +87,10 @@ class Pbi44ProblemReportTest extends TestCase
             'donation_id' => $donation->id,
             'issue_type' => 'expired',
         ]);
+
+        // Assert admin received notification
+        $this->assertEquals(1, $admin->notifications->count());
+        $notification = $admin->notifications->first();
+        $this->assertEquals('Laporan Masalah Baru', $notification->data['title']);
     }
 }

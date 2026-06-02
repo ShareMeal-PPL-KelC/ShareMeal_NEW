@@ -25,7 +25,7 @@
 
                 <div class="flex items-center gap-4">
                     <div class="hidden md:block text-right">
-                        <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
+                        <div class="text-sm font-medium text-gray-900">{{ Auth::user()->displayName }}</div>
                         <div class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</div>
                     </div>
                     <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop" class="hidden md:flex">
@@ -127,7 +127,7 @@
                 <div class="bg-white w-64 h-full p-4" @click.stop>
                     <div class="mb-6 flex justify-between items-center">
                         <div>
-                            <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ Auth::user()->displayName }}</div>
                             <div class="text-xs text-gray-500 capitalize">{{ Auth::user()->role }}</div>
                         </div>
                         <button @click="mobileMenuOpen = false" class="text-gray-400 hover:text-gray-600">

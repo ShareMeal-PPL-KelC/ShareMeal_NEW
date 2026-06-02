@@ -30,7 +30,8 @@ class KonsumenMelihatRiwayatTest extends DuskTestCase
 
             $browser->loginAs($kina)
                     ->visit('/consumer/history')
-                    ->assertSee('Riwayat Transaksi');
+                    ->waitForText('Riwayat Pesanan')
+                    ->assertSee('Riwayat Pesanan');
         });
     }
 }

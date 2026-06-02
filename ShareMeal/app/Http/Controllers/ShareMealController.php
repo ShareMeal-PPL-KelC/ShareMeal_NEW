@@ -139,17 +139,23 @@ class ShareMealController extends Controller
         ];
 
         if ($request->user_type === 'mitra') {
+            $rules['organization_name'] = ['required', 'string', 'regex:/^[a-zA-Z0-9\s]+$/'];
             $rules['document_ktp_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_siup_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_nib_mitra'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_halal_mitra'] = ['nullable', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
         } elseif ($request->user_type === 'lembaga') {
+            $rules['organization_name'] = ['required', 'string', 'regex:/^[a-zA-Z0-9\s]+$/'];
             $rules['document_legalitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_izin_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
             $rules['document_identitas_lembaga'] = ['required', 'file', 'mimes:jpg,png,pdf', 'max:2048'];
         }
 
-        $data = $request->validate($rules);
+        $data = $request->validate($rules, [
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
+            'organization_name.required' => 'Nama mitra atau nama lembaga wajib diisi.',
+            'organization_name.regex' => 'Nama mitra atau nama lembaga hanya boleh berisi huruf, angka, dan spasi.',
+        ]);
 
         $userData = [
             'name' => $data['name'],
@@ -158,11 +164,11 @@ class ShareMealController extends Controller
             'role' => $data['user_type'],
             'status' => 'active',
             'phone' => null,
-            'organization_name' => in_array($data['user_type'], ['mitra', 'lembaga'], true) ? $data['name'] : null,
+            'organization_name' => in_array($data['user_type'], ['mitra', 'lembaga'], true) ? $data['organization_name'] : null,
             'joined_at' => now()->toDateString(),
             'transactions_count' => 0,
             'warnings_count' => 0,
-            'is_verified' => false,
+            'is_verified' => $data['user_type'] === 'consumer',
         ];
 
         // Process file uploads
@@ -181,7 +187,11 @@ class ShareMealController extends Controller
 
         User::query()->create($userData);
 
-        return redirect()->route('login')->with('success', 'Registrasi berhasil. Akun Anda sedang dalam proses verifikasi oleh admin.');
+        $successMessage = $data['user_type'] === 'consumer' 
+            ? 'Registrasi berhasil. Silakan masuk menggunakan akun Anda.' 
+            : 'Registrasi berhasil. Akun Anda sedang dalam proses verifikasi oleh admin.';
+
+        return redirect()->route('login')->with('success', $successMessage);
     }
 
     public function logout(): RedirectResponse
@@ -224,6 +234,10 @@ class ShareMealController extends Controller
 
         if (!$user) {
             return redirect()->route('login')->with('error', 'Silakan login untuk mengelola profil.');
+        }
+
+        if ($user->role === 'consumer' && !$user->is_verified) {
+            $user->update(['is_verified' => true]);
         }
 
         return view('pages.profile.edit', [
@@ -355,6 +369,10 @@ class ShareMealController extends Controller
             'phone_verified_at' => now(),
             'phone_change_available_at' => now()->addMinute(),
         ]);
+
+        if ($user->role === 'consumer' && !$user->is_verified) {
+            $user->update(['is_verified' => true]);
+        }
 
         $request->session()->forget($this->profilePhoneOtpSessionKey($user->id));
         ShareMealState::login($user->id);
@@ -784,6 +802,21 @@ class ShareMealController extends Controller
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         app(AutoDonationService::class)->processProducts($userId);
 
+        $user = Auth::user()?->load('profile');
+        $profile = $user?->profile;
+        $openingHours = $profile?->opening_hours ?? '08:00 - 20:00';
+        $parts = explode(' - ', $openingHours);
+        $shopOpen = count($parts) === 2 ? trim($parts[0]) : '08:00';
+        $shopClose = count($parts) === 2 ? trim($parts[1]) : '20:00';
+
+        try {
+            $startCarbon = \Carbon\Carbon::createFromFormat('H:i', $shopOpen);
+            $defaultPickupStart = $startCarbon->addHour()->format('H:i');
+        } catch (\Exception $e) {
+            $defaultPickupStart = '09:00';
+        }
+        $defaultPickupEnd = $shopClose;
+
         $products = Product::with(['user' => function($q) {
                 $q->withAvg('reviewsAsMitra', 'rating')
                   ->withCount('reviewsAsMitra')
@@ -802,7 +835,7 @@ class ShareMealController extends Controller
                 return $product;
             });
 
-        return view('pages.mitra.inventory', compact('products'));
+        return view('pages.mitra.inventory', compact('products', 'defaultPickupStart', 'defaultPickupEnd'));
     }
 
     public function mitraInventoryStore(Request $request): RedirectResponse
@@ -1181,7 +1214,13 @@ class ShareMealController extends Controller
     {
         $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         $userObj = User::query()->find($userId);
-        $donations = ShareMealState::get('donations');
+        
+        $allDonations = ShareMealState::get('donations');
+        
+        // Filter donations: show available ones, and only show claimed/completed if claimed by this user
+        $donations = collect($allDonations)->filter(function ($donation) use ($userObj) {
+            return $donation['status'] === 'available' || $donation['lembaga_id'] == $userObj->id;
+        })->all();
 
         // PBI #45: Add critical alert for active claimed donations
         $criticalAlerts = [];
@@ -1207,8 +1246,16 @@ class ShareMealController extends Controller
 
     public function lembagaDonations(): View
     {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $allDonations = ShareMealState::get('donations');
+
+        // Filter donations: show available ones, and only show claimed/completed if claimed by this user
+        $donations = collect($allDonations)->filter(function ($donation) use ($userId) {
+            return $donation['status'] === 'available' || $donation['lembaga_id'] == $userId;
+        })->all();
+
         return view('pages.lembaga.donations', $this->dashboardData('lembaga', 'Kelola Donasi', 'Klaim & tracking donasi makanan') + [
-            'donations' => ShareMealState::get('donations'),
+            'donations' => $donations,
             'activeTab' => request('tab', 'available'),
         ]);
     }
@@ -1285,7 +1332,7 @@ class ShareMealController extends Controller
             $evidencePath = $request->file('evidence_image')->store('reports', 'public');
         }
 
-        \App\Models\ProblemReport::create([
+        $report = \App\Models\ProblemReport::create([
             'reporter_id' => $userId,
             'mitra_id' => $donation->mitra_id,
             'donation_id' => $donation->id,
@@ -1294,6 +1341,12 @@ class ShareMealController extends Controller
             'evidence_image' => $evidencePath,
             'status' => 'pending',
         ]);
+
+        // Notify Admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\NewProblemReportNotification($report));
+        }
 
         return back()->with('success', 'Laporan masalah donasi berhasil dikirim.');
     }
@@ -1471,6 +1524,70 @@ class ShareMealController extends Controller
         ]);
     }
 
+    public function adminExportTransactionsCsv(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        // Seluruh data transaksi (semua halaman)
+        $allTransactions = collect([
+            (object)['id' => 5420, 'customer' => (object)['name' => 'Budi Santoso'],  'mitra' => (object)['name' => 'Toko Roti Sejahtera'],   'total_amount' => 45000,  'status' => 'completed', 'created_at' => now()->subMinutes(15)],
+            (object)['id' => 5419, 'customer' => (object)['name' => 'Siti Aminah'],   'mitra' => (object)['name' => 'Warung Makan Ibu Rina'],  'total_amount' => 28500,  'status' => 'pending',   'created_at' => now()->subMinutes(30)],
+            (object)['id' => 5418, 'customer' => (object)['name' => 'Andi Wijaya'],   'mitra' => (object)['name' => 'Healthy Cafe'],           'total_amount' => 120000, 'status' => 'completed', 'created_at' => now()->subHours(2)],
+            (object)['id' => 5417, 'customer' => (object)['name' => 'Rina Melati'],   'mitra' => (object)['name' => 'Toko Roti Sejahtera'],   'total_amount' => 15000,  'status' => 'cancelled', 'created_at' => now()->subHours(5)],
+            (object)['id' => 5416, 'customer' => (object)['name' => 'Dwi Cahyo'],     'mitra' => (object)['name' => 'Toko Roti Sejahtera'],   'total_amount' => 60000,  'status' => 'completed', 'created_at' => now()->subHours(6)],
+            (object)['id' => 5415, 'customer' => (object)['name' => 'Yuni Pertiwi'],  'mitra' => (object)['name' => 'Healthy Cafe'],           'total_amount' => 35000,  'status' => 'completed', 'created_at' => now()->subHours(7)],
+        ]);
+
+        $filename = 'transaksi_sharemeal_' . now()->format('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ];
+
+        $callback = function () use ($allTransactions) {
+            $file = fopen('php://output', 'w');
+
+            // BOM UTF-8 agar Excel tidak garbled
+            fputs($file, "\xEF\xBB\xBF");
+
+            // Header baris
+            fputcsv($file, [
+                'ID Transaksi',
+                'Konsumen',
+                'Mitra',
+                'Total (Rp)',
+                'Status',
+                'Tanggal',
+                'Jam (WIB)',
+            ]);
+
+            foreach ($allTransactions as $trx) {
+                $statusLabel = match ($trx->status) {
+                    'completed' => 'Selesai',
+                    'pending'   => 'Menunggu',
+                    'cancelled' => 'Dibatalkan',
+                    default     => $trx->status,
+                };
+
+                fputcsv($file, [
+                    'TRX-' . str_pad($trx->id, 5, '0', STR_PAD_LEFT),
+                    $trx->customer->name ?? '-',
+                    $trx->mitra->name ?? '-',
+                    $trx->total_amount,
+                    $statusLabel,
+                    $trx->created_at->format('d/m/Y'),
+                    $trx->created_at->format('H:i'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function adminReviews(): View
     {
         $reviews = Review::with(['customer', 'mitra.profile', 'order.items.product'])
@@ -1567,9 +1684,10 @@ class ShareMealController extends Controller
         ]);
     }
 
-    public function adminWarnUser(int $userId): RedirectResponse
+    public function adminWarnUser(Request $request, int $userId): RedirectResponse
     {
-        ShareMealState::warnUser($userId);
+        $data = $request->validate(['reason' => ['required']]);
+        ShareMealState::warnUser($userId, $data['reason']);
         return back()->with('success', 'Peringatan diberikan kepada user.');
     }
 
@@ -1607,11 +1725,17 @@ class ShareMealController extends Controller
     public function adminEducationStore(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'title' => ['required'],
-            'category' => ['required'],
-            'status' => ['required'],
-            'content' => ['required'],
+            'title'    => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string'],
+            'status'   => ['required', 'string'],
+            'content'  => ['required', 'string'],
+            'image'    => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('articles', 'public');
+        }
+
         ShareMealState::saveArticle($data);
         return back()->with('success', 'Artikel berhasil ditambahkan.');
     }
@@ -1619,11 +1743,22 @@ class ShareMealController extends Controller
     public function adminEducationUpdate(Request $request, int $articleId): RedirectResponse
     {
         $data = $request->validate([
-            'title' => ['required'],
-            'category' => ['required'],
-            'status' => ['required'],
-            'content' => ['required'],
+            'title'    => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string'],
+            'status'   => ['required', 'string'],
+            'content'  => ['required', 'string'],
+            'image'    => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
+
+        if ($request->hasFile('image')) {
+            // Hapus gambar lama jika ada
+            $oldArticle = \App\Models\Article::find($articleId);
+            if ($oldArticle && $oldArticle->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($oldArticle->image)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldArticle->image);
+            }
+            $data['image_path'] = $request->file('image')->store('articles', 'public');
+        }
+
         ShareMealState::saveArticle($data, $articleId);
         return back()->with('success', 'Artikel berhasil diperbarui.');
     }
@@ -1657,23 +1792,24 @@ class ShareMealController extends Controller
     {
         $report = \App\Models\ProblemReport::findOrFail($reportId);
         $mitra = $report->mitra;
+        $reason = $request->input('reason') ?: ($report->issue_label . ': ' . $report->description);
 
         if ($mitra) {
             $mitra->increment('warnings_count');
             $mitra->update([
                 'status' => 'warned',
                 'last_warning_at' => now(),
-                'warning_reason' => $report->issue_label . ': ' . $report->description,
+                'warning_reason' => $reason,
             ]);
 
             // Notify Mitra
             $mitra->notify(new \App\Notifications\SystemWarningNotification(
                 'Peringatan Akun',
-                'Akun Anda mendapatkan peringatan resmi karena laporan: ' . $report->issue_label . '. Mohon jaga kualitas layanan Anda.'
+                'Akun Anda mendapatkan peringatan resmi. Alasan: ' . $reason
             ));
         }
 
-        $report->update(['status' => 'resolved', 'admin_note' => 'Diberikan peringatan kepada mitra.']);
+        $report->update(['status' => 'resolved', 'admin_note' => 'Diberikan peringatan kepada mitra. Alasan: ' . $reason]);
 
         return back()->with('success', 'Peringatan telah dikirimkan kepada mitra.');
     }
@@ -1682,16 +1818,23 @@ class ShareMealController extends Controller
     {
         $report = \App\Models\ProblemReport::findOrFail($reportId);
         $mitra = $report->mitra;
+        $reason = $request->input('reason') ?: ('Pelanggaran berat/berulang berdasarkan laporan: ' . $report->issue_label);
 
         if ($mitra) {
             $mitra->update([
                 'status' => 'blocked',
                 'blocked_at' => now(),
-                'block_reason' => 'Pelanggaran berat/berulang berdasarkan laporan: ' . $report->issue_label,
+                'block_reason' => $reason,
             ]);
+
+            // Notify Mitra
+            $mitra->notify(new \App\Notifications\SystemWarningNotification(
+                'Akun Diblokir',
+                'Akun Anda telah dinonaktifkan permanen oleh Admin. Alasan: ' . $reason
+            ));
         }
 
-        $report->update(['status' => 'resolved', 'admin_note' => 'Mitra telah diblokir secara permanen.']);
+        $report->update(['status' => 'resolved', 'admin_note' => 'Mitra telah diblokir secara permanen. Alasan: ' . $reason]);
 
         return back()->with('success', 'Mitra telah diblokir.');
     }

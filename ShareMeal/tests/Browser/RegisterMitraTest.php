@@ -39,6 +39,7 @@ class RegisterMitraTest extends DuskTestCase
                     ->attach('document_nib_mitra', $dummyFilePath)
                     
                     // Step 3: Isi Biodata
+                    ->type('organization_name', 'Toko Kue Mitra')
                     ->type('name', 'Mitra Baru ShareMeal')
                     ->type('email', $uniqueEmail)
                     ->type('password', 'password123')

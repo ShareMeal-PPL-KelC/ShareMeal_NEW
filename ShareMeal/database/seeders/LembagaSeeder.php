@@ -16,7 +16,7 @@ class LembagaSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'lembaga@example.com'],
             [
-                'name' => 'Yayasan Peduli Anak',
+                'name' => 'Hendra Setiawan',
                 'password' => Hash::make('password'),
                 'role' => 'lembaga',
                 'status' => 'active',

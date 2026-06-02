@@ -82,6 +82,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/education/{articleId}', [ShareMealController::class, 'adminEducationUpdate'])->name('education.update');
     Route::post('/education/{articleId}/delete', [ShareMealController::class, 'adminEducationDelete'])->name('education.delete');
     Route::get('/transactions', [ShareMealController::class, 'adminTransactions'])->name('transactions');
+    Route::get('/transactions/export-csv', [ShareMealController::class, 'adminExportTransactionsCsv'])->name('transactions.export-csv');
     Route::get('/reports', [ShareMealController::class, 'adminReports'])->name('reports');
     
     // PBI #47 & #48: Moderation Reports

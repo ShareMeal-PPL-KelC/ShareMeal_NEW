@@ -3,9 +3,11 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Models\Article;
 use App\Models\Donation;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 use App\Notifications\FlashSaleNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -63,6 +65,8 @@ class ShareMealState
             'donations' => \App\Models\Donation::query()->get()->map(function ($donation) {
                 return [
                     'id' => $donation->id,
+                    'mitra_id' => $donation->mitra_id,
+                    'lembaga_id' => $donation->lembaga_id,
                     'store' => [
                         'name' => $donation->mitra->name ?? 'Mitra Default',
                         'address' => 'Jl. Pahlawan No. 10, Jakarta',
@@ -232,7 +236,7 @@ class ShareMealState
         ]);
     }
 
-    public static function warnUser(int $userId): void
+    public static function warnUser(int $userId, ?string $reason = null): void
     {
         $user = User::query()->find($userId);
         if (!$user) {
@@ -243,6 +247,7 @@ class ShareMealState
             'status' => 'warned',
             'warnings_count' => $user->warnings_count + 1,
             'last_warning_at' => now()->toDateString(),
+            'warning_reason' => $reason ?? 'Pelanggaran ketentuan sistem.',
         ]);
     }
 
@@ -267,15 +272,23 @@ class ShareMealState
     public static function saveArticle(array $payload, ?int $articleId = null): void
     {
         $attributes = [
-            'title' => $payload['title'],
-            'category' => $payload['category'],
-            'status' => $payload['status'],
-            'content' => $payload['content'],
-            'author' => 'Admin System',
+            'title'        => $payload['title'],
+            'category'     => $payload['category'],
+            'status'       => $payload['status'],
+            'content'      => $payload['content'],
+            'author'       => 'Admin System',
             'published_on' => now()->toDateString(),
-            'image' => 'https://images.unsplash.com/photo-1593113702251-272b1bc414a9?auto=format&fit=crop&q=80&w=800',
-            'read_time' => '4 min read',
+            'read_time'    => '4 min read',
         ];
+
+        // Jika ada upload baru, pakai path yang disimpan controller
+        if (!empty($payload['image_path'])) {
+            $attributes['image'] = $payload['image_path'];
+        } elseif (!$articleId) {
+            // Artikel baru tanpa gambar → pakai default
+            $attributes['image'] = 'https://images.unsplash.com/photo-1593113702251-272b1bc414a9?auto=format&fit=crop&q=80&w=800';
+        }
+        // Update tanpa gambar baru → tidak ubah kolom image (biarkan gambar lama)
 
         if ($articleId) {
             Article::query()->whereKey($articleId)->update($attributes);
@@ -412,6 +425,22 @@ class ShareMealState
 
     protected static function transformApplication(User $user): array
     {
+        $documents = [];
+        if ($user->role === 'mitra') {
+            $documents = [
+                'ktp' => $user->document_ktp,
+                'siup' => $user->document_siup,
+                'nib' => $user->document_nib,
+                'halal' => $user->document_halal,
+            ];
+        } elseif ($user->role === 'lembaga') {
+            $documents = [
+                'legalitas' => $user->document_legalitas,
+                'izin' => $user->document_izin,
+                'identitas' => $user->document_identitas,
+            ];
+        }
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -419,12 +448,7 @@ class ShareMealState
             'email' => $user->email,
             'phone' => $user->phone,
             'submitted_at' => optional($user->created_at)->format('Y-m-d H:i'),
-            'documents' => [
-                'ktp' => $user->document_ktp,
-                'siup' => $user->document_siup,
-                'nib' => $user->document_nib,
-                'halal' => $user->document_halal,
-            ],
+            'documents' => $documents,
             'status' => 'pending', // Applications are always pending if is_verified is false
             'rejection_reason' => $user->verification_rejection_reason,
         ];
@@ -439,7 +463,7 @@ class ShareMealState
             'phone' => $user->phone,
             'type' => $user->role,
             'status' => $user->status,
-            'joined_at' => optional($user->joined_at)->format('Y-m-d') ?? now()->format('Y-m-d'),
+            'joined_at' => optional($user->joined_at ?? $user->created_at)->format('d M Y') ?? '-',
             'transactions' => $user->transactions_count,
             'warnings' => $user->warnings_count,
             'verified' => $user->is_verified,
@@ -452,15 +476,21 @@ class ShareMealState
 
     protected static function transformArticle(Article $article): array
     {
+        // Jika image adalah path lokal (bukan URL eksternal), ubah ke URL publik
+        $image = $article->image;
+        if ($image && !str_starts_with($image, 'http')) {
+            $image = Storage::url($image);
+        }
+
         return [
-            'id' => $article->id,
-            'title' => $article->title,
-            'category' => $article->category,
-            'status' => $article->status,
-            'date' => optional($article->published_on)->format('Y-m-d') ?? optional($article->created_at)->format('Y-m-d'),
-            'author' => $article->author,
-            'content' => $article->content,
-            'image' => $article->image,
+            'id'        => $article->id,
+            'title'     => $article->title,
+            'category'  => $article->category,
+            'status'    => $article->status,
+            'date'      => optional($article->published_on)->format('Y-m-d') ?? optional($article->created_at)->format('Y-m-d'),
+            'author'    => $article->author,
+            'content'   => $article->content,
+            'image'     => $image,
             'read_time' => $article->read_time,
         ];
     }

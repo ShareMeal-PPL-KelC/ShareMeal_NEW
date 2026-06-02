@@ -41,6 +41,24 @@
         </div>
     @endif
 
+    @if($user->status === 'warned' || $user->warnings_count > 0)
+        <div class="rounded-2xl border border-orange-100 bg-orange-50/50 p-6 flex items-start gap-4">
+            <div class="w-12 h-12 bg-orange-100 text-orange-650 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>
+                </svg>
+            </div>
+            <div class="space-y-1.5 flex-1">
+                <h3 class="text-xs font-black text-orange-850 uppercase tracking-widest leading-none">Riwayat Peringatan Admin</h3>
+                <p class="text-xs text-orange-700 leading-relaxed font-medium">Akun Anda sedang dalam status peringatan resmi oleh Admin.</p>
+                <div class="text-xs text-orange-600 mt-2 bg-white/70 p-3 rounded-lg border border-orange-100 italic">
+                    <strong>Alasan Terakhir:</strong> {{ $user->warning_reason ?: 'Pelanggaran kebijakan platform.' }}
+                </div>
+                <p class="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-2 block">Total Peringatan Akun: {{ $user->warnings_count }}</p>
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
         <aside class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-fit">
             <div class="flex flex-col items-center text-center">

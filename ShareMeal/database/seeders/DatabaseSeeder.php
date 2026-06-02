@@ -29,7 +29,8 @@ class DatabaseSeeder extends Seeder
         $mitra = User::updateOrCreate(
             ['email' => 'mitra@example.com'],
             [
-                'name' => 'Toko Roti Makmur',
+                'name' => 'Budi Santoso',
+                'organization_name' => 'Toko Roti Makmur',
                 'password' => bcrypt('password'),
                 'role' => 'mitra',
                 'phone' => '089876543210',
