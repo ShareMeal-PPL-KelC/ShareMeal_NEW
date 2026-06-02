@@ -44,12 +44,31 @@
                                 </p>
                                 @endif
                                 <p class="text-sm text-green-600 font-bold flex items-center gap-1">
-                                    <i data-lucide="calendar" class="w-4 h-4"></i> Jam Ambil: {{ $donation->pickup_time_window }}
+                                    <i data-lucide="calendar" class="w-4 h-4"></i> Jendela Ambil: {{ $donation->pickup_time_window }}
                                 </p>
                             </div>
                         </div>
-                        <div class="text-right">
+                        <div class="flex flex-col items-end gap-2">
                             <div class="text-2xl font-black text-gray-900">{{ $donation->quantity }} {{ $donation->unit }}</div>
+                            <div class="flex gap-2">
+                                @if($donation->status === 'pending')
+                                    <form action="{{ route('mitra.donations.cancel', $donation->id) }}" method="POST" onsubmit="return confirm('Batalkan donasi ini?')">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 transition">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Batalkan
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if($donation->status === 'claimed')
+                                    <form action="{{ route('mitra.donations.complete', $donation->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-bold text-green-600 hover:text-green-700 flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100 transition shadow-sm">
+                                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Konfirmasi Penyerahan
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
@@ -62,32 +81,49 @@
 
                         <!-- Lembaga Info -->
                         <div>
-                            <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Informasi Lembaga</p>
+                            <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Informasi Lembaga & Penjemputan</p>
                             @if($donation->status === 'claimed' || $donation->status === 'completed')
                                 @if($donation->lembaga)
-                                    <div class="space-y-3">
+                                    <div class="space-y-4">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
                                                 <i data-lucide="building" class="w-5 h-5"></i>
                                             </div>
                                             <div>
                                                 <p class="text-sm font-bold text-gray-900">{{ $donation->lembaga->name }}</p>
-                                                <p class="text-xs text-gray-500">Lembaga Sosial</p>
+                                                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Lembaga Sosial</p>
                                             </div>
                                         </div>
-                                        <div class="flex flex-col gap-1 text-sm text-gray-600 pl-13">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i>
-                                                {{ $donation->lembaga->phone ?: 'Tidak ada nomor telepon' }}
+                                        
+                                        <div class="bg-white rounded-xl p-4 border border-gray-100 space-y-3">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-2 text-xs font-bold text-gray-400">
+                                                    <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i> JADWAL JEMPUT
+                                                </div>
+                                                <div class="text-sm font-black text-[#174413]">
+                                                    {{ $donation->pickup_time ? \Carbon\Carbon::parse($donation->pickup_time)->format('H:i') : 'Segera' }}
+                                                </div>
                                             </div>
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
-                                                {{ $donation->lembaga->email }}
+                                            <div class="h-px bg-gray-50"></div>
+                                            <div class="flex flex-col gap-2 text-sm text-gray-600">
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i>
+                                                    {{ $donation->lembaga->phone ?: 'Tidak ada nomor telepon' }}
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <i data-lucide="clock" class="w-4 h-4 text-gray-400"></i>
+                                                    @if($donation->status === 'completed')
+                                                        Diserahkan pada: {{ \Carbon\Carbon::parse($donation->delivered_at)->format('d M, H:i') }}
+                                                    @else
+                                                        Diklaim pada: {{ \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') }}
+                                                    @endif
+                                                </div>
                                             </div>
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="clock" class="w-4 h-4 text-gray-400"></i>
-                                                Diklaim pada: {{ \Carbon\Carbon::parse($donation->claimed_at)->format('d M Y, H:i') }}
-                                            </div>
+                                            @if($donation->status === 'claimed')
+                                                <a href="https://wa.me/{{ $donation->lembaga->phone }}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 transition mt-2">
+                                                    <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Hubungi Lembaga
+                                                </a>
+                                            @endif
                                         </div>
                                     </div>
                                 @else
