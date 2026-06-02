@@ -47,6 +47,19 @@ class ConsumerController extends Controller
             ->withAvg('reviewsAsMitra', 'rating')
             ->get();
 
+        // PBI #45: Add critical alert for active orders
+        $criticalAlerts = [];
+        $shippingOrdersCount = $orders->where('status', 'shipping')->count();
+        if ($shippingOrdersCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'info',
+                'message' => "Hore! Ada $shippingOrdersCount pesanan yang sedang dalam perjalanan ke tempat Anda.",
+                'link' => route('consumer.history'),
+                'link_text' => 'Pantau Lokasi'
+            ];
+        }
+        session()->flash('critical_alerts', $criticalAlerts);
+
         return view('consumer.dashboard', compact('stats', 'flashSales', 'favoriteStores'));
     }
 
@@ -104,11 +117,19 @@ class ConsumerController extends Controller
 
     public function checkout(Request $request)
     {
-        app(AutoDonationService::class)->processProducts();
+        try {
+            app(AutoDonationService::class)->processProducts();
+        } catch (\Exception $e) {
+            \Log::error('AutoDonationService error in checkout: ' . $e->getMessage());
+        }
 
         $product = Product::with('user.profile')->findOrFail($request->product_id);
 
-        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || $product->expires_at->isPast()) {
+        if (!$product->user) {
+            return redirect()->route('consumer.search')->withErrors(['product_id' => 'Data mitra tidak ditemukan untuk produk ini.']);
+        }
+
+        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || ($product->expires_at && $product->expires_at->isPast())) {
             return redirect()->route('consumer.search')->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.']);
         }
 
@@ -127,24 +148,37 @@ class ConsumerController extends Controller
 
         // Generate 30-min slots within window
         $slots = [];
-        $start = \Carbon\Carbon::createFromFormat('H:i:s', $pickupStart);
-        $end = \Carbon\Carbon::createFromFormat('H:i:s', $pickupEnd);
-        
-        while ($start->lt($end)) {
-            $slotStart = $start->format('H:i');
-            $start->addMinutes(30);
-            if ($start->gt($end)) break;
-            $slotEnd = $start->format('H:i');
-            $slotLabel = "$slotStart - $slotEnd";
+        try {
+            $startStr = !empty($pickupStart) ? $pickupStart : '18:00';
+            $endStr = !empty($pickupEnd) ? $pickupEnd : '20:00';
             
-            $currentCount = $orderCounts[$slotLabel] ?? 0;
-            $isFull = $currentCount >= $slotLimit;
+            $start = \Carbon\Carbon::parse($startStr);
+            $end = \Carbon\Carbon::parse($endStr);
             
-            $slots[] = (object) [
-                'label' => $slotLabel,
-                'is_full' => $isFull,
-                'remaining' => max(0, $slotLimit - $currentCount)
-            ];
+            if ($end->lt($start)) {
+                $end->addDay();
+            }
+            
+            $maxSlots = 48;
+            while ($start->lt($end) && $maxSlots > 0) {
+                $slotStart = $start->format('H:i');
+                $start->addMinutes(30);
+                if ($start->gt($end)) break;
+                $slotEnd = $start->format('H:i');
+                $slotLabel = "$slotStart - $slotEnd";
+                
+                $currentCount = $orderCounts[$slotLabel] ?? 0;
+                $isFull = $currentCount >= $slotLimit;
+                
+                $slots[] = (object) [
+                    'label' => $slotLabel,
+                    'is_full' => $isFull,
+                    'remaining' => max(0, $slotLimit - $currentCount)
+                ];
+                $maxSlots--;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error generating slots: ' . $e->getMessage());
         }
 
         $booking = (object) [
@@ -185,6 +219,7 @@ class ConsumerController extends Controller
             'price' => 'required|numeric',
             'receiving_method' => 'required|in:pickup,delivery',
             'delivery_time_slot' => 'required_if:receiving_method,delivery|string|nullable',
+            'payment_method' => 'nullable|string|in:qris,gopay,ovo,dana',
         ]);
 
         $product = Product::findOrFail($request->product_id);
@@ -236,6 +271,7 @@ class ConsumerController extends Controller
             'receiving_method' => $receivingMethod,
             'delivery_fee' => $deliveryFee,
             'delivery_time_slot' => $deliveryTimeSlot,
+            'payment_method' => $request->payment_method ?? 'qris',
         ]);
 
         OrderItem::create([
@@ -250,6 +286,16 @@ class ConsumerController extends Controller
         $mitra = User::find($request->mitra_id);
         if ($mitra) {
             $mitra->notify(new \App\Notifications\IncomingOrderNotification($order));
+        }
+
+        if (request()->wantsJson() || request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'order_id' => $order->id,
+                'order_number' => $order->orderId,
+                'pickup_code' => $order->pickup_code,
+                'redirect_url' => route('consumer.history'),
+            ]);
         }
 
         return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);

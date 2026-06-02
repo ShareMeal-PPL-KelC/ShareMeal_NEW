@@ -12,6 +12,8 @@ Route::post('/register', [ShareMealController::class, 'doRegister'])->name('regi
 Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
 
 Route::post('/notifications/mark-as-read', [ShareMealController::class, 'markNotificationsRead'])->name('notifications.markRead');
+Route::post('/notifications/{id}/mark-as-read', [ShareMealController::class, 'markSingleNotificationRead'])->name('notifications.markSingleRead');
+Route::get('/notifications', [ShareMealController::class, 'allNotifications'])->name('notifications.index');
 Route::get('/profile', [ShareMealController::class, 'editProfile'])->name('profile.edit');
 Route::post('/profile', [ShareMealController::class, 'updateProfile'])->name('profile.update');
 Route::post('/profile/phone/verify', [ShareMealController::class, 'verifyProfilePhone'])->name('profile.phone.verify');

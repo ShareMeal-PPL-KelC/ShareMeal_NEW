@@ -20,6 +20,41 @@
     $navUser = Auth::user() ?? \App\Models\User::with('profile')->find(session('sharemeal.current_user_id'));
 @endphp
 <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
+    <!-- PBI #45: Critical Notification Banner -->
+    @if($navUser)
+        @php
+            $criticalAlerts = session('critical_alerts', []);
+            if ($navUser->status === 'warned') {
+                $criticalAlerts[] = [
+                    'type' => 'warning',
+                    'message' => 'Peringatan: Akun Anda mendapatkan peringatan karena pelanggaran kebijakan. Mohon patuhi aturan platform.',
+                    'link' => '#',
+                    'link_text' => 'Pelajari Selengkapnya'
+                ];
+            }
+            if ($navUser->status === 'blocked') {
+                $criticalAlerts[] = [
+                    'type' => 'danger',
+                    'message' => 'AKSES DIBATASI: Akun Anda telah diblokir. Silakan hubungi dukungan untuk informasi lebih lanjut.',
+                    'action' => 'Banding'
+                ];
+            }
+        @endphp
+
+        @foreach($criticalAlerts as $alert)
+            <div class="{{ ($alert['type'] ?? '') === 'danger' ? 'bg-red-600' : 'bg-orange-600' }} text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60] animate-in slide-in-from-top duration-300">
+                <i data-lucide="{{ ($alert['type'] ?? '') === 'danger' ? 'shield-off' : 'alert-circle' }}" class="w-4 h-4"></i>
+                <span>{{ $alert['message'] }}</span>
+                @if(isset($alert['link']))
+                    <a href="{{ $alert['link'] }}" class="underline ml-2">{{ $alert['link_text'] ?? 'Detail' }}</a>
+                @endif
+                @if(isset($alert['action']))
+                    <button class="bg-white {{ ($alert['type'] ?? '') === 'danger' ? 'text-red-600' : 'text-orange-600' }} px-2 py-0.5 rounded ml-2 uppercase text-[10px]">{{ $alert['action'] }}</button>
+                @endif
+            </div>
+        @endforeach
+    @endif
+
     <!-- Top Navigation -->
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -100,7 +135,7 @@
                                 @endif
                             </div>
                             <div class="px-4 py-2 border-t border-gray-50 text-center">
-                                <a href="#" class="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors">Lihat Semua Notifikasi</a>
+                                <a href="{{ route('notifications.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors">Lihat Semua Notifikasi</a>
                             </div>
                         </div>
                     </div>
@@ -195,6 +230,11 @@
                                 <i data-lucide="book-open" class="w-5 h-5"></i>
                                 <span>Edukasi</span>
                             </a>
+                            <a href="{{ route('admin.problem-reports.index') }}"
+                               class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('admin.problem-reports.*') ? 'bg-red-50 text-red-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                                <span>Laporan Masalah</span>
+                            </a>
                         @elseif(request()->is('lembaga*'))
                             <a href="{{ route('lembaga.dashboard') }}"
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('lembaga.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -281,6 +321,9 @@
                             <a href="{{ route('admin.education') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="book-open" class="w-5 h-5"></i><span>Edukasi</span>
                             </a>
+                            <a href="{{ route('admin.problem-reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('admin.problem-reports.*') ? 'bg-red-50 text-red-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="alert-triangle" class="w-5 h-5"></i><span>Laporan Masalah</span>
+                            </a>
                         @elseif(request()->is('lembaga*'))
                             <a href="{{ route('lembaga.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('lembaga.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
@@ -338,9 +381,72 @@
         </div>
     </div>
 
+    <!-- PBI #45: Toast Notification System -->
+    <div x-data="{ 
+            notifications: [],
+            add(n) {
+                this.notifications.push({ id: Date.now(), ...n });
+                setTimeout(() => {
+                    this.notifications = this.notifications.filter(item => item.id !== n.id);
+                }, 5000);
+            }
+         }" 
+         @notify.window="notifications.push({ id: Date.now(), ...$event.detail })"
+         class="fixed bottom-6 right-6 z-[100] space-y-3 w-80">
+        <template x-for="n in notifications" :key="n.id">
+            <div x-show="true"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-4 opacity-0 scale-95"
+                 x-transition:enter-end="translate-y-0 opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 flex items-start gap-4 ring-1 ring-black/5"
+                 @click="notifications = notifications.filter(item => item.id !== n.id)">
+                <div class="mt-0.5">
+                    <template x-if="n.type === 'success'">
+                        <div class="bg-green-100 p-2 rounded-xl text-green-600">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        </div>
+                    </template>
+                    <template x-if="n.type === 'error'">
+                        <div class="bg-red-100 p-2 rounded-xl text-red-600">
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                        </div>
+                    </template>
+                    <template x-if="n.type === 'warning'">
+                        <div class="bg-orange-100 p-2 rounded-xl text-orange-600">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        </div>
+                    </template>
+                    <template x-if="!n.type || n.type === 'info'">
+                        <div class="bg-blue-100 p-2 rounded-xl text-blue-600">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                        </div>
+                    </template>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-black text-gray-900" x-text="n.title"></div>
+                    <div class="text-xs text-gray-500 font-medium mt-0.5 line-clamp-2" x-text="n.message"></div>
+                </div>
+                <button class="text-gray-300 hover:text-gray-500 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </template>
+    </div>
+
     <script>
         // Initialize Lucide Icons
         lucide.createIcons();
+
+        // PBI #45: Trigger session messages as toasts
+        @if(session('success'))
+            window.dispatchEvent(new CustomEvent('notify', { detail: { title: 'Berhasil', message: '{{ session('success') }}', type: 'success' } }));
+        @endif
+        @if(session('error'))
+            window.dispatchEvent(new CustomEvent('notify', { detail: { title: 'Terjadi Kesalahan', message: '{{ session('error') }}', type: 'error' } }));
+        @endif
     </script>
 </body>
 </html>
