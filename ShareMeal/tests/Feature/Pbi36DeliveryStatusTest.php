@@ -87,4 +87,27 @@ class Pbi36DeliveryStatusTest extends TestCase
         $response->assertStatus(404);
         $this->assertEquals('pending', $order->fresh()->status);
     }
+
+    public function test_notification_sent_when_status_updated(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'pending'
+        ]);
+
+        $this->actingAs($mitra)->post(route('mitra.orders.update-status', $order->id), [
+            'status' => 'ready'
+        ]);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $consumer,
+            \App\Notifications\OrderStatusUpdated::class
+        );
+    }
 }

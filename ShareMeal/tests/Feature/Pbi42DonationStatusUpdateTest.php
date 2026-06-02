@@ -59,11 +59,10 @@ class Pbi42DonationStatusUpdateTest extends TestCase
     public function test_mitra_cannot_complete_unclaimed_donation(): void
     {
         $mitra = User::factory()->create(['role' => 'mitra']);
-        
         $donation = Donation::create([
             'mitra_id' => $mitra->id,
-            'title' => 'Roti Donasi',
-            'quantity' => 5,
+            'title' => 'Nasi Bungkus',
+            'quantity' => 10,
             'unit' => 'pcs',
             'status' => 'pending',
         ]);
@@ -72,5 +71,26 @@ class Pbi42DonationStatusUpdateTest extends TestCase
 
         $response->assertSessionHas('error');
         $this->assertEquals('pending', $donation->fresh()->status);
+    }
+
+    public function test_lembaga_can_complete_donation(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $lembaga = User::factory()->create(['role' => 'lembaga']);
+        $donation = Donation::create([
+            'mitra_id' => $mitra->id,
+            'lembaga_id' => $lembaga->id,
+            'title' => 'Nasi Bungkus',
+            'quantity' => 10,
+            'unit' => 'pcs',
+            'status' => 'claimed',
+        ]);
+
+        $response = $this->actingAs($lembaga)->post(route('lembaga.donations.complete', $donation->id));
+
+        $response->assertSessionHas('success');
+        $this->assertEquals('completed', $donation->fresh()->status);
+        $this->assertEquals('delivered', $donation->fresh()->tracking_status);
+        $this->assertNotNull($donation->fresh()->delivered_at);
     }
 }

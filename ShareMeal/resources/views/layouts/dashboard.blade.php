@@ -22,19 +22,37 @@
 <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
     <!-- PBI #45: Critical Notification Banner -->
     @if($navUser)
-        @if($navUser->status === 'warned')
-            <div class="bg-orange-600 text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60]">
-                <i data-lucide="alert-circle" class="w-4 h-4"></i>
-                Peringatan: Akun Anda mendapatkan peringatan karena pelanggaran kebijakan. Mohon patuhi aturan platform.
-                <a href="#" class="underline ml-2">Pelajari Selengkapnya</a>
+        @php
+            $criticalAlerts = session('critical_alerts', []);
+            if ($navUser->status === 'warned') {
+                $criticalAlerts[] = [
+                    'type' => 'warning',
+                    'message' => 'Peringatan: Akun Anda mendapatkan peringatan karena pelanggaran kebijakan. Mohon patuhi aturan platform.',
+                    'link' => '#',
+                    'link_text' => 'Pelajari Selengkapnya'
+                ];
+            }
+            if ($navUser->status === 'blocked') {
+                $criticalAlerts[] = [
+                    'type' => 'danger',
+                    'message' => 'AKSES DIBATASI: Akun Anda telah diblokir. Silakan hubungi dukungan untuk informasi lebih lanjut.',
+                    'action' => 'Banding'
+                ];
+            }
+        @endphp
+
+        @foreach($criticalAlerts as $alert)
+            <div class="{{ ($alert['type'] ?? '') === 'danger' ? 'bg-red-600' : 'bg-orange-600' }} text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60] animate-in slide-in-from-top duration-300">
+                <i data-lucide="{{ ($alert['type'] ?? '') === 'danger' ? 'shield-off' : 'alert-circle' }}" class="w-4 h-4"></i>
+                <span>{{ $alert['message'] }}</span>
+                @if(isset($alert['link']))
+                    <a href="{{ $alert['link'] }}" class="underline ml-2">{{ $alert['link_text'] ?? 'Detail' }}</a>
+                @endif
+                @if(isset($alert['action']))
+                    <button class="bg-white {{ ($alert['type'] ?? '') === 'danger' ? 'text-red-600' : 'text-orange-600' }} px-2 py-0.5 rounded ml-2 uppercase text-[10px]">{{ $alert['action'] }}</button>
+                @endif
             </div>
-        @elseif($navUser->status === 'blocked')
-            <div class="bg-red-600 text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60]">
-                <i data-lucide="shield-off" class="w-4 h-4"></i>
-                AKSES DIBATASI: Akun Anda telah diblokir. Silakan hubungi dukungan untuk informasi lebih lanjut.
-                <button class="bg-white text-red-600 px-2 py-0.5 rounded ml-2 uppercase text-[10px]">Banding</button>
-            </div>
-        @endif
+        @endforeach
     @endif
 
     <!-- Top Navigation -->

@@ -52,7 +52,7 @@
         this.description = '';
         this.isReportDialogOpen = true;
     }
-}">,old_string:
+}">
     <div>
         <h1 class="text-3xl font-bold text-gray-900">Riwayat Transaksi</h1>
         <p class="text-gray-600 mt-1">Pantau status pesanan dan berikan ulasan Anda</p>

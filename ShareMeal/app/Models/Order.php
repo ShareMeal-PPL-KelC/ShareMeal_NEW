@@ -35,6 +35,7 @@ class Order extends Model
         'receiving_method',
         'delivery_fee',
         'delivery_time_slot',
+        'payment_method',
     ];
 
     protected $casts = [

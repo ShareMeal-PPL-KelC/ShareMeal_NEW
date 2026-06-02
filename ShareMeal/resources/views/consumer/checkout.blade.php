@@ -1,67 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-<div class="space-y-6" x-data="{
-    paymentMethod: 'qris',
-    receivingMethod: 'pickup',
-    deliveryTimeSlot: '',
-    deliveryFee: {{ $booking->deliveryFee }},
-    canDelivery: {{ $booking->canDelivery ? 'true' : 'false' }},
-    subtotal: {{ $booking->price * $booking->quantity }},
-    get total() {
-        return this.receivingMethod === 'delivery' ? this.subtotal + this.deliveryFee : this.subtotal;
-    },
-    countdown: 600,
-    isProcessing: false,
-    processingMessage: 'Memverifikasi pembayaran...',
-    paymentComplete: false,
-    pickupCode: 'PICK-{{ strtoupper(bin2hex(random_bytes(2))) }}',
-
-    init() {
-        setInterval(() => {
-            if (this.countdown > 0 && !this.paymentComplete && !this.isProcessing) {
-                this.countdown--;
-            }
-        }, 1000);
-    },
-
-    formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return mins + ':' + (secs < 10 ? '0' : '') + secs;
-    },
-
-    handleConfirmPayment() {
-        if (this.receivingMethod === 'delivery' && !this.deliveryTimeSlot) {
-            alert('Silakan pilih waktu pengantaran terlebih dahulu.');
-            return;
-        }
-
-        this.isProcessing = true;
-        
-        // Simulate step 1: Verification
-        setTimeout(() => {
-            this.processingMessage = 'Sinkronisasi dengan mitra...';
-            
-            // Simulate step 2: Finalizing
-            setTimeout(() => {
-                this.processingMessage = 'Menyiapkan struk digital...';
-                
-                setTimeout(() => {
-                    this.isProcessing = false;
-                    this.paymentComplete = true;
-                    // Trigger Lucide icons refresh if necessary
-                    if (window.lucide) window.lucide.createIcons();
-                }, 1000);
-            }, 1500);
-        }, 1500);
-    },
-
-    copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        alert('Nomor berhasil disalin!');
-    }
-}">
+<div class="space-y-6" x-data="checkoutPage">
     <!-- Loading Overlay -->
     <div x-show="isProcessing" 
          class="fixed inset-0 z-[100] flex items-center justify-center bg-white/90 backdrop-blur-sm"
@@ -342,7 +282,7 @@
                 <div class="bg-gray-50 border border-gray-100 rounded-3xl mb-8 overflow-hidden">
                     <div class="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
                         <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nomor Transaksi</span>
-                        <span class="text-xs font-mono font-bold text-gray-900">{{ $booking->id }}</span>
+                        <span class="text-xs font-mono font-bold text-gray-900" x-text="realOrderId || '{{ $booking->id }}'"></span>
                     </div>
                     <div class="p-8 space-y-5 text-left">
                         <div class="grid grid-cols-2 gap-6">
@@ -381,7 +321,7 @@
                             </div>
                             <div class="text-right" x-show="receivingMethod === 'pickup'">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Kode Ambil</span>
-                                <div class="font-mono font-black text-green-700 text-xl tracking-tighter" x-text="pickupCode"></div>
+                                <div class="font-mono font-black text-green-700 text-xl tracking-tighter" x-text="realPickupCode || pickupCode"></div>
                             </div>
                         </div>
 
@@ -395,14 +335,11 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button @click="const form = document.getElementById('checkout-form'); 
-                            const inputCode = document.createElement('input'); inputCode.type = 'hidden'; inputCode.name = 'pickup_code'; inputCode.value = pickupCode; form.appendChild(inputCode);
-                            const inputSlot = document.createElement('input'); inputSlot.type = 'hidden'; inputSlot.name = 'delivery_time_slot_final'; inputSlot.value = deliveryTimeSlot; form.appendChild(inputSlot);
-                            form.submit();"
-                            class="flex-1 flex items-center justify-center gap-3 bg-[#174413] text-white py-4 px-10 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition active:scale-95">
+                    <a href="{{ route('consumer.history') }}"
+                       class="flex-1 flex items-center justify-center gap-3 bg-[#174413] text-white py-4 px-10 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition active:scale-95">
                         <i data-lucide="history" class="w-5 h-5"></i>
                         Lihat Riwayat Pesanan
-                    </button>
+                    </a>
                     <button @click="window.print()" class="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-4 px-6 rounded-2xl font-black hover:bg-gray-200 transition">
                         <i data-lucide="printer" class="w-5 h-5"></i>
                         Cetak Struk
@@ -424,4 +361,96 @@
         <input type="hidden" name="payment_method" :value="paymentMethod">
     </form>
 </div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('checkoutPage', () => ({
+            paymentMethod: 'qris',
+            receivingMethod: 'pickup',
+            deliveryTimeSlot: '',
+            deliveryFee: {{ (int)($booking->deliveryFee ?? 0) }},
+            canDelivery: {{ $booking->canDelivery ? 'true' : 'false' }},
+            subtotal: {{ (int)($booking->price * $booking->quantity) }},
+            countdown: 600,
+            isProcessing: false,
+            processingMessage: 'Memverifikasi pembayaran...',
+            paymentComplete: false,
+            realOrderId: '',
+            realPickupCode: '',
+            pickupCode: 'PICK-A1B2',
+
+            get total() {
+                return this.receivingMethod === 'delivery' ? this.subtotal + this.deliveryFee : this.subtotal;
+            },
+
+            init() {
+                setInterval(() => {
+                    if (this.countdown > 0 && !this.paymentComplete && !this.isProcessing) {
+                        this.countdown--;
+                    }
+                }, 1000);
+                
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            },
+
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return mins + ':' + (secs < 10 ? '0' : '') + secs;
+            },
+
+            async handleConfirmPayment() {
+                if (this.receivingMethod === 'delivery' && !this.deliveryTimeSlot) {
+                    alert('Silakan pilih waktu pengantaran terlebih dahulu.');
+                    return;
+                }
+
+                this.isProcessing = true;
+                this.processingMessage = 'Memverifikasi pembayaran...';
+                
+                await new Promise(r => setTimeout(r, 1500));
+                this.processingMessage = 'Sinkronisasi dengan mitra...';
+                
+                await new Promise(r => setTimeout(r, 1500));
+                this.processingMessage = 'Menyelesaikan pesanan...';
+
+                try {
+                    const formData = new FormData(document.getElementById('checkout-form'));
+                    const response = await fetch("{{ route('consumer.checkout.store') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.realOrderId = data.order_number;
+                        this.realPickupCode = data.pickup_code;
+                        this.isProcessing = false;
+                        this.paymentComplete = true;
+                        this.$nextTick(() => {
+                            if (window.lucide) lucide.createIcons();
+                        });
+                    } else {
+                        throw new Error(data.message || 'Gagal membuat pesanan');
+                    }
+                } catch (error) {
+                    this.isProcessing = false;
+                    alert('Terjadi kesalahan: ' + error.message);
+                }
+            },
+
+            copyToClipboard(text) {
+                navigator.clipboard.writeText(text);
+                alert('Nomor berhasil disalin!');
+            }
+        }));
+    });
+</script>
 @endsection

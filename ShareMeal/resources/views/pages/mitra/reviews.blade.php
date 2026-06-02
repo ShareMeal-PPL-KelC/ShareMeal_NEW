@@ -7,6 +7,46 @@
         <p class="text-gray-600 mt-1">Lihat feedback dan rating dari pembeli Anda</p>
     </div>
 
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
+            <div class="text-5xl font-black text-gray-900 mb-2">{{ $stats['average'] }}</div>
+            <div class="flex gap-1 mb-2">
+                @for($i = 1; $i <= 5; $i++)
+                <i data-lucide="star" class="w-5 h-5 {{ $i <= round($stats['average']) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200' }}"></i>
+                @endfor
+            </div>
+            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest">Rating Rata-rata</div>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
+            <div class="text-5xl font-black text-gray-900 mb-2">{{ $stats['total'] }}</div>
+            <div class="bg-green-100 text-green-600 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-2">
+                Ulasan Masuk
+            </div>
+            <div class="text-sm font-bold text-gray-400 uppercase tracking-widest">Total Feedback</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+            <div class="space-y-2">
+                @foreach([5, 4, 3, 2, 1] as $star)
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1 w-8">
+                        <span class="text-sm font-bold text-gray-600">{{ $star }}</span>
+                        <i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400"></i>
+                    </div>
+                    <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-yellow-400 rounded-full" style="width: {{ $stats['total'] > 0 ? ($stats['counts'][$star] / $stats['total']) * 100 : 0 }}%"></div>
+                    </div>
+                    <div class="w-8 text-right">
+                        <span class="text-xs font-bold text-gray-400">{{ $stats['counts'][$star] }}</span>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
     <!-- Review List -->
     <div class="grid grid-cols-1 gap-6">
         @forelse($reviews as $review)
