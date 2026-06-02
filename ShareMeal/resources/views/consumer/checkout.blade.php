@@ -4,6 +4,7 @@
 <div class="space-y-6" x-data="{
     paymentMethod: 'qris',
     receivingMethod: 'pickup',
+    deliveryTimeSlot: '',
     deliveryFee: {{ $booking->deliveryFee }},
     canDelivery: {{ $booking->canDelivery ? 'true' : 'false' }},
     subtotal: {{ $booking->price * $booking->quantity }},
@@ -95,6 +96,29 @@
                             <div class="text-[10px] text-blue-600 font-bold uppercase tracking-wider" x-text="canDelivery ? 'Rp ' + deliveryFee.toLocaleString('id-ID') : 'Tidak Tersedia'"></div>
                         </div>
                         <input type="radio" name="receiving_method_radio" value="delivery" x-model="receivingMethod" :disabled="!canDelivery" class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-600">
+                    </div>
+                </div>
+
+                <!-- Time Slot Selection -->
+                <div x-show="receivingMethod === 'delivery'" x-transition class="pt-8 border-t border-gray-100">
+                    <div class="px-8 max-w-lg mx-auto">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 text-center">
+                            Pilih Waktu Pengantaran
+                        </label>
+                        <div class="relative">
+                            <select x-model="deliveryTimeSlot" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm font-bold text-gray-700 appearance-none">
+                                <option value="">-- Klik untuk memilih waktu --</option>
+                                @foreach($booking->deliverySlots as $slot)
+                                    <option value="{{ $slot->label }}" {{ $slot->is_full ? 'disabled' : '' }}>
+                                        {{ $slot->label }} {{ $slot->is_full ? '(Penuh)' : '(' . $slot->remaining . ' slot tersedia)' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none text-gray-400">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-4 italic text-center">Pesanan akan dikirimkan pada rentang waktu yang Anda pilih.</p>
                     </div>
                 </div>
             </div>
@@ -305,6 +329,7 @@
         <input type="hidden" name="quantity" value="{{ $booking->quantity }}">
         <input type="hidden" name="price" value="{{ $booking->price }}">
         <input type="hidden" name="receiving_method" :value="receivingMethod">
+        <input type="hidden" name="delivery_time_slot" :value="deliveryTimeSlot">
         <input type="hidden" name="payment_method" :value="paymentMethod">
     </form>
 </div>
