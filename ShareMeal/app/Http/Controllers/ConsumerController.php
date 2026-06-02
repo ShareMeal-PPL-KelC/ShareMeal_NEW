@@ -47,6 +47,19 @@ class ConsumerController extends Controller
             ->withAvg('reviewsAsMitra', 'rating')
             ->get();
 
+        // PBI #45: Add critical alert for active orders
+        $criticalAlerts = [];
+        $shippingOrdersCount = $orders->where('status', 'shipping')->count();
+        if ($shippingOrdersCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'info',
+                'message' => "Hore! Ada $shippingOrdersCount pesanan yang sedang dalam perjalanan ke tempat Anda.",
+                'link' => route('consumer.history'),
+                'link_text' => 'Pantau Lokasi'
+            ];
+        }
+        session()->flash('critical_alerts', $criticalAlerts);
+
         return view('consumer.dashboard', compact('stats', 'flashSales', 'favoriteStores'));
     }
 
@@ -104,28 +117,68 @@ class ConsumerController extends Controller
 
     public function checkout(Request $request)
     {
-        app(AutoDonationService::class)->processProducts();
+        try {
+            app(AutoDonationService::class)->processProducts();
+        } catch (\Exception $e) {
+            \Log::error('AutoDonationService error in checkout: ' . $e->getMessage());
+        }
 
         $product = Product::with('user.profile')->findOrFail($request->product_id);
 
-        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || $product->expires_at->isPast()) {
+        if (!$product->user) {
+            return redirect()->route('consumer.search')->withErrors(['product_id' => 'Data mitra tidak ditemukan untuk produk ini.']);
+        }
+
+        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || ($product->expires_at && $product->expires_at->isPast())) {
             return redirect()->route('consumer.search')->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.']);
         }
 
         $pickupStart = $product->pickup_start_time ?? '18:00';
         $pickupEnd = $product->pickup_end_time ?? '20:00';
 
+        $slotLimit = $product->user->profile?->delivery_slot_limit ?? 10;
+        
+        // Count orders per slot for today
+        $orderCounts = Order::where('mitra_id', $product->user_id)
+            ->whereDate('created_at', now()->toDateString())
+            ->whereNotNull('delivery_time_slot')
+            ->groupBy('delivery_time_slot')
+            ->select('delivery_time_slot', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->pluck('count', 'delivery_time_slot');
+
         // Generate 30-min slots within window
         $slots = [];
-        $start = \Carbon\Carbon::createFromFormat('H:i:s', $pickupStart);
-        $end = \Carbon\Carbon::createFromFormat('H:i:s', $pickupEnd);
-        
-        while ($start->lt($end)) {
-            $slotStart = $start->format('H:i');
-            $start->addMinutes(30);
-            if ($start->gt($end)) break;
-            $slotEnd = $start->format('H:i');
-            $slots[] = "$slotStart - $slotEnd";
+        try {
+            $startStr = !empty($pickupStart) ? $pickupStart : '18:00';
+            $endStr = !empty($pickupEnd) ? $pickupEnd : '20:00';
+            
+            $start = \Carbon\Carbon::parse($startStr);
+            $end = \Carbon\Carbon::parse($endStr);
+            
+            if ($end->lt($start)) {
+                $end->addDay();
+            }
+            
+            $maxSlots = 48;
+            while ($start->lt($end) && $maxSlots > 0) {
+                $slotStart = $start->format('H:i');
+                $start->addMinutes(30);
+                if ($start->gt($end)) break;
+                $slotEnd = $start->format('H:i');
+                $slotLabel = "$slotStart - $slotEnd";
+                
+                $currentCount = $orderCounts[$slotLabel] ?? 0;
+                $isFull = $currentCount >= $slotLimit;
+                
+                $slots[] = (object) [
+                    'label' => $slotLabel,
+                    'is_full' => $isFull,
+                    'remaining' => max(0, $slotLimit - $currentCount)
+                ];
+                $maxSlots--;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error generating slots: ' . $e->getMessage());
         }
 
         $booking = (object) [
@@ -166,6 +219,7 @@ class ConsumerController extends Controller
             'price' => 'required|numeric',
             'receiving_method' => 'required|in:pickup,delivery',
             'delivery_time_slot' => 'required_if:receiving_method,delivery|string|nullable',
+            'payment_method' => 'nullable|string|in:qris,gopay,ovo,dana',
         ]);
 
         $product = Product::findOrFail($request->product_id);
@@ -191,6 +245,19 @@ class ConsumerController extends Controller
                 return back()->withErrors(['receiving_method' => 'Mitra ini tidak menyediakan jasa pengiriman.'])->withInput();
             }
             $deliveryFee = $mitra->profile->delivery_fee;
+
+            // PBI #38: Delivery Slot Limits
+            if ($deliveryTimeSlot) {
+                $slotLimit = $mitra->profile->delivery_slot_limit ?? 10;
+                $currentSlotCount = Order::where('mitra_id', $request->mitra_id)
+                    ->whereDate('created_at', now()->toDateString())
+                    ->where('delivery_time_slot', $deliveryTimeSlot)
+                    ->count();
+
+                if ($currentSlotCount >= $slotLimit) {
+                    return back()->withErrors(['delivery_time_slot' => 'Slot waktu pengantaran ini sudah penuh. Silakan pilih waktu lain.'])->withInput();
+                }
+            }
         }
 
         $order = Order::create([
@@ -204,6 +271,7 @@ class ConsumerController extends Controller
             'receiving_method' => $receivingMethod,
             'delivery_fee' => $deliveryFee,
             'delivery_time_slot' => $deliveryTimeSlot,
+            'payment_method' => $request->payment_method ?? 'qris',
         ]);
 
         OrderItem::create([
@@ -218,6 +286,16 @@ class ConsumerController extends Controller
         $mitra = User::find($request->mitra_id);
         if ($mitra) {
             $mitra->notify(new \App\Notifications\IncomingOrderNotification($order));
+        }
+
+        if (request()->wantsJson() || request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'order_id' => $order->id,
+                'order_number' => $order->orderId,
+                'pickup_code' => $order->pickup_code,
+                'redirect_url' => route('consumer.history'),
+            ]);
         }
 
         return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
@@ -252,10 +330,46 @@ class ConsumerController extends Controller
         return back()->with('success', 'Terima kasih atas ulasan Anda!');
     }
 
+    public function submitProblemReport(Request $request)
+    {
+        $data = $request->validate([
+            'order_id' => ['required', 'exists:orders,id'],
+            'issue_type' => ['required', 'string', 'in:expired,bad_quality,mismatch,other'],
+            'description' => ['required', 'string', 'max:2000'],
+            'evidence_image' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        $order = Order::where('id', $data['order_id'])
+            ->where('customer_id', $userId)
+            ->firstOrFail();
+
+        $evidencePath = null;
+        if ($request->hasFile('evidence_image')) {
+            $evidencePath = $request->file('evidence_image')->store('reports', 'public');
+        }
+
+        \App\Models\ProblemReport::create([
+            'reporter_id' => $userId,
+            'mitra_id' => $order->mitra_id,
+            'order_id' => $order->id,
+            'issue_type' => $data['issue_type'],
+            'description' => $data['description'],
+            'evidence_image' => $evidencePath,
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'Laporan masalah berhasil dikirim. Admin akan segera meninjau laporan Anda.');
+    }
+
+    /**
+     * PBI #32: Update Existing Review
+     * Dikerjakan oleh: Muh Irfan Ubaidillah
+     */
     public function updateReview(Request $request, Review $review)
     {
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
-        
+
         if ($review->customer_id !== $userId) {
             abort(403, 'Anda tidak memiliki akses untuk mengubah ulasan ini.');
         }
@@ -267,9 +381,13 @@ class ConsumerController extends Controller
 
         $review->update($data);
 
-        return back()->with('success', 'Ulasan Anda berhasil diperbarui.');
+        return back()->with('success', 'Ulasan berhasil diperbarui!');
     }
 
+    /**
+     * PBI #32: Delete Review
+     * Dikerjakan oleh: Muh Irfan Ubaidillah
+     */
     public function deleteReview(Review $review)
     {
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
@@ -280,7 +398,7 @@ class ConsumerController extends Controller
 
         $review->delete();
 
-        return back()->with('success', 'Ulasan Anda telah dihapus.');
+        return back()->with('success', 'Ulasan berhasil dihapus!');
     }
 
     public function education()
