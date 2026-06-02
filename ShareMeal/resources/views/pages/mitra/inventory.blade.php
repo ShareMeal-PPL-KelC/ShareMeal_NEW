@@ -103,10 +103,6 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Tidak Layak
                             </div>
                         </template>
-
-                        <button @click="toggleDonation(product.id)" :class="product.donatable ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'" class="w-12 h-12 rounded-xl flex items-center justify-center hover:opacity-80 transition" title="Toggle Donasi Otomatis">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                        </button>
                         
                         <button @click="openEditDialog(product)" :disabled="product.status === 'expired'" class="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-50 disabled:hover:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -214,10 +210,6 @@
         @csrf
     </form>
 
-    <form id="toggle-donation-form" method="POST" class="hidden">
-        @csrf
-    </form>
-
     <form id="delete-form" method="POST" class="hidden">
         @csrf
     </form>
@@ -276,12 +268,6 @@
                     form.action = `/mitra/inventory/${id}/flash-sale`;
                     form.submit();
                 }
-            },
-
-            toggleDonation(id) {
-                const form = document.getElementById('toggle-donation-form');
-                form.action = `/mitra/inventory/${id}/toggle-donation`;
-                form.submit();
             },
             
             deleteProduct(id) {

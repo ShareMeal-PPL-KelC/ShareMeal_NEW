@@ -12,6 +12,8 @@ Route::post('/register', [ShareMealController::class, 'doRegister'])->name('regi
 Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
 
 Route::post('/notifications/mark-as-read', [ShareMealController::class, 'markNotificationsRead'])->name('notifications.markRead');
+Route::post('/notifications/{id}/mark-as-read', [ShareMealController::class, 'markSingleNotificationRead'])->name('notifications.markSingleRead');
+Route::get('/notifications', [ShareMealController::class, 'allNotifications'])->name('notifications.index');
 Route::get('/profile', [ShareMealController::class, 'editProfile'])->name('profile.edit');
 Route::post('/profile', [ShareMealController::class, 'updateProfile'])->name('profile.update');
 Route::post('/profile/phone/verify', [ShareMealController::class, 'verifyProfilePhone'])->name('profile.phone.verify');
@@ -20,13 +22,17 @@ Route::prefix('consumer')->name('consumer.')->group(function () {
     Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
     Route::get('/search', [ConsumerController::class, 'search'])->name('search');
     Route::get('/history', [ConsumerController::class, 'history'])->name('history');
+    
+    // PBI #32: Edit & Delete Review - Dikerjakan oleh: Muh Irfan Ubaidillah
     Route::post('/review', [ConsumerController::class, 'submitReview'])->name('review.submit');
     Route::put('/review/{review}', [ConsumerController::class, 'updateReview'])->name('review.update');
     Route::delete('/review/{review}', [ConsumerController::class, 'deleteReview'])->name('review.delete');
+    
     Route::get('/education', [ConsumerController::class, 'education'])->name('education');
     Route::get('/education/{id}', [ConsumerController::class, 'showArticle'])->name('education.show');
     Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [ConsumerController::class, 'storeOrder'])->name('checkout.store');
+    Route::post('/report', [ConsumerController::class, 'submitProblemReport'])->name('report.submit');
     // Route::get('/favorites', [ConsumerController::class, 'favorites'])->name('favorites');
 });
 
@@ -58,6 +64,7 @@ Route::prefix('lembaga')->name('lembaga.')->group(function () {
     Route::get('/donations', [ShareMealController::class, 'lembagaDonations'])->name('donations');
     Route::post('/donations/{donationId}/claim', [ShareMealController::class, 'lembagaClaimDonation'])->name('donations.claim');
     Route::post('/donations/{donationId}/complete', [ShareMealController::class, 'lembagaCompleteDonation'])->name('donations.complete');
+    Route::post('/report', [ShareMealController::class, 'lembagaSubmitProblemReport'])->name('report.submit');
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -76,4 +83,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/education/{articleId}/delete', [ShareMealController::class, 'adminEducationDelete'])->name('education.delete');
     Route::get('/transactions', [ShareMealController::class, 'adminTransactions'])->name('transactions');
     Route::get('/reports', [ShareMealController::class, 'adminReports'])->name('reports');
+    
+    // PBI #47 & #48: Moderation Reports
+    Route::get('/problem-reports', [ShareMealController::class, 'adminProblemReports'])->name('problem-reports.index');
+    Route::post('/problem-reports/{report}/dismiss', [ShareMealController::class, 'adminDismissReport'])->name('problem-reports.dismiss');
+    Route::post('/problem-reports/{report}/warn', [ShareMealController::class, 'adminWarnMitraReport'])->name('problem-reports.warn');
+    Route::post('/problem-reports/{report}/block', [ShareMealController::class, 'adminBlockMitraReport'])->name('problem-reports.block');
 });

@@ -20,10 +20,16 @@ class Donation extends Model
         'expires_at',
         'status',
         'pickup_time',
+        'pickup_start_time',
+        'pickup_end_time',
         'image',
         'claimed_at',
         'delivered_at',
         'tracking_status',
+    ];
+
+    protected $appends = [
+        'pickup_time_window',
     ];
 
     protected $casts = [
@@ -41,5 +47,14 @@ class Donation extends Model
     public function lembaga(): BelongsTo
     {
         return $this->belongsTo(User::class, 'lembaga_id');
+    }
+
+    public function getPickupTimeWindowAttribute(): string
+    {
+        if (!empty($this->attributes['pickup_start_time']) && !empty($this->attributes['pickup_end_time'])) {
+            return substr($this->attributes['pickup_start_time'], 0, 5) . ' - ' . substr($this->attributes['pickup_end_time'], 0, 5);
+        }
+
+        return 'Belum ditentukan';
     }
 }
