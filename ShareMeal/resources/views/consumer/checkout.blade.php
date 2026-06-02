@@ -4,350 +4,279 @@
 <div class="space-y-6" x-data="checkoutPage">
     <!-- Loading Overlay -->
     <div x-show="isProcessing" 
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-white/90 backdrop-blur-sm"
+         class="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
          x-cloak>
         <div class="text-center space-y-6 max-w-xs px-4">
             <div class="relative w-24 h-24 mx-auto">
-                <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-gray-100/50 rounded-full"></div>
                 <div class="absolute inset-0 border-4 border-[#174413] rounded-full border-t-transparent animate-spin"></div>
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <i data-lucide="shield-check" class="w-8 h-8 text-[#174413]"></i>
+                    <i data-lucide="shield-check" class="w-8 h-8 text-[#174413] animate-pulse"></i>
                 </div>
             </div>
             <div class="space-y-2">
                 <h3 class="text-xl font-black text-gray-900" x-text="processingMessage"></h3>
-                <p class="text-sm text-gray-500 font-medium">Mohon tunggu sebentar, jangan tutup halaman ini.</p>
+                <p class="text-sm text-gray-550 font-medium leading-relaxed">Mohon tunggu sebentar, jangan tutup halaman ini.</p>
             </div>
         </div>
     </div>
 
     <!-- Header -->
-    <div x-show="!paymentComplete">
-        <a href="{{ route('consumer.search') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 h-10 px-4 py-2 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            Kembali
+    <div x-show="!paymentComplete" class="mb-12 reveal">
+        <a href="{{ route('consumer.search') }}" class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold hover:text-luxury-forest transition-colors mb-6 group">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-1"></i>
+            Back to Curation
         </a>
-        <h1 class="text-3xl font-bold text-gray-900">Checkout Pembayaran</h1>
-        <p class="text-gray-600 mt-1">Selesaikan pembayaran untuk konfirmasi pesanan</p>
+        <h1 class="text-5xl font-serif font-bold text-luxury-forest leading-tight">Finalizing Curation</h1>
+        <p class="text-luxury-slate font-medium mt-2 tracking-wide">Complete your contribution to a sustainable future.</p>
     </div>
 
     <!-- Fase Checkout -->
-    <div x-show="!paymentComplete" class="grid lg:grid-cols-3 gap-6">
-        <!-- Left Column - Payment Methods -->
-        <div class="lg:col-span-2 space-y-6">
+    <div x-show="!paymentComplete" class="grid lg:grid-cols-3 gap-12">
+        <!-- Left Column - Methods & Payment -->
+        <div class="lg:col-span-2 space-y-10">
             <!-- Timer Card -->
-            <div class="rounded-xl border border-orange-200 bg-orange-50 shadow-sm">
-                <div class="p-4 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-orange-600"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        <span class="font-semibold text-orange-900">Selesaikan pembayaran dalam:</span>
-                    </div>
-                    <div class="text-2xl font-bold text-orange-600" x-text="formatTime(countdown)"></div>
+            <div class="rounded-[1.5rem] bg-luxury-gold/5 border border-luxury-gold/20 px-8 py-4 flex items-center justify-between reveal">
+                <div class="flex items-center gap-4">
+                    <div class="w-2 h-2 bg-luxury-gold rounded-full animate-pulse"></div>
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold">Secure Checkout Session expires in:</span>
                 </div>
+                <div class="text-2xl font-serif font-bold text-luxury-gold" x-text="formatTime(countdown)"></div>
             </div>
 
             <!-- Selection Card -->
-            <div class="rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div class="p-6 pb-4 border-b border-gray-50">
-                    <h3 class="text-lg font-bold">Pilih Metode Pengambilan</h3>
+            <div class="glass-card rounded-[2.5rem] overflow-hidden reveal delay-100">
+                <div class="p-10 border-b border-luxury-alabas/60 bg-white/30">
+                    <h3 class="text-2xl font-serif font-bold text-luxury-forest">Fulfillment Method</h3>
                 </div>
-                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-10 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/10">
                     <!-- Pickup -->
-                    <div class="relative flex items-center p-4 border rounded-xl cursor-pointer transition-all"
-                         :class="receivingMethod === 'pickup' ? 'border-green-600 bg-green-50/30' : 'border-gray-100 hover:bg-gray-50'"
-                         @click="receivingMethod = 'pickup'">
-                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 shrink-0">
-                            <i data-lucide="store" class="w-5 h-5"></i>
+                    <label class="relative block cursor-pointer group">
+                        <input type="radio" name="receiving_method_radio" value="pickup" x-model="receivingMethod" class="sr-only peer">
+                        <div class="p-8 border-2 border-luxury-alabas/80 bg-white/40 rounded-[2rem] transition-all duration-500 peer-checked:border-luxury-forest peer-checked:bg-luxury-forest/5 group-hover:border-luxury-gold/30">
+                            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-luxury-gold mb-6 group-hover:scale-110 transition-transform shadow-sm">
+                                <i data-lucide="store" class="w-6 h-6"></i>
+                            </div>
+                            <div class="font-serif text-xl font-bold text-luxury-forest">Boutique Pickup</div>
+                            <div class="text-[10px] text-luxury-gold font-black uppercase tracking-widest mt-2">Complimentary</div>
                         </div>
-                        <div class="flex-1 ml-4">
-                            <div class="font-bold text-gray-900 text-sm">Ambil di Tempat</div>
-                            <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Gratis</div>
-                        </div>
-                        <input type="radio" name="receiving_method_radio" value="pickup" x-model="receivingMethod" class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-600">
-                    </div>
+                    </label>
 
                     <!-- Delivery -->
-                    <div class="relative flex items-center p-4 border rounded-xl transition-all"
-                         :class="[!canDelivery ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer', 
-                                 receivingMethod === 'delivery' ? 'border-green-600 bg-green-50/30' : 'border-gray-100 hover:bg-gray-50']"
-                         @click="if(canDelivery) receivingMethod = 'delivery'">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shrink-0">
-                            <i data-lucide="truck" class="w-5 h-5"></i>
+                    <label class="relative block" :class="canDelivery ? 'cursor-pointer group' : 'opacity-40'">
+                        <input type="radio" name="receiving_method_radio" value="delivery" x-model="receivingMethod" :disabled="!canDelivery" class="sr-only peer">
+                        <div class="p-8 border-2 border-luxury-alabas/80 bg-white/40 rounded-[2rem] transition-all duration-500 peer-checked:border-luxury-forest peer-checked:bg-luxury-forest/5 group-hover:border-luxury-gold/30">
+                            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-luxury-emerald mb-6 group-hover:scale-110 transition-transform shadow-sm">
+                                <i data-lucide="truck" class="w-6 h-6"></i>
+                            </div>
+                            <div class="font-serif text-xl font-bold text-luxury-forest">Private Delivery</div>
+                            <div class="text-[10px] text-luxury-emerald font-black uppercase tracking-widest mt-2" x-text="canDelivery ? 'Rp ' + deliveryFee.toLocaleString('id-ID') : 'Unavailable'"></div>
                         </div>
-                        <div class="flex-1 ml-4">
-                            <div class="font-bold text-gray-900 text-sm">Kirim ke Alamat</div>
-                            <div class="text-[10px] text-blue-600 font-bold uppercase tracking-wider" x-text="canDelivery ? 'Rp ' + deliveryFee.toLocaleString('id-ID') : 'Tidak Tersedia'"></div>
-                        </div>
-                        <input type="radio" name="receiving_method_radio" value="delivery" x-model="receivingMethod" :disabled="!canDelivery" class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-600">
-                    </div>
+                    </label>
                 </div>
 
                 <!-- Time Slot Selection -->
-                <div x-show="receivingMethod === 'delivery'" x-transition class="pt-8 border-t border-gray-100">
-                    <div class="px-8 max-w-lg mx-auto">
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 text-center">
-                            Pilih Waktu Pengantaran
-                        </label>
+                <div x-show="receivingMethod === 'delivery'" 
+                     x-transition:enter="transition ease-out duration-500"
+                     x-transition:enter-start="opacity-0 -translate-y-4"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="px-10 pb-10 border-t border-luxury-alabas/60 pt-10 bg-white/10">
+                    <div class="max-w-md mx-auto text-center">
+                        <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] mb-6 block text-center">Select Arrival Window</span>
                         <div class="relative">
-                            <select x-model="deliveryTimeSlot" class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm font-bold text-gray-700 appearance-none">
-                                <option value="">-- Klik untuk memilih waktu --</option>
+                            <select x-model="deliveryTimeSlot" class="w-full bg-white/80 border border-luxury-alabas rounded-[1.2rem] px-8 py-5 outline-none focus:ring-2 focus:ring-luxury-forest transition-all font-bold text-luxury-forest appearance-none text-center shadow-sm">
+                                <option value="">-- Choose your preferred time --</option>
                                 @foreach($booking->deliverySlots as $slot)
                                     <option value="{{ $slot->label }}" {{ $slot->is_full ? 'disabled' : '' }}>
-                                        {{ $slot->label }} {{ $slot->is_full ? '(Penuh)' : '(' . $slot->remaining . ' slot tersedia)' }}
+                                        {{ $slot->label }} {{ $slot->is_full ? '(Reserved)' : '' }}
                                     </option>
                                 @endforeach
                             </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-6 pointer-events-none text-gray-400">
-                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                            </div>
+                            <i data-lucide="chevron-down" class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-luxury-gold pointer-events-none"></i>
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-4 italic text-center">Pesanan akan dikirimkan pada rentang waktu yang Anda pilih.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Selection Card -->
-            <div class="rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div class="p-6 pb-4 border-b border-gray-50">
-                    <h3 class="text-lg font-bold">Pilih Metode Pembayaran</h3>
+            <!-- Payment Card -->
+            <div class="glass-card rounded-[2.5rem] overflow-hidden reveal delay-200">
+                <div class="p-10 border-b border-luxury-alabas/60 bg-white/30">
+                    <h3 class="text-2xl font-serif font-bold text-luxury-forest">Secure Settlement</h3>
                 </div>
-                <div class="p-6 space-y-3">
+                <div class="p-10 space-y-4 bg-white/10">
                     @foreach($paymentMethods as $method)
-                    <div class="flex items-center space-x-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
-                         :class="paymentMethod === '{{ $method->id }}' ? 'border-green-600 bg-green-50/30' : ''"
-                         @click="paymentMethod = '{{ $method->id }}'">
-                        <input type="radio" name="payment_method_radio" value="{{ $method->id }}" x-model="paymentMethod" class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-600">
-                        <div class="flex items-center gap-4 flex-1 ml-2">
-                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 shrink-0">
-                                @if($method->id === 'qris')
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="9"></rect><rect x="14" y="7" width="3" height="5"></rect></svg>
-                                @else
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-                                @endif
+                    <label class="relative block cursor-pointer group">
+                        <input type="radio" name="payment_method_radio" value="{{ $method->id }}" x-model="paymentMethod" class="sr-only peer">
+                        <div class="flex items-center justify-between p-6 bg-white/40 border border-luxury-alabas rounded-[1.5rem] transition-all duration-500 peer-checked:border-luxury-forest peer-checked:bg-luxury-forest/5 group-hover:border-luxury-gold/30">
+                            <div class="flex items-center gap-6">
+                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-luxury-forest shadow-sm border border-luxury-alabas/60">
+                                    @if($method->id === 'qris')
+                                    <i data-lucide="qr-code" class="w-6 h-6 stroke-[1.5]"></i>
+                                    @else
+                                    <i data-lucide="credit-card" class="w-6 h-6 stroke-[1.5]"></i>
+                                    @endif
+                                </div>
+                                <div>
+                                    <div class="font-serif text-lg font-bold text-luxury-forest">{{ $method->name }}</div>
+                                    <div class="text-[10px] text-luxury-slate font-black uppercase tracking-widest mt-1">{{ $method->description }}</div>
+                                </div>
                             </div>
-                            <div class="flex-1">
-                                <div class="font-bold text-gray-900">{{ $method->name }}</div>
-                                <div class="text-sm text-gray-500 font-medium">{{ $method->description }}</div>
+                            <div class="w-6 h-6 border-2 border-luxury-alabas rounded-full flex items-center justify-center peer-checked:border-luxury-forest bg-white">
+                                <div class="w-3 h-3 bg-luxury-forest rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                             </div>
                         </div>
-                    </div>
+                    </label>
                     @endforeach
                 </div>
             </div>
-
-            <!-- Payment Instructions Card -->
-            <div class="rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div class="p-6 pb-4 border-b border-gray-50">
-                    <h3 class="text-lg font-bold">Instruksi Pembayaran</h3>
-                </div>
-                <div class="p-6">
-                    <!-- QRIS -->
-                    <div x-show="paymentMethod === 'qris'" class="space-y-6">
-                        <div class="bg-gray-50 p-8 border-2 border-dashed border-gray-200 rounded-2xl flex justify-center">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SHAREMEAL-PAY-{{ $booking->id }}" alt="QRIS" class="w-48 h-48 rounded-xl shadow-sm">
-                        </div>
-                        <div class="text-center space-y-2">
-                            <p class="font-bold text-gray-900">Scan QR Code dengan aplikasi pembayaran:</p>
-                            <p class="text-sm text-gray-500 font-medium">GoPay, OVO, DANA, LinkAja, ShopeePay, atau Mobile Banking</p>
-                        </div>
-                        <div class="h-px bg-gray-100 w-full my-6"></div>
-                        <ol class="list-decimal list-inside space-y-3 text-sm text-gray-700 font-medium ml-4">
-                            <li>Buka aplikasi e-wallet atau mobile banking Anda</li>
-                            <li>Pilih menu Scan QR / QRIS</li>
-                            <li>Arahkan kamera ke QR Code di atas</li>
-                            <li>Periksa detail pembayaran</li>
-                            <li>Konfirmasi pembayaran</li>
-                        </ol>
-                    </div>
-
-                    <!-- E-Wallets -->
-                    <div x-show="['gopay', 'ovo', 'dana'].includes(paymentMethod)" class="space-y-6" style="display: none;">
-                        <div class="bg-gray-50 p-6 rounded-2xl text-center border border-gray-100">
-                            <p class="text-sm text-gray-500 font-bold uppercase tracking-widest mb-3">Nomor Tujuan <span x-text="paymentMethod"></span></p>
-                            <div class="flex items-center justify-center gap-3">
-                                <p class="text-3xl font-mono font-black text-[#174413]">0812-3456-7890</p>
-                                <button @click="copyToClipboard('081234567890')" class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition shadow-sm text-gray-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="h-px bg-gray-100 w-full my-6"></div>
-                        <ol class="list-decimal list-inside space-y-3 text-sm text-gray-700 font-medium ml-4">
-                            <li>Buka aplikasi e-wallet Anda</li>
-                            <li>Pilih menu Transfer / Kirim Uang</li>
-                            <li>Masukkan nomor tujuan di atas</li>
-                            <li>Masukkan nominal: <strong class="text-gray-900">Rp {{ number_format($booking->price, 0, ',', '.') }}</strong></li>
-                            <li>Periksa detail dan konfirmasi pembayaran</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Button -->
-            <button @click="handleConfirmPayment()" class="w-full flex items-center justify-center gap-2 bg-[#174413] text-white py-4 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition hover:scale-[1.01]">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                Saya Sudah Bayar
-            </button>
-            <p class="text-xs font-bold text-center text-gray-400 uppercase tracking-widest mt-4">Klik tombol di atas setelah menyelesaikan pembayaran</p>
         </div>
 
-        <!-- Right Column - Order Summary -->
-        <div class="space-y-6">
-            <div class="rounded-2xl border border-gray-100 bg-white shadow-sm sticky top-6">
-                <div class="p-6 pb-4 border-b border-gray-50">
-                    <h3 class="text-lg font-bold">Ringkasan Pesanan</h3>
-                </div>
-                <div class="p-6 space-y-6">
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-green-600"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                            <span class="font-bold text-gray-900">{{ $booking->storeName }}</span>
-                        </div>
-                        <p class="text-sm text-gray-500 font-medium">{{ $booking->address }}</p>
-                    </div>
-
-                    <div class="h-px bg-gray-100 w-full"></div>
-
-                    <div>
-                        <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Item Pesanan</h4>
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold text-sm text-gray-900">{{ $booking->dealItem }}</p>
-                                <p class="text-xs text-gray-500 font-medium mt-1">Qty: {{ $booking->quantity }}</p>
-                            </div>
-                            <p class="font-bold text-sm text-gray-900">Rp {{ number_format($booking->price, 0, ',', '.') }}</p>
+        <!-- Right Column - Summary -->
+        <div class="space-y-8">
+            <div class="glass-card rounded-[2.5rem] p-10 sticky top-32 reveal delay-300">
+                <h3 class="text-2xl font-serif font-bold text-luxury-forest mb-8">Summary</h3>
+                
+                <div class="space-y-6">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="store" class="w-5 h-5 text-luxury-gold mt-1"></i>
+                        <div>
+                            <div class="text-sm font-bold text-luxury-forest">{{ $booking->storeName }}</div>
+                            <div class="text-xs text-luxury-slate mt-1 italic">{{ $booking->address }}</div>
                         </div>
                     </div>
 
-                    <div class="h-px bg-gray-100 w-full"></div>
+                    <div class="h-px bg-luxury-alabas/60"></div>
 
-                    <div>
-                        <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Detail Pembayaran</h4>
-                        <div class="space-y-2 text-sm font-medium">
-                            <div class="flex justify-between text-gray-600">
-                                <span>Subtotal</span>
-                                <span class="text-gray-900">Rp {{ number_format($booking->price * $booking->quantity, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between text-gray-600">
-                                <span>Biaya Admin</span>
-                                <span class="text-gray-900">Rp 0</span>
-                            </div>
-                            <div class="flex justify-between text-gray-600" x-show="receivingMethod === 'delivery'">
-                                <span>Ongkos Kirim</span>
-                                <span class="text-gray-900" x-text="'Rp ' + deliveryFee.toLocaleString('id-ID')"></span>
-                            </div>
-                            <div class="pt-3 mt-3 border-t border-gray-100 flex justify-between text-lg font-black">
-                                <span class="text-gray-900">Total</span>
-                                <span class="text-green-600" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
-                            </div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-bold text-luxury-forest">{{ $booking->dealItem }}</div>
+                            <div class="text-[10px] text-luxury-slate font-black uppercase tracking-widest mt-1">Quantity: {{ $booking->quantity }}</div>
+                        </div>
+                        <div class="text-sm font-bold text-luxury-forest">Rp {{ number_format($booking->price, 0, ',', '.') }}</div>
+                    </div>
+
+                    <div class="h-px bg-luxury-alabas/60"></div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs font-medium text-luxury-slate">
+                            <span>Subtotal</span>
+                            <span>Rp {{ number_format($booking->price * $booking->quantity, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs font-medium text-luxury-slate" x-show="receivingMethod === 'delivery'">
+                            <span>Shipping</span>
+                            <span x-text="'Rp ' + deliveryFee.toLocaleString('id-ID')"></span>
+                        </div>
+                        <div class="pt-4 mt-4 border-t border-luxury-alabas/60 flex justify-between items-end">
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-1">Total Investment</span>
+                            <span class="text-3xl font-serif font-black text-luxury-forest leading-none" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                         </div>
                     </div>
 
-                    <div class="h-px bg-gray-100 w-full"></div>
-
-                    <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-                        <h4 class="text-xs font-black uppercase tracking-widest text-gray-400" x-text="receivingMethod === 'delivery' ? 'Info Pengiriman' : 'Info Pengambilan'"></h4>
-                        <div class="flex items-start gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-gray-400 mt-0.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            <div>
-                                <p class="text-xs font-bold text-gray-900" x-text="receivingMethod === 'delivery' ? 'Estimasi Sampai' : 'Jadwal Ambil'"></p>
-                                <p class="text-xs text-gray-500 font-medium">{{ $booking->pickupTime }}</p>
-                            </div>
-                        </div>
-                    </div>
+                    <button @click="handleConfirmPayment()" 
+                            class="w-full bg-luxury-forest text-white py-6 rounded-[1.5rem] font-black uppercase tracking-[0.3em] text-[10px] hover:bg-luxury-gold transition-all duration-500 luxury-shadow mt-10 active:scale-95 flex items-center justify-center gap-3 group">
+                        Confirm & Process
+                        <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Fase Sukses (Struk Digital) -->
-    <div x-show="paymentComplete" class="max-w-2xl mx-auto" style="display: none;" 
-         x-transition:enter="transition ease-out duration-500"
-         x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-         x-transition:enter-end="opacity-100 scale-100 translate-y-0">
-        <div class="rounded-3xl border border-gray-100 bg-white shadow-2xl overflow-hidden relative">
-            <!-- Decorative Background Element -->
-            <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-500 via-green-600 to-green-700"></div>
+    <div x-show="paymentComplete" class="max-w-2xl mx-auto py-12" style="display: none;" 
+         x-transition:enter="transition ease-out duration-1000"
+         x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 scale-100">
+        
+        <div class="glass-panel rounded-[3.5rem] shadow-2xl border border-white/40 overflow-hidden relative">
+            <!-- Top Elegant Accent -->
+            <div class="h-2 w-full bg-gradient-to-r from-luxury-forest via-luxury-gold to-luxury-emerald"></div>
             
-            <div class="p-10 text-center">
-                <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-green-50/50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 animate-[bounce_2s_infinite]"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <div class="p-12 lg:p-16 text-center">
+                <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-10 luxury-shadow border border-luxury-alabas">
+                    <i data-lucide="check" class="w-10 h-10 text-luxury-forest stroke-[3] animate-in zoom-in duration-700"></i>
                 </div>
-                <h2 class="text-3xl font-black text-gray-900 mb-2">Pembayaran Berhasil!</h2>
-                <p class="text-gray-500 font-medium mb-8" x-text="receivingMethod === 'delivery' ? 'Pesanan Anda sedang diproses oleh mitra.' : 'Pesanan Anda siap diambil sesuai jadwal.'"></p>
+                
+                <h2 class="text-4xl font-serif font-bold text-luxury-forest mb-4">Contribution Confirmed</h2>
+                <p class="text-luxury-slate font-medium mb-12 tracking-wide" x-text="receivingMethod === 'delivery' ? 'Your curated selection is now being prepared for transit.' : 'Your selection is secured and awaits your arrival at the boutique.'"></p>
 
-                <div class="bg-gray-50 border border-gray-100 rounded-3xl mb-8 overflow-hidden">
-                    <div class="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nomor Transaksi</span>
-                        <span class="text-xs font-mono font-bold text-gray-900" x-text="realOrderId || '{{ $booking->id }}'"></span>
+                <div class="bg-white/40 rounded-[2.5rem] border border-luxury-alabas p-10 mb-12 text-left relative overflow-hidden">
+                    <!-- Invoice Decoration -->
+                    <div class="absolute top-0 right-0 p-8 opacity-5">
+                        <i data-lucide="leaf" class="w-32 h-32 text-luxury-forest -rotate-12"></i>
                     </div>
-                    <div class="p-8 space-y-5 text-left">
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1" x-text="receivingMethod === 'delivery' ? 'Metode' : 'Metode'"></span>
-                                <div class="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
-                                    <template x-if="receivingMethod === 'delivery'">
-                                        <i data-lucide="truck" class="w-3.5 h-3.5 text-blue-600"></i>
-                                    </template>
-                                    <template x-if="receivingMethod === 'pickup'">
-                                        <i data-lucide="store" class="w-3.5 h-3.5 text-green-600"></i>
-                                    </template>
-                                    <span x-text="receivingMethod === 'delivery' ? 'Delivery' : 'Self Pickup'"></span>
-                                </div>
-                            </div>
-                            <div>
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Pembayaran</span>
-                                <div class="font-bold text-gray-900 text-sm uppercase" x-text="paymentMethod"></div>
-                            </div>
-                        </div>
 
-                        <div class="h-px bg-gray-200/50 w-full"></div>
-
+                    <div class="flex justify-between items-center mb-10 pb-6 border-b border-luxury-alabas/50">
                         <div>
-                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2" x-text="receivingMethod === 'delivery' ? 'Alamat Pengantaran' : 'Lokasi Pengambilan'"></span>
-                            <div class="font-bold text-gray-900 text-sm mb-0.5">{{ $booking->storeName }}</div>
-                            <div class="text-xs text-gray-500 font-medium leading-relaxed">{{ $booking->address }}</div>
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">Transaction ID</span>
+                            <span class="font-mono text-xs font-bold text-luxury-forest tracking-tighter" x-text="realOrderId || '{{ $booking->id }}'"></span>
                         </div>
+                        <div class="text-right">
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">Status</span>
+                            <span class="text-[10px] font-black text-luxury-emerald uppercase tracking-widest bg-luxury-emerald/10 px-3 py-1 rounded-lg">Settled</span>
+                        </div>
+                    </div>
 
-                        <div class="h-px bg-gray-200/50 w-full"></div>
-
-                        <div class="flex justify-between items-end">
-                            <div>
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1" x-text="receivingMethod === 'delivery' ? 'Estimasi Sampai' : 'Jadwal Ambil'"></span>
-                                <div class="font-bold text-gray-900 text-sm" x-text="receivingMethod === 'delivery' ? deliveryTimeSlot : '{{ $booking->pickupTime }}'"></div>
-                            </div>
-                            <div class="text-right" x-show="receivingMethod === 'pickup'">
-                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Kode Ambil</span>
-                                <div class="font-mono font-black text-green-700 text-xl tracking-tighter" x-text="realPickupCode || pickupCode"></div>
+                    <div class="grid grid-cols-2 gap-10 mb-10">
+                        <div>
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3">Service</span>
+                            <div class="flex items-center gap-3">
+                                <i :data-lucide="receivingMethod === 'delivery' ? 'truck' : 'store'" class="w-4 h-4 text-luxury-forest"></i>
+                                <span class="text-sm font-bold text-luxury-forest uppercase tracking-widest" x-text="receivingMethod === 'delivery' ? 'Delivery' : 'Boutique Pickup'"></span>
                             </div>
                         </div>
-
-                        <div class="pt-4 border-t-2 border-dashed border-gray-200">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm font-bold text-gray-900">Total Pembayaran</span>
-                                <div class="font-black text-green-600 text-2xl" x-text="'Rp ' + total.toLocaleString('id-ID')"></div>
+                        <div>
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3">Settlement</span>
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-luxury-forest"></i>
+                                <span class="text-sm font-bold text-luxury-forest uppercase" x-text="paymentMethod"></span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-10 p-6 bg-white rounded-2xl border border-luxury-alabas/50 shadow-sm">
+                        <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3" x-text="receivingMethod === 'delivery' ? 'Destination' : 'Boutique Location'"></span>
+                        <div class="text-sm font-bold text-luxury-forest mb-1">{{ $booking->storeName }}</div>
+                        <div class="text-xs text-luxury-slate leading-relaxed font-medium italic opacity-85">{{ $booking->address }}</div>
+                    </div>
+
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2" x-text="receivingMethod === 'delivery' ? 'Expected Arrival' : 'Pick-up Schedule'"></span>
+                            <div class="text-sm font-black text-luxury-forest uppercase tracking-widest" x-text="receivingMethod === 'delivery' ? deliveryTimeSlot : '{{ $booking->pickupTime }}'"></div>
+                        </div>
+                        <div class="text-right" x-show="receivingMethod === 'pickup'">
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">Claim Code</span>
+                            <div class="font-mono text-3xl font-black text-luxury-forest tracking-tighter" x-text="realPickupCode || pickupCode"></div>
+                        </div>
+                    </div>
+
+                    <!-- Total Row -->
+                    <div class="mt-10 pt-8 border-t-2 border-dashed border-luxury-alabas/50">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em]">Total Contribution</span>
+                            <div class="text-3xl font-serif font-black text-luxury-forest" x-text="'Rp ' + total.toLocaleString('id-ID')"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <div class="flex flex-col sm:flex-row gap-6 justify-center">
                     <a href="{{ route('consumer.history') }}"
-                       class="flex-1 flex items-center justify-center gap-3 bg-[#174413] text-white py-4 px-10 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition active:scale-95">
-                        <i data-lucide="history" class="w-5 h-5"></i>
-                        Lihat Riwayat Pesanan
+                       class="flex-[2] flex items-center justify-center gap-4 bg-luxury-forest text-white py-5 px-10 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-luxury-gold transition-all duration-500 active:scale-95 group">
+                        <i data-lucide="calendar" class="w-4 h-4 text-luxury-gold transition-transform group-hover:rotate-12"></i>
+                        View My History
                     </a>
-                    <button @click="window.print()" class="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-4 px-6 rounded-2xl font-black hover:bg-gray-200 transition">
-                        <i data-lucide="printer" class="w-5 h-5"></i>
-                        Cetak Struk
+                    <button @click="window.print()" class="flex-1 flex items-center justify-center gap-3 bg-white text-luxury-slate py-5 px-8 rounded-[1.5rem] border border-luxury-alabas font-black uppercase tracking-[0.2em] text-[10px] hover:bg-luxury-ivory transition-all duration-500">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        Print
                     </button>
                 </div>
             </div>
         </div>
-        <p class="text-center text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-8">Terima kasih telah membantu mengurangi food waste!</p>
+        <p class="text-center text-luxury-slate/40 text-[10px] font-black uppercase tracking-[0.4em] mt-12">Elevating sustainability through mindful curation.</p>
     </div>
 
     <form id="checkout-form" action="{{ route('consumer.checkout.store') }}" method="POST" class="hidden">
