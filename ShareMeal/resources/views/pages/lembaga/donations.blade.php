@@ -246,6 +246,10 @@
                                         <p>Dijemput: <span x-text="donation.pickup_time || '-'"></span></p>
                                         <p>Diterima: <span x-text="donation.delivered_at || donation.claimed_at"></span></p>
                                     </div>
+                                    <button @click="openReportModal(donation)" class="mt-4 w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-100 py-2 rounded-xl text-xs font-bold hover:bg-red-100 transition">
+                                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                        Laporkan Masalah Makanan
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -264,52 +268,141 @@
 
     <!-- Claim Modal -->
     <div x-show="showClaimModal" 
-         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-         x-transition.opacity
+         class="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
          x-cloak>
-        <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl" 
-             @click.away="showClaimModal = false"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100">
-            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="text-xl font-black text-gray-900">Klaim Donasi</h3>
-                <button @click="showClaimModal = false" class="text-gray-400 hover:text-gray-600 transition">
-                    <i data-lucide="x" class="w-6 h-6"></i>
+        
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showClaimModal = false"></div>
+
+        <!-- Modal Content -->
+        <div class="bg-white rounded-[32px] w-full max-w-lg overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300" 
+             x-show="showClaimModal"
+             x-transition:enter="transition ease-out duration-300 delay-100"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+            
+            <div class="p-8 border-b border-gray-50 flex items-center justify-between bg-white">
+                <div>
+                    <h3 class="text-2xl font-black text-gray-900 leading-tight">Konfirmasi Klaim</h3>
+                    <p class="text-sm text-gray-500 font-medium mt-1">Lengkapi detail penjemputan Anda</p>
+                </div>
+                <button @click="showClaimModal = false" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
-            <form :action="'{{ route('lembaga.donations.claim', 'DONATION_ID') }}'.replace('DONATION_ID', selectedDonation?.id)" method="POST" class="p-6 space-y-6">
+            <form :action="'{{ route('lembaga.donations.claim', 'DONATION_ID') }}'.replace('DONATION_ID', selectedDonation?.id)" method="POST" class="p-8 space-y-8">
                 @csrf
-                <div class="bg-purple-50 rounded-2xl p-4 border border-purple-100">
-                    <div class="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">Donasi Dari</div>
-                    <div class="font-bold text-purple-900" x-text="selectedDonation?.store.name"></div>
-                    <div class="text-xs text-purple-700 mt-1" x-text="selectedDonation?.items[0].name + ' (' + selectedDonation?.items[0].quantity + ' ' + selectedDonation?.items[0].unit + ')'"></div>
+                <div class="flex items-start gap-4 p-5 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 shrink-0">
+                        <i data-lucide="package" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-0.5">Donasi Dari</div>
+                        <div class="font-bold text-purple-900 text-lg" x-text="selectedDonation?.store.name"></div>
+                        <div class="text-xs text-purple-700 font-medium" x-text="selectedDonation?.items[0].name + ' (' + selectedDonation?.items[0].quantity + ' ' + selectedDonation?.items[0].unit + ')'"></div>
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-3">Pilih Jadwal Penjemputan</label>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <label class="text-sm font-black text-gray-900 uppercase tracking-wider">Jadwal Penjemputan</label>
+                        <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-bold" x-text="selectedDonation?.pickup_time_window"></span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <template x-for="slot in availableSlots" :key="slot">
                             <label class="relative group cursor-pointer">
                                 <input type="radio" name="pickup_time" :value="slot" class="sr-only peer" required>
-                                <div class="p-3 text-center rounded-xl border-2 border-gray-100 peer-checked:border-purple-600 peer-checked:bg-purple-50 group-hover:border-purple-100 transition-all font-bold text-sm text-gray-600 peer-checked:text-purple-700">
+                                <div class="p-3 text-center rounded-2xl border-2 border-gray-100 peer-checked:border-purple-600 peer-checked:bg-purple-50 group-hover:border-purple-100 transition-all font-bold text-sm text-gray-500 peer-checked:text-purple-700">
                                     <span x-text="slot"></span>
                                 </div>
                             </label>
                         </template>
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-3 font-medium">Jadwal tersedia berdasarkan jendela operasional mitra: <span x-text="selectedDonation?.pickup_time_window"></span></p>
+                    <p class="text-[11px] text-gray-400 mt-4 flex items-center gap-2">
+                        <i data-lucide="info" class="w-3 h-3"></i>
+                        Pilih waktu yang tersedia sesuai jam operasional mitra.
+                    </p>
                 </div>
 
-                <div class="bg-orange-50 rounded-xl p-4 flex gap-3">
-                    <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-600 flex-shrink-0"></i>
-                    <p class="text-[11px] text-orange-800 font-medium">Dengan melakukan klaim, Anda berkomitmen untuk menjemput donasi tepat waktu. Kegagalan penjemputan dapat mempengaruhi reputasi lembaga Anda.</p>
+                <div class="p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50 flex gap-3">
+                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600 shrink-0">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-[11px] text-orange-800 font-medium leading-relaxed">Dengan melakukan klaim, Anda berkomitmen untuk menjemput donasi tepat waktu guna menjaga kualitas makanan.</p>
                 </div>
 
-                <button type="submit" class="w-full bg-purple-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-purple-100 hover:bg-purple-700 transition active:scale-95 flex items-center justify-center gap-2">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i>
-                    Konfirmasi Klaim
+                <div class="flex gap-3">
+                    <button type="button" @click="showClaimModal = false" class="flex-1 px-6 py-4 rounded-2xl font-black text-gray-500 bg-gray-50 hover:bg-gray-100 transition active:scale-95">
+                        Batal
+                    </button>
+                    <button type="submit" class="flex-[2] bg-purple-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-purple-100 hover:bg-purple-700 transition active:scale-95 flex items-center justify-center gap-2">
+                        Konfirmasi Klaim
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div x-show="showReportModal" 
+         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+         x-transition.opacity
+         x-cloak>
+        <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl" 
+             @click.away="showReportModal = false"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-xl font-black text-gray-900 text-red-600 flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                    Laporkan Masalah
+                </h3>
+                <button @click="showReportModal = false" class="text-gray-400 hover:text-gray-600 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form action="{{ route('lembaga.report.submit') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-6" @submit="showReportModal = false">
+                @csrf
+                <input type="hidden" name="donation_id" :value="selectedDonationForReport?.id">
+
+                <div class="bg-red-50 rounded-2xl p-4 border border-red-100">
+                    <div class="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Melaporkan Donasi</div>
+                    <div class="font-bold text-red-900" x-text="selectedDonationForReport?.store.name"></div>
+                    <div class="text-xs text-red-700 mt-1" x-text="selectedDonationForReport?.items[0].name"></div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jenis Masalah</label>
+                    <select name="issue_type" x-model="reportIssueType" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-red-600 transition">
+                        <option value="bad_quality">Kualitas Buruk / Basi</option>
+                        <option value="expired">Sudah Kedaluwarsa</option>
+                        <option value="mismatch">Tidak Sesuai Deskripsi</option>
+                        <option value="other">Lainnya</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Detail Laporan</label>
+                    <textarea name="description" x-model="reportDescription" rows="3" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-red-600 transition" placeholder="Jelaskan secara rinci masalah makanan yang diterima..."></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Foto Bukti (Opsional)</label>
+                    <input type="file" name="evidence_image" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                </div>
+
+                <button type="submit" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-red-100 hover:bg-red-700 transition active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                    Kirim Laporan
                 </button>
             </form>
         </div>
@@ -333,6 +426,22 @@
             },
             completedDonations() {
                 return this.donations.filter(d => d.status === 'completed');
+            },
+
+            showReportModal: false,
+            selectedDonationForReport: null,
+            reportIssueType: 'bad_quality',
+            reportDescription: '',
+
+            openReportModal(donation) {
+                this.selectedDonationForReport = donation;
+                this.reportIssueType = 'bad_quality';
+                this.reportDescription = '';
+                this.showReportModal = true;
+                
+                setTimeout(() => {
+                    if (window.lucide) window.lucide.createIcons();
+                }, 50);
             },
 
             openClaimModal(donation) {
