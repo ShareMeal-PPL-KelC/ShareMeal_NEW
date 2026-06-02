@@ -196,7 +196,26 @@ class ShareMealController extends Controller
         if (Auth::check()) {
             Auth::user()->unreadNotifications->markAsRead();
         }
+        return back()->with('success', 'Semua notifikasi telah ditandai dibaca.');
+    }
+
+    public function markSingleNotificationRead(string $id): RedirectResponse
+    {
+        if (Auth::check()) {
+            Auth::user()->notifications()->findOrFail($id)->markAsRead();
+        }
         return back();
+    }
+
+    public function allNotifications(): View
+    {
+        $user = Auth::user();
+        $notifications = $user?->notifications()->paginate(15);
+        $role = $user?->role ?? 'consumer';
+
+        return view('pages.notifications', $this->dashboardData($role, 'Semua Notifikasi', 'Pantau semua aktivitas dan pemberitahuan Anda') + [
+            'notificationsList' => $notifications,
+        ]);
     }
 
     public function editProfile(): View|RedirectResponse
@@ -580,7 +599,20 @@ class ShareMealController extends Controller
             ->take(5)
             ->get();
 
-        return view('pages.mitra.dashboard', compact('stats', 'recentOrders', 'expiringItems', 'recentReviews'));
+        // PBI #45: Add critical alert for near-expiry products
+        $criticalAlerts = [];
+        $urgentExpiringCount = $expiringItems->where('expires_at', '<', now()->addHours(4))->count();
+        if ($urgentExpiringCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'warning',
+                'message' => "Perhatian: Ada $urgentExpiringCount produk yang akan kedaluwarsa dalam kurang dari 4 jam!",
+                'link' => route('mitra.inventory'),
+                'link_text' => 'Kelola Sekarang'
+            ];
+        }
+        session()->flash('critical_alerts', $criticalAlerts);
+
+        return view('pages.mitra.dashboard', compact('stats', 'recentOrders', 'recentReviews', 'expiringItems'));
     }
 
     public function editMitraBusinessProfile(): View|RedirectResponse
@@ -964,11 +996,11 @@ class ShareMealController extends Controller
 
         $user = Auth::user()?->load('profile');
         $profile = $user->profile;
-        
+
         $openingHours = $profile?->business_opening_hours ?? $profile?->opening_hours;
         if ($openingHours && str_contains($openingHours, ' - ')) {
             [$opStart, $opEnd] = explode(' - ', $openingHours, 2);
-            
+
             if ($data['pickup_start_time'] < $opStart || $data['pickup_start_time'] > $opEnd) {
                 return back()->withErrors(['pickup_start_time' => "Jam mulai pengambilan harus di dalam jam operasional ($openingHours)."])->withInput();
             }
@@ -1000,6 +1032,41 @@ class ShareMealController extends Controller
         return back()->with('success', 'Donasi berhasil didaftarkan.');
     }
 
+    public function mitraDonationComplete(int $donationId): RedirectResponse
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = Donation::where('mitra_id', $userId)->findOrFail($donationId);
+
+        if ($donation->status !== 'claimed') {
+            return back()->with('error', 'Hanya donasi yang sudah diklaim yang bisa diselesaikan.');
+        }
+
+        $donation->update([
+            'status' => 'completed',
+            'delivered_at' => now(),
+            'tracking_status' => 'delivered',
+        ]);
+
+        return back()->with('success', 'Donasi dikonfirmasi telah diserahkan.');
+    }
+
+    public function mitraDonationCancel(int $donationId): RedirectResponse
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = Donation::where('mitra_id', $userId)->findOrFail($donationId);
+
+        if ($donation->status === 'completed') {
+            return back()->with('error', 'Donasi yang sudah selesai tidak bisa dibatalkan.');
+        }
+
+        if ($donation->status === 'claimed') {
+            // Optional: notify lembaga if needed
+        }
+
+        $donation->delete();
+
+        return back()->with('success', 'Donasi berhasil dibatalkan/dihapus.');
+    }
     public function mitraDonations(): View
     {
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id') ?? \App\Models\User::where('role', 'mitra')->value('id');
@@ -1040,12 +1107,27 @@ class ShareMealController extends Controller
     public function mitraReviews(): View
     {
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        
+        $allReviews = Review::where('mitra_id', $userId)->get();
+        
+        $stats = [
+            'average' => round($allReviews->avg('rating') ?? 0, 1),
+            'total' => $allReviews->count(),
+            'counts' => [
+                5 => $allReviews->where('rating', 5)->count(),
+                4 => $allReviews->where('rating', 4)->count(),
+                3 => $allReviews->where('rating', 3)->count(),
+                2 => $allReviews->where('rating', 2)->count(),
+                1 => $allReviews->where('rating', 1)->count(),
+            ]
+        ];
+
         $reviews = Review::with(['customer', 'order.items.product'])
             ->where('mitra_id', $userId)
             ->latest()
             ->paginate(10);
 
-        return view('pages.mitra.reviews', compact('reviews'));
+        return view('pages.mitra.reviews', compact('reviews', 'stats'));
     }
 
     public function updateOrderStatus(Request $request, int $orderId): JsonResponse|RedirectResponse
@@ -1058,6 +1140,11 @@ class ShareMealController extends Controller
         ]);
 
         $order->update(['status' => $request->status]);
+
+        // Send notification to consumer (PBI #43)
+        if ($order->customer) {
+            $order->customer->notify(new \App\Notifications\OrderStatusUpdated($order));
+        }
 
         if ($request->wantsJson() || $request->expectsJson()) {
             return response()->json([
@@ -1095,6 +1182,19 @@ class ShareMealController extends Controller
         $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         $userObj = User::query()->find($userId);
         $donations = ShareMealState::get('donations');
+
+        // PBI #45: Add critical alert for active claimed donations
+        $criticalAlerts = [];
+        $activeClaimedCount = collect($donations)->where('status', 'claimed')->count();
+        if ($activeClaimedCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'info',
+                'message' => "Ada $activeClaimedCount donasi yang sudah Anda klaim dan menunggu penjemputan.",
+                'link' => route('lembaga.donations', ['tab' => 'claimed']),
+                'link_text' => 'Lihat Jadwal'
+            ];
+        }
+        session()->flash('critical_alerts', $criticalAlerts);
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
             'stats' => (object) ['totalDonations' => 156, 'activeDonations' => 8, 'beneficiaries' => 120, 'thisMonth' => 45],
@@ -1151,8 +1251,51 @@ class ShareMealController extends Controller
     }
     public function lembagaCompleteDonation(string $donationId): RedirectResponse
     {
-        ShareMealState::completeDonation($donationId);
+        $donation = Donation::findOrFail($donationId);
+
+        if ($donation->status !== 'claimed') {
+            return back()->with('error', 'Hanya donasi yang sudah diklaim yang bisa diselesaikan.');
+        }
+
+        $donation->update([
+            'status' => 'completed',
+            'delivered_at' => now(),
+            'tracking_status' => 'delivered',
+        ]);
+
         return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
+    }
+
+    public function lembagaSubmitProblemReport(Request $request)
+    {
+        $data = $request->validate([
+            'donation_id' => ['required', 'exists:donations,id'],
+            'issue_type' => ['required', 'string', 'in:expired,bad_quality,mismatch,other'],
+            'description' => ['required', 'string', 'max:2000'],
+            'evidence_image' => ['nullable', 'image', 'max:2048'],
+        ]);
+
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = \App\Models\Donation::where('id', $data['donation_id'])
+            ->where('lembaga_id', $userId)
+            ->firstOrFail();
+
+        $evidencePath = null;
+        if ($request->hasFile('evidence_image')) {
+            $evidencePath = $request->file('evidence_image')->store('reports', 'public');
+        }
+
+        \App\Models\ProblemReport::create([
+            'reporter_id' => $userId,
+            'mitra_id' => $donation->mitra_id,
+            'donation_id' => $donation->id,
+            'issue_type' => $data['issue_type'],
+            'description' => $data['description'],
+            'evidence_image' => $evidencePath,
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'Laporan masalah donasi berhasil dikirim.');
     }
 
     public function adminDashboard(): View
@@ -1489,5 +1632,67 @@ class ShareMealController extends Controller
     {
         ShareMealState::deleteArticle($articleId);
         return back()->with('success', 'Artikel berhasil dihapus.');
+    }
+
+    public function adminProblemReports(): View
+    {
+        $reports = \App\Models\ProblemReport::with(['reporter', 'mitra', 'order', 'donation'])
+            ->latest()
+            ->paginate(15);
+
+        return view('pages.admin.problem_reports', $this->dashboardData('admin', 'Laporan Masalah', 'Moderasi dan tindak lanjut laporan makanan bermasalah') + [
+            'reports' => $reports,
+        ]);
+    }
+
+    public function adminDismissReport(int $reportId): RedirectResponse
+    {
+        $report = \App\Models\ProblemReport::findOrFail($reportId);
+        $report->update(['status' => 'dismissed']);
+
+        return back()->with('success', 'Laporan telah diabaikan.');
+    }
+
+    public function adminWarnMitraReport(Request $request, int $reportId): RedirectResponse
+    {
+        $report = \App\Models\ProblemReport::findOrFail($reportId);
+        $mitra = $report->mitra;
+
+        if ($mitra) {
+            $mitra->increment('warnings_count');
+            $mitra->update([
+                'status' => 'warned',
+                'last_warning_at' => now(),
+                'warning_reason' => $report->issue_label . ': ' . $report->description,
+            ]);
+
+            // Notify Mitra
+            $mitra->notify(new \App\Notifications\SystemWarningNotification(
+                'Peringatan Akun',
+                'Akun Anda mendapatkan peringatan resmi karena laporan: ' . $report->issue_label . '. Mohon jaga kualitas layanan Anda.'
+            ));
+        }
+
+        $report->update(['status' => 'resolved', 'admin_note' => 'Diberikan peringatan kepada mitra.']);
+
+        return back()->with('success', 'Peringatan telah dikirimkan kepada mitra.');
+    }
+
+    public function adminBlockMitraReport(Request $request, int $reportId): RedirectResponse
+    {
+        $report = \App\Models\ProblemReport::findOrFail($reportId);
+        $mitra = $report->mitra;
+
+        if ($mitra) {
+            $mitra->update([
+                'status' => 'blocked',
+                'blocked_at' => now(),
+                'block_reason' => 'Pelanggaran berat/berulang berdasarkan laporan: ' . $report->issue_label,
+            ]);
+        }
+
+        $report->update(['status' => 'resolved', 'admin_note' => 'Mitra telah diblokir secara permanen.']);
+
+        return back()->with('success', 'Mitra telah diblokir.');
     }
 }
