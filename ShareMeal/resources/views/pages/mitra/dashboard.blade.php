@@ -2,145 +2,124 @@
 
 @section('content')
 <div class="space-y-6">
-    <div>
-        <h1 class="text-3xl font-bold text-gray-900">Dashboard Mitra</h1>
-        <p class="text-gray-600 mt-1">Kelola surplus pangan dan kurangi food waste</p>
+    <div class="mb-12">
+        <h1 class="text-5xl font-serif font-bold text-luxury-forest leading-tight">Business Overview</h1>
+        <p class="text-luxury-slate font-medium mt-2 tracking-wide text-center md:text-left">Optimize your surplus inventory and enhance your community impact.</p>
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-600">Total Produk</span>
-                <i data-lucide="package" class="w-4 h-4 text-gray-400"></i>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+        <div class="bg-white p-8 rounded-[2rem] luxury-shadow border border-luxury-alabas hover:bg-luxury-forest transition-all duration-500 group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="w-12 h-12 bg-luxury-ivory rounded-xl flex items-center justify-center group-hover:bg-white/10">
+                    <i data-lucide="package" class="w-6 h-6 text-luxury-gold"></i>
+                </div>
+                <div class="text-[10px] font-black text-luxury-gold uppercase tracking-widest">Live Stock</div>
             </div>
-            <div class="text-2xl font-bold text-gray-900">{{ $stats->totalProducts }}</div>
-            <p class="text-xs text-gray-500 mt-1">Dalam inventaris</p>
+            <div class="text-4xl font-serif font-bold text-luxury-forest group-hover:text-white transition-colors">{{ $stats->totalProducts }} Items</div>
+            <p class="text-[10px] text-luxury-slate group-hover:text-white/60 mt-3 font-bold uppercase tracking-wider italic">Within active inventory</p>
         </div>
 
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-600">Flash Sale Aktif</span>
-                <i data-lucide="trending-down" class="w-4 h-4 text-orange-600"></i>
+        <div class="bg-white p-8 rounded-[2rem] luxury-shadow border border-luxury-alabas hover:bg-luxury-emerald transition-all duration-500 group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="w-12 h-12 bg-luxury-ivory rounded-xl flex items-center justify-center group-hover:bg-white/10">
+                    <i data-lucide="dollar-sign" class="w-6 h-6 text-luxury-gold"></i>
+                </div>
+                <div class="text-[10px] font-black text-luxury-gold uppercase tracking-widest">Revenue</div>
             </div>
-            <div class="text-2xl font-bold text-orange-600">{{ $stats->activeFlashSale }}</div>
-            <p class="text-xs text-gray-500 mt-1">Produk dengan diskon</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-600">Pesanan Pending</span>
-                <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600"></i>
-            </div>
-            <div class="text-2xl font-bold text-blue-600">{{ $stats->pendingOrders }}</div>
-            <p class="text-xs text-gray-500 mt-1">Menunggu pengambilan</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-600">Revenue Bulan Ini</span>
-                <i data-lucide="dollar-sign" class="w-4 h-4 text-green-600"></i>
-            </div>
-            <div class="text-2xl font-bold text-green-600">Rp {{ number_format($stats->totalRevenue, 0, ',', '.') }}</div>
-            <p class="text-xs text-green-600 mt-1 flex items-center">
-                <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>
-                +12% dari bulan lalu
+            <div class="text-3xl font-serif font-bold text-luxury-forest group-hover:text-white transition-colors">Rp {{ number_format($stats->totalRevenue / 1000, 0) }}k</div>
+            <p class="text-[10px] text-luxury-emerald group-hover:text-white mt-3 font-black uppercase tracking-wider bg-luxury-emerald/10 group-hover:bg-white/10 px-3 py-1 rounded-full inline-block">
+                +12.5% MTM
             </p>
         </div>
 
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-600">Makanan Diselamatkan</span>
-                <i data-lucide="leaf" class="w-4 h-4 text-green-600"></i>
+        <div class="bg-white p-8 rounded-[2rem] luxury-shadow border border-luxury-alabas hover:bg-luxury-gold transition-all duration-500 group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="w-12 h-12 bg-luxury-ivory rounded-xl flex items-center justify-center group-hover:bg-white/10">
+                    <i data-lucide="star" class="w-6 h-6 text-luxury-forest"></i>
+                </div>
+                <div class="text-[10px] font-black text-luxury-forest group-hover:text-white uppercase tracking-widest">Appreciation</div>
             </div>
-            <div class="text-2xl font-bold text-green-600">{{ $stats->foodSaved }}</div>
-            <p class="text-xs text-gray-500 mt-1">Estimasi total kg</p>
+            <div class="text-4xl font-serif font-bold text-luxury-forest group-hover:text-white transition-colors">{{ $stats->averageRating }} <span class="text-sm opacity-40">/ 5.0</span></div>
+            <p class="text-[10px] text-luxury-slate group-hover:text-white/60 mt-3 font-bold uppercase tracking-wider italic">From {{ $stats->totalReviews }} curators</p>
         </div>
 
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-600">Donasi Diberikan</span>
-                <i data-lucide="heart" class="w-4 h-4 text-purple-600"></i>
+        <div class="bg-white p-8 rounded-[2rem] luxury-shadow border border-luxury-alabas hover:bg-luxury-forest transition-all duration-500 group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="w-12 h-12 bg-luxury-ivory rounded-xl flex items-center justify-center group-hover:bg-white/10">
+                    <i data-lucide="leaf" class="w-6 h-6 text-luxury-gold"></i>
+                </div>
+                <div class="text-[10px] font-black text-luxury-gold uppercase tracking-widest">Impact</div>
             </div>
-            <div class="text-2xl font-bold text-purple-600">{{ $stats->donationsGiven }}</div>
-            <p class="text-xs text-gray-500 mt-1">Ke lembaga sosial</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-600">Rating Toko</span>
-                <i data-lucide="star" class="w-4 h-4 text-yellow-500"></i>
-            </div>
-            <div class="text-2xl font-bold text-yellow-500">{{ $stats->averageRating }} <span class="text-sm text-gray-400 font-normal">/ 5.0</span></div>
-            <p class="text-xs text-gray-500 mt-1">Berdasarkan {{ $stats->totalReviews }} ulasan</p>
+            <div class="text-4xl font-serif font-bold text-luxury-forest group-hover:text-white transition-colors">{{ $stats->foodSaved }}kg</div>
+            <p class="text-[10px] text-luxury-slate group-hover:text-white/60 mt-3 font-bold uppercase tracking-wider italic">Food waste diverted</p>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-16">
         <!-- Expiring Items Alert -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-gray-50 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="alert-circle" class="w-5 h-5 text-orange-600"></i>
-                    <h2 class="text-xl font-bold text-gray-900">Mendekati Expired</h2>
+        <div class="bg-white rounded-[2.5rem] border border-luxury-alabas luxury-shadow overflow-hidden flex flex-col">
+            <div class="p-8 border-b border-luxury-alabas flex items-center justify-between bg-luxury-ivory/30">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                    <h2 class="text-xl font-serif font-bold text-luxury-forest">Urgent Inventory</h2>
                 </div>
-                <a href="{{ route('mitra.inventory') }}" class="text-sm font-semibold text-[#174413] hover:underline flex items-center gap-1">
-                    Kelola
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </a>
+                <a href="{{ route('mitra.inventory') }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold hover:text-luxury-forest transition-colors">Manage</a>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-8 space-y-4 flex-1">
                 @forelse($expiringItems as $item)
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div class="flex items-center justify-between p-6 bg-luxury-ivory/50 rounded-2xl border border-luxury-alabas hover:bg-white hover:luxury-shadow transition-all duration-300 group">
                     <div>
-                        <div class="font-bold text-gray-900">{{ $item->name }}</div>
-                        <div class="text-sm text-gray-500">Stok: {{ $item->stock }}</div>
+                        <div class="font-bold text-luxury-forest group-hover:text-luxury-gold transition-colors">{{ $item->name }}</div>
+                        <div class="text-[10px] text-luxury-slate font-black uppercase tracking-widest mt-1">Stock: {{ $item->stock }}</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs font-bold text-orange-600">{{ $item->expires_at->diffForHumans() }}</div>
-                        <div class="text-[10px] text-gray-400">sisa waktu</div>
+                        <div class="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1">{{ $item->expires_at->diffForHumans() }}</div>
+                        <div class="w-16 h-1 bg-luxury-alabas rounded-full overflow-hidden">
+                            <div class="h-full bg-orange-400 w-2/3"></div>
+                        </div>
                     </div>
                 </div>
                 @empty
-                <div class="text-center py-4 text-gray-500 italic">Tidak ada produk kritis.</div>
+                <div class="text-center py-12">
+                    <i data-lucide="check-circle" class="w-10 h-10 text-luxury-emerald/30 mx-auto mb-4"></i>
+                    <p class="text-luxury-slate font-serif italic text-lg">Inventory is optimized.</p>
+                </div>
                 @endforelse
             </div>
         </div>
 
         <!-- Recent Reviews -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-gray-50 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="star" class="w-5 h-5 text-yellow-500"></i>
-                    <h2 class="text-xl font-bold text-gray-900">Ulasan Terbaru</h2>
+        <div class="bg-white rounded-[2.5rem] border border-luxury-alabas luxury-shadow overflow-hidden flex flex-col">
+            <div class="p-8 border-b border-luxury-alabas flex items-center justify-between bg-luxury-ivory/30">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="star" class="w-5 h-5 text-luxury-gold"></i>
+                    <h2 class="text-xl font-serif font-bold text-luxury-forest">Latest Appreciation</h2>
                 </div>
-                <a href="{{ route('mitra.reviews') }}" class="text-sm font-semibold text-[#174413] hover:underline flex items-center gap-1">
-                    Semua Ulasan
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </a>
+                <a href="{{ route('mitra.reviews') }}" class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold hover:text-luxury-forest transition-colors">View All</a>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-8 space-y-6 flex-1">
                 @forelse($recentReviews as $review)
-                <div class="p-4 bg-yellow-50/30 rounded-xl border border-yellow-100/50">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="font-bold text-sm text-gray-900">{{ $review->customer->name }}</div>
-                        <div class="flex gap-0.5">
+                <div class="p-6 bg-white border border-luxury-alabas rounded-2xl hover:luxury-shadow transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm font-bold text-luxury-forest">{{ $review->customer->name }}</div>
+                        <div class="flex gap-1">
                             @for($i = 1; $i <= 5; $i++)
-                            <i data-lucide="star" class="w-3 h-3 {{ $i <= $review->rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200' }}"></i>
+                            <i data-lucide="star" class="w-3 h-3 {{ $i <= $review->rating ? 'text-luxury-gold fill-luxury-gold' : 'text-luxury-alabas' }}"></i>
                             @endfor
                         </div>
                     </div>
                     @if($review->comment)
-                    <p class="text-xs text-gray-600 italic line-clamp-2">"{{ $review->comment }}"</p>
+                    <p class="text-sm font-serif text-luxury-forest italic leading-relaxed opacity-80 line-clamp-2">&ldquo;{{ $review->comment }}&rdquo;</p>
                     @else
-                    <p class="text-xs text-gray-400 italic">Tidak ada komentar.</p>
+                    <p class="text-xs text-luxury-slate italic">Silent appreciation</p>
                     @endif
-                    <div class="text-[10px] text-gray-400 mt-2">{{ $review->created_at->diffForHumans() }}</div>
+                    <div class="text-[9px] text-luxury-gold font-black uppercase tracking-widest mt-4">{{ $review->created_at->diffForHumans() }}</div>
                 </div>
                 @empty
-                <div class="text-center py-8 text-gray-400 italic">
-                    <i data-lucide="message-square" class="w-8 h-8 mx-auto mb-2 opacity-20"></i>
-                    Belum ada ulasan.
+                <div class="text-center py-12">
+                    <i data-lucide="message-square" class="w-10 h-10 text-luxury-alabas/30 mx-auto mb-4"></i>
+                    <p class="text-luxury-slate font-serif italic text-lg">Awaiting feedback.</p>
                 </div>
                 @endforelse
             </div>
@@ -148,45 +127,61 @@
     </div>
 
     <!-- Recent Orders -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-gray-50 flex items-center justify-between">
-            <h2 class="text-xl font-bold text-gray-900">Pesanan Terbaru</h2>
-            <a href="{{ route('mitra.orders') }}" class="text-sm font-semibold text-[#174413] hover:underline flex items-center gap-1">
-                Lihat Semua Pesanan
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+    <div class="bg-white rounded-[3rem] border border-luxury-alabas luxury-shadow overflow-hidden mb-12">
+        <div class="p-10 border-b border-luxury-alabas flex items-center justify-between bg-luxury-ivory/20">
+            <div>
+                <h2 class="text-3xl font-serif font-bold text-luxury-forest">Recent Acquisitions</h2>
+                <p class="text-[10px] text-luxury-gold font-black uppercase tracking-[0.2em] mt-1">Pantau pesanan terbaru dari komunitas Anda</p>
+            </div>
+            <a href="{{ route('mitra.orders') }}" class="px-8 py-4 rounded-2xl bg-white border border-luxury-alabas text-[10px] font-black uppercase tracking-[0.2em] text-luxury-forest hover:bg-luxury-forest hover:text-white transition-all duration-500 luxury-shadow">
+                Full Log
             </a>
         </div>
-        <div class="p-6 space-y-4">
+        <div class="divide-y divide-luxury-alabas">
             @forelse($recentOrders as $order)
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 rounded-xl gap-4 hover:border-green-200 transition">
-                <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-gray-900">{{ $order->customer->name }}</span>
-                        <span class="text-xs text-gray-400 font-mono">#{{ $order->id }}</span>
+            <div class="p-8 flex flex-col md:flex-row md:items-center justify-between gap-8 hover:bg-luxury-ivory/30 transition-all duration-500 group">
+                <div class="flex items-center gap-8 flex-1">
+                    <div class="w-16 h-16 bg-luxury-forest/5 rounded-2xl flex items-center justify-center text-luxury-forest luxury-shadow border border-luxury-alabas transition-transform group-hover:scale-110">
+                        <i data-lucide="shopping-bag" class="w-7 h-7 stroke-[1.5]"></i>
                     </div>
-                    <div class="text-sm text-gray-600 mt-1 line-clamp-1">{{ $order->items_string }}</div>
-                    <div class="text-xs text-gray-400 mt-1">{{ $order->time }}</div>
+                    <div>
+                        <div class="flex items-center gap-4">
+                            <div class="font-serif text-2xl font-bold text-luxury-forest group-hover:text-luxury-gold transition-colors duration-500">{{ $order->customer->name }}</div>
+                            <span class="font-mono text-[10px] text-luxury-slate opacity-50 uppercase tracking-tighter">#{{ $order->id }}</span>
+                        </div>
+                        <div class="text-sm text-luxury-slate font-medium mt-2 italic opacity-80">{{ $order->items_string }}</div>
+                        <div class="text-[9px] text-luxury-gold font-black uppercase tracking-widest mt-3">{{ $order->time }}</div>
+                    </div>
                 </div>
-                <div class="flex items-center gap-6">
+                <div class="flex items-center gap-10">
                     <div class="text-right">
-                        <div class="font-bold text-green-700">Rp {{ number_format($order->amount, 0, ',', '.') }}</div>
-                        <div class="text-xs mt-1 {{ $order->status === 'Selesai' ? 'text-green-600' : 'text-orange-600 font-bold' }}">
-                            {{ $order->status }}
+                        <div class="text-2xl font-serif font-black text-luxury-forest">Rp {{ number_format($order->amount, 0, ',', '.') }}</div>
+                        <div class="mt-2">
+                            <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg {{ $order->status === 'Selesai' ? 'bg-luxury-emerald/10 text-luxury-emerald' : 'bg-orange-50 text-orange-600' }}">
+                                {{ $order->status }}
+                            </span>
                         </div>
                     </div>
-                    <a href="{{ route('mitra.orders') }}" class="bg-gray-50 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-50 hover:text-[#174413] transition">
-                        Detail
+                    <a href="{{ route('mitra.orders') }}" class="w-14 h-14 bg-luxury-ivory rounded-2xl flex items-center justify-center text-luxury-forest hover:bg-luxury-forest hover:text-white transition-all duration-500 luxury-shadow group/btn active:scale-90">
+                        <i data-lucide="chevron-right" class="w-6 h-6 transition-transform group-hover/btn:translate-x-1"></i>
                     </a>
                 </div>
             </div>
             @empty
-            <div class="text-center py-4 text-gray-500 italic">Belum ada pesanan masuk.</div>
+            <div class="p-20 text-center">
+                <div class="w-20 h-20 bg-luxury-ivory rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="inbox" class="w-8 h-8 text-luxury-alabas"></i>
+                </div>
+                <p class="text-luxury-slate font-serif text-xl italic">Waiting for the first acquisition.</p>
+            </div>
             @endforelse
         </div>
     </div>
 </div>
 
 <script>
-    lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
 </script>
 @endsection
