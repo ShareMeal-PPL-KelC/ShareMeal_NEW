@@ -599,7 +599,20 @@ class ShareMealController extends Controller
             ->take(5)
             ->get();
 
-        return view('pages.mitra.dashboard', compact('stats', 'recentOrders', 'expiringItems', 'recentReviews'));
+        // PBI #45: Add critical alert for near-expiry products
+        $criticalAlerts = [];
+        $urgentExpiringCount = $expiringItems->where('expires_at', '<', now()->addHours(4))->count();
+        if ($urgentExpiringCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'warning',
+                'message' => "Perhatian: Ada $urgentExpiringCount produk yang akan kedaluwarsa dalam kurang dari 4 jam!",
+                'link' => route('mitra.inventory'),
+                'link_text' => 'Kelola Sekarang'
+            ];
+        }
+        session()->flash('critical_alerts', $criticalAlerts);
+
+        return view('pages.mitra.dashboard', compact('stats', 'recentOrders', 'recentReviews', 'expiringItems'));
     }
 
     public function editMitraBusinessProfile(): View|RedirectResponse
@@ -1094,12 +1107,27 @@ class ShareMealController extends Controller
     public function mitraReviews(): View
     {
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        
+        $allReviews = Review::where('mitra_id', $userId)->get();
+        
+        $stats = [
+            'average' => round($allReviews->avg('rating') ?? 0, 1),
+            'total' => $allReviews->count(),
+            'counts' => [
+                5 => $allReviews->where('rating', 5)->count(),
+                4 => $allReviews->where('rating', 4)->count(),
+                3 => $allReviews->where('rating', 3)->count(),
+                2 => $allReviews->where('rating', 2)->count(),
+                1 => $allReviews->where('rating', 1)->count(),
+            ]
+        ];
+
         $reviews = Review::with(['customer', 'order.items.product'])
             ->where('mitra_id', $userId)
             ->latest()
             ->paginate(10);
 
-        return view('pages.mitra.reviews', compact('reviews'));
+        return view('pages.mitra.reviews', compact('reviews', 'stats'));
     }
 
     public function updateOrderStatus(Request $request, int $orderId): JsonResponse|RedirectResponse
@@ -1112,6 +1140,11 @@ class ShareMealController extends Controller
         ]);
 
         $order->update(['status' => $request->status]);
+
+        // Send notification to consumer (PBI #43)
+        if ($order->customer) {
+            $order->customer->notify(new \App\Notifications\OrderStatusUpdated($order));
+        }
 
         if ($request->wantsJson() || $request->expectsJson()) {
             return response()->json([
@@ -1149,6 +1182,19 @@ class ShareMealController extends Controller
         $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         $userObj = User::query()->find($userId);
         $donations = ShareMealState::get('donations');
+
+        // PBI #45: Add critical alert for active claimed donations
+        $criticalAlerts = [];
+        $activeClaimedCount = collect($donations)->where('status', 'claimed')->count();
+        if ($activeClaimedCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'info',
+                'message' => "Ada $activeClaimedCount donasi yang sudah Anda klaim dan menunggu penjemputan.",
+                'link' => route('lembaga.donations', ['tab' => 'claimed']),
+                'link_text' => 'Lihat Jadwal'
+            ];
+        }
+        session()->flash('critical_alerts', $criticalAlerts);
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
             'stats' => (object) ['totalDonations' => 156, 'activeDonations' => 8, 'beneficiaries' => 120, 'thisMonth' => 45],
@@ -1205,7 +1251,18 @@ class ShareMealController extends Controller
     }
     public function lembagaCompleteDonation(string $donationId): RedirectResponse
     {
-        ShareMealState::completeDonation($donationId);
+        $donation = Donation::findOrFail($donationId);
+
+        if ($donation->status !== 'claimed') {
+            return back()->with('error', 'Hanya donasi yang sudah diklaim yang bisa diselesaikan.');
+        }
+
+        $donation->update([
+            'status' => 'completed',
+            'delivered_at' => now(),
+            'tracking_status' => 'delivered',
+        ]);
+
         return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
     }
 

@@ -48,6 +48,8 @@ Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function
     Route::get('/reviews', [ShareMealController::class, 'mitraReviews'])->name('reviews');
     Route::get('/donations', [ShareMealController::class, 'mitraDonations'])->name('donations');
     Route::post('/donations', [ShareMealController::class, 'mitraDonationStore'])->name('donations.store');
+    Route::post('/donations/{donationId}/complete', [ShareMealController::class, 'mitraDonationComplete'])->name('donations.complete');
+    Route::post('/donations/{donationId}/cancel', [ShareMealController::class, 'mitraDonationCancel'])->name('donations.cancel');
 });
 
 Route::prefix('lembaga')->name('lembaga.')->group(function () {

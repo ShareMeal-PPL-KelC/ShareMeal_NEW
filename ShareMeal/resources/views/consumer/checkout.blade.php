@@ -3,6 +3,13 @@
 @section('content')
 <div class="space-y-6" x-data="{
     paymentMethod: 'qris',
+    receivingMethod: 'pickup',
+    deliveryFee: {{ $booking->deliveryFee }},
+    canDelivery: {{ $booking->canDelivery ? 'true' : 'false' }},
+    subtotal: {{ $booking->price * $booking->quantity }},
+    get total() {
+        return this.receivingMethod === 'delivery' ? this.subtotal + this.deliveryFee : this.subtotal;
+    },
     countdown: 600,
     paymentComplete: false,
     pickupCode: 'PICK-{{ strtoupper(bin2hex(random_bytes(2))) }}',
@@ -52,6 +59,43 @@
                         <span class="font-semibold text-orange-900">Selesaikan pembayaran dalam:</span>
                     </div>
                     <div class="text-2xl font-bold text-orange-600" x-text="formatTime(countdown)"></div>
+                </div>
+            </div>
+
+            <!-- Selection Card -->
+            <div class="rounded-xl border border-gray-100 bg-white shadow-sm">
+                <div class="p-6 pb-4 border-b border-gray-50">
+                    <h3 class="text-lg font-bold">Pilih Metode Pengambilan</h3>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Pickup -->
+                    <div class="relative flex items-center p-4 border rounded-xl cursor-pointer transition-all"
+                         :class="receivingMethod === 'pickup' ? 'border-green-600 bg-green-50/30' : 'border-gray-100 hover:bg-gray-50'"
+                         @click="receivingMethod = 'pickup'">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 shrink-0">
+                            <i data-lucide="store" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1 ml-4">
+                            <div class="font-bold text-gray-900 text-sm">Ambil di Tempat</div>
+                            <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Gratis</div>
+                        </div>
+                        <input type="radio" name="receiving_method_radio" value="pickup" x-model="receivingMethod" class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-600">
+                    </div>
+
+                    <!-- Delivery -->
+                    <div class="relative flex items-center p-4 border rounded-xl transition-all"
+                         :class="[!canDelivery ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer', 
+                                 receivingMethod === 'delivery' ? 'border-green-600 bg-green-50/30' : 'border-gray-100 hover:bg-gray-50']"
+                         @click="if(canDelivery) receivingMethod = 'delivery'">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shrink-0">
+                            <i data-lucide="truck" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1 ml-4">
+                            <div class="font-bold text-gray-900 text-sm">Kirim ke Alamat</div>
+                            <div class="text-[10px] text-blue-600 font-bold uppercase tracking-wider" x-text="canDelivery ? 'Rp ' + deliveryFee.toLocaleString('id-ID') : 'Tidak Tersedia'"></div>
+                        </div>
+                        <input type="radio" name="receiving_method_radio" value="delivery" x-model="receivingMethod" :disabled="!canDelivery" class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-600">
+                    </div>
                 </div>
             </div>
 
@@ -181,9 +225,13 @@
                                 <span>Biaya Admin</span>
                                 <span class="text-gray-900">Rp 0</span>
                             </div>
+                            <div class="flex justify-between text-gray-600" x-show="receivingMethod === 'delivery'">
+                                <span>Ongkos Kirim</span>
+                                <span class="text-gray-900" x-text="'Rp ' + deliveryFee.toLocaleString('id-ID')"></span>
+                            </div>
                             <div class="pt-3 mt-3 border-t border-gray-100 flex justify-between text-lg font-black">
                                 <span class="text-gray-900">Total</span>
-                                <span class="text-green-600">Rp {{ number_format($booking->price * $booking->quantity, 0, ',', '.') }}</span>
+                                <span class="text-green-600" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                             </div>
                         </div>
                     </div>
@@ -191,11 +239,11 @@
                     <div class="h-px bg-gray-100 w-full"></div>
 
                     <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-                        <h4 class="text-xs font-black uppercase tracking-widest text-gray-400">Info Pengambilan</h4>
+                        <h4 class="text-xs font-black uppercase tracking-widest text-gray-400" x-text="receivingMethod === 'delivery' ? 'Info Pengiriman' : 'Info Pengambilan'"></h4>
                         <div class="flex items-start gap-2.5">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-gray-400 mt-0.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             <div>
-                                <p class="text-xs font-bold text-gray-900">Jadwal Ambil</p>
+                                <p class="text-xs font-bold text-gray-900" x-text="receivingMethod === 'delivery' ? 'Estimasi Sampai' : 'Jadwal Ambil'"></p>
                                 <p class="text-xs text-gray-500 font-medium">{{ $booking->pickupTime }}</p>
                             </div>
                         </div>
@@ -212,25 +260,30 @@
                 <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 </div>
-                <h2 class="text-3xl font-black text-gray-900 mb-2">Pembayaran Berhasil!</h2>
-                <p class="text-gray-500 font-medium mb-8">Terima kasih, pesanan Anda sedang diproses oleh penjual.</p>
+                <h2 class="text-3xl font-black text-gray-900 mb-2">Pesanan Terkonfirmasi!</h2>
+                <p class="text-gray-500 font-medium mb-8" x-text="receivingMethod === 'delivery' ? 'Kurir akan segera mengantar pesanan Anda.' : 'Silakan datang ke lokasi mitra untuk mengambil pesanan.'"></p>
 
                 <div class="bg-gray-50 border border-gray-100 p-8 rounded-2xl mb-8 max-w-sm mx-auto shadow-inner">
                     <div class="space-y-4 text-left">
                         <div>
-                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Lokasi Pengambilan</span>
+                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1" x-text="receivingMethod === 'delivery' ? 'Alamat Pengantaran' : 'Lokasi Pengambilan'"></span>
                             <div class="font-bold text-gray-900 text-sm mb-0.5">{{ $booking->storeName }}</div>
                             <div class="text-xs text-gray-500 font-medium">{{ $booking->address }}</div>
                         </div>
-                        <div class="h-px bg-gray-200 w-full"></div>
-                        <div>
+                        <div class="h-px bg-gray-200 w-full" x-show="receivingMethod === 'pickup'"></div>
+                        <div x-show="receivingMethod === 'pickup'">
                             <span class="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Kode Pengambilan</span>
                             <div class="font-mono font-black text-[#174413] text-2xl tracking-wider" x-text="pickupCode"></div>
                         </div>
                         <div class="h-px bg-gray-200 w-full"></div>
                         <div>
+                            <span class="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1" x-text="receivingMethod === 'delivery' ? 'Estimasi Sampai' : 'Jadwal Ambil'"></span>
+                            <div class="font-bold text-gray-900 text-sm">{{ $booking->pickupTime }}</div>
+                        </div>
+                        <div class="h-px bg-gray-200 w-full"></div>
+                        <div>
                             <span class="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Total Bayar</span>
-                            <div class="font-black text-green-600 text-xl">Rp {{ number_format($booking->price * $booking->quantity, 0, ',', '.') }}</div>
+                            <div class="font-black text-green-600 text-xl" x-text="'Rp ' + total.toLocaleString('id-ID')"></div>
                         </div>
                     </div>
                 </div>
@@ -238,7 +291,7 @@
                 <div class="flex flex-col sm:flex-row gap-3 justify-center">
                     <button @click="const form = document.getElementById('checkout-form'); const input = document.createElement('input'); input.type = 'hidden'; input.name = 'pickup_code'; input.value = pickupCode; form.appendChild(input); form.submit();"
                             class="flex items-center justify-center gap-2 bg-[#174413] text-white py-4 px-8 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition">
-                        Lihat Riwayat
+                        Selesai & Lihat Riwayat
                     </button>
                 </div>
             </div>
@@ -251,6 +304,7 @@
         <input type="hidden" name="mitra_id" value="{{ $booking->mitra_id }}">
         <input type="hidden" name="quantity" value="{{ $booking->quantity }}">
         <input type="hidden" name="price" value="{{ $booking->price }}">
+        <input type="hidden" name="receiving_method" :value="receivingMethod">
         <input type="hidden" name="payment_method" :value="paymentMethod">
     </form>
 </div>
