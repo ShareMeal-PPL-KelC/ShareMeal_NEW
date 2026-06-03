@@ -117,12 +117,12 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div>
+                <div class="flex flex-col md:flex-row gap-5">
+                    <div class="flex-1 md:min-w-[300px]">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Kontak Usaha</label>
                         <div class="flex gap-2">
                             <div class="relative flex-1">
-                                <input type="text" name="business_contact" id="business_contact" value="{{ old('business_contact', $businessContact) }}" readonly class="w-full rounded-xl border border-gray-200 bg-gray-100 p-3 text-sm text-gray-500 cursor-not-allowed">
+                                <input type="text" name="business_contact" id="business_contact" value="{{ old('business_contact', $businessContact) }}" readonly class="w-full rounded-xl border border-gray-200 bg-gray-100 p-3 pr-28 text-sm text-gray-500 cursor-not-allowed">
                                 @if($profile?->business_contact_verified_at)
                                     <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">
                                         <i data-lucide="shield-check" class="w-3 h-3"></i>
@@ -145,17 +145,17 @@
                         @enderror
                     </div>
 
-                    <div>
+                    <div class="w-full md:w-40">
                         <label for="opening_start" class="block text-sm font-semibold text-gray-700 mb-2">Jam Buka</label>
-                        <input id="opening_start" name="opening_start" type="time" value="{{ old('opening_start', $openingStart) }}" required class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-[#174413] focus:ring-2 focus:ring-green-100 outline-none transition">
+                        <input id="opening_start" name="opening_start" type="time" value="{{ old('opening_start', $openingStart) }}" required class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-[#174413] focus:ring-2 focus:ring-green-100 outline-none transition text-center">
                         @error('opening_start')
                             <p class="mt-2 text-sm text-red-600 validation-error-msg">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <div>
+                    <div class="w-full md:w-40">
                         <label for="opening_end" class="block text-sm font-semibold text-gray-700 mb-2">Jam Tutup</label>
-                        <input id="opening_end" name="opening_end" type="time" value="{{ old('opening_end', $openingEnd) }}" required class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-[#174413] focus:ring-2 focus:ring-green-100 outline-none transition">
+                        <input id="opening_end" name="opening_end" type="time" value="{{ old('opening_end', $openingEnd) }}" required class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-[#174413] focus:ring-2 focus:ring-green-100 outline-none transition text-center">
                         @error('opening_end')
                             <p class="mt-2 text-sm text-red-600 validation-error-msg">{{ $message }}</p>
                         @enderror

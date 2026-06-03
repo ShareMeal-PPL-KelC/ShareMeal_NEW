@@ -93,4 +93,27 @@ class MitraInventoryStockTest extends TestCase
         $product->refresh();
         $this->assertEquals(0, $product->donatable);
     }
+
+    public function test_mitra_can_toggle_donation_on_available_product(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra', 'is_verified' => true]);
+
+        $product = Product::create([
+            'user_id' => $mitra->id,
+            'name' => 'Roti Donasi',
+            'category' => 'Bakery',
+            'price' => 10000,
+            'stock' => 10,
+            'expires_at' => now()->addDays(1),
+            'pickup_start_time' => '17:00',
+            'pickup_end_time' => '19:00',
+            'status' => 'normal',
+            'donatable' => false,
+        ]);
+
+        $response = $this->actingAs($mitra)->post(route('mitra.inventory.toggle-donation', $product->id));
+
+        $response->assertSessionHas('success');
+        $this->assertTrue((bool)$product->fresh()->donatable);
+    }
 }

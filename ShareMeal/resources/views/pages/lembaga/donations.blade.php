@@ -508,6 +508,42 @@
             </form>
         </div>
     </div>
+
+    <!-- Warning Dialog Modal Overlay -->
+    <div x-show="isWarningDialogOpen" 
+         class="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6" 
+         x-cloak>
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-red-950/50 backdrop-blur-md" @click="isWarningDialogOpen = false"></div>
+
+        <!-- Modal Content -->
+        <div x-show="isWarningDialogOpen"
+             x-transition:enter="ease-out duration-500"
+             x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             class="relative bg-white/95 backdrop-blur-lg w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl border border-red-200/50 p-10 z-[130] text-center animate-in fade-in zoom-in duration-300">
+            
+            <!-- Icon Warning/Alert -->
+            <div class="w-20 h-20 bg-red-50 text-red-600 border border-red-100 rounded-[1.75rem] flex items-center justify-center mb-6 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 animate-bounce">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>
+                </svg>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-2xl font-serif font-black text-gray-900 mb-4" x-text="warningTitle"></h3>
+            
+            <!-- Message -->
+            <p class="text-xs font-medium text-gray-600 leading-relaxed mb-8 whitespace-pre-line text-center" x-text="warningMessage"></p>
+            
+            <!-- Action Button -->
+            <button type="button" 
+                    @click="isWarningDialogOpen = false" 
+                    class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl shadow-lg transition-all duration-300 tracking-widest uppercase text-[10px] active:scale-95">
+                Mengerti
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -537,6 +573,9 @@
             evidenceImagePreview: '',
             isReporting: false,
             isReportSuccess: false,
+            isWarningDialogOpen: false,
+            warningTitle: '',
+            warningMessage: '',
 
             openReportModal(donation) {
                 this.selectedDonationForReport = donation;
@@ -558,6 +597,21 @@
                 const form = e.target;
                 this.isReporting = true;
                 
+                // Client-side image size check (max 2MB / 2048KB)
+                const fileInput = form.querySelector('input[name=evidence_image]');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const maxSize = 2 * 1024 * 1024; // 2MB
+                    if (file.size > maxSize) {
+                        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                        this.warningTitle = 'Gambar Terlalu Besar';
+                        this.warningMessage = 'Ukuran file gambar yang Anda pilih terlalu besar (' + fileSizeMB + ' MB). Maksimal ukuran gambar yang diizinkan adalah 2.00 MB. Silakan kompres gambar atau pilih gambar lain yang lebih kecil.';
+                        this.isWarningDialogOpen = true;
+                        this.isReporting = false;
+                        return;
+                    }
+                }
+
                 try {
                     const formData = new FormData(form);
                     const response = await fetch(form.action, {
@@ -580,11 +634,26 @@
                             window.location.reload();
                         }, 2000);
                     } else {
-                        throw new Error('Gagal mengirim laporan');
+                        let errorMessage = 'Gagal mengirim laporan';
+                        try {
+                            const errorData = await response.json();
+                            if (errorData.errors && errorData.errors.evidence_image) {
+                                errorMessage = errorData.errors.evidence_image.join(', ');
+                            } else if (errorData.message) {
+                                errorMessage = errorData.message;
+                            }
+                        } catch (e) {
+                            if (response.status === 413) {
+                                errorMessage = 'Ukuran file gambar melebihi batas upload server (maksimal 2MB).';
+                            }
+                        }
+                        throw new Error(errorMessage);
                     }
                 } catch (error) {
                     this.isReporting = false;
-                    alert('Terjadi kesalahan saat mengirim laporan: ' + error.message);
+                    this.warningTitle = 'Gagal Mengirim Laporan';
+                    this.warningMessage = error.message;
+                    this.isWarningDialogOpen = true;
                 }
             },
 

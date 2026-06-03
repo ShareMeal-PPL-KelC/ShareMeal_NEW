@@ -172,7 +172,7 @@
                        class="underline ml-2 hover:text-orange-100 transition-colors">{{ $alert['link_text'] ?? 'Detail' }}</a>
                 @endif
             </div>
-            @else
+            @elseif(($alert['type'] ?? '') === 'danger')
             <div class="bg-red-600 text-white px-4 py-2 text-center text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-[60] animate-in slide-in-from-top duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9.5" x2="14.5" y1="14.5" y2="9.5"/><line x1="14.5" x2="9.5" y1="14.5" y2="9.5"/></svg>
                 <span>{{ $alert['message'] }}</span>
@@ -247,10 +247,18 @@
 
                     <div class="flex items-center gap-6">
                         <!-- Notifications Dropdown -->
+                        @php
+                            $dynamicInfoNotifications = [];
+                            foreach (session('critical_alerts', []) as $alert) {
+                                if (($alert['type'] ?? '') === 'info') {
+                                    $dynamicInfoNotifications[] = $alert;
+                                }
+                            }
+                        @endphp
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" class="relative p-2.5 text-luxury-slate hover:text-luxury-forest hover:bg-white/80 rounded-full transition-all duration-300 focus:outline-none">
                                 <i data-lucide="bell" class="w-6 h-6 stroke-[1.5]"></i>
-                                @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                                @if(Auth::check() && (Auth::user()->unreadNotifications->count() > 0 || count($dynamicInfoNotifications) > 0))
                                     <span class="absolute top-2 right-2 block h-2.5 w-2.5 rounded-full bg-luxury-gold ring-4 ring-white"></span>
                                 @endif
                             </button>
@@ -273,39 +281,66 @@
                                 </div>
                                 <div class="max-h-[32rem] overflow-y-auto custom-scrollbar bg-white/50">
                                     @if(Auth::check())
-                                        @forelse(Auth::user()->notifications()->latest()->take(5)->get() as $notification)
-                                            <div class="px-6 py-5 hover:bg-white/90 transition-colors border-b border-luxury-alabas last:border-0 {{ $notification->unread() ? 'bg-luxury-gold/10' : '' }}">
-                                                <div class="flex gap-4">
-                                                    <div class="mt-1">
-                                                        @if(($notification->data['status'] ?? '') == 'completed')
-                                                            <div class="bg-luxury-forest/10 p-2 rounded-xl">
-                                                                <i data-lucide="check-circle" class="w-4 h-4 text-luxury-forest"></i>
-                                                            </div>
-                                                        @elseif(($notification->data['status'] ?? '') == 'cancelled')
-                                                            <div class="bg-red-50 p-2 rounded-xl">
-                                                                <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
-                                                            </div>
-                                                        @else
+                                        @php
+                                            $dbNotifications = Auth::user()->notifications()->latest()->take(5)->get();
+                                        @endphp
+                                        @if(count($dynamicInfoNotifications) > 0 || $dbNotifications->count() > 0)
+                                            @foreach($dynamicInfoNotifications as $infoAlert)
+                                                <div class="px-6 py-5 hover:bg-white/90 transition-colors border-b border-luxury-alabas last:border-0 bg-luxury-gold/10">
+                                                    <div class="flex gap-4">
+                                                        <div class="mt-1">
                                                             <div class="bg-luxury-gold/10 p-2 rounded-xl">
                                                                 <i data-lucide="info" class="w-4 h-4 text-luxury-gold"></i>
                                                             </div>
-                                                        @endif
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <div class="text-sm font-bold text-luxury-charcoal">{{ $notification->data['title'] ?? 'Notifikasi' }}</div>
-                                                        <div class="text-xs text-luxury-slate mt-1 leading-relaxed">{{ $notification->data['message'] ?? '' }}</div>
-                                                        <div class="text-[10px] text-luxury-gold mt-2 uppercase font-bold tracking-widest">{{ $notification->created_at->diffForHumans() }}</div>
+                                                        </div>
+                                                        <div class="flex-1">
+                                                            <div class="text-sm font-bold text-luxury-charcoal">Status Klaim Donasi</div>
+                                                            <div class="text-xs text-luxury-slate mt-1 leading-relaxed">{{ $infoAlert['message'] }}</div>
+                                                            @if(isset($infoAlert['link']))
+                                                                <a href="{{ $infoAlert['link'] }}" class="inline-block text-xs text-luxury-gold hover:text-luxury-forest font-semibold mt-2 underline">
+                                                                    {{ $infoAlert['link_text'] ?? 'Lihat Detail' }}
+                                                                </a>
+                                                            @endif
+                                                            <div class="text-[10px] text-luxury-gold mt-2 uppercase font-bold tracking-widest">Saat Ini</div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        @empty
+                                            @endforeach
+
+                                            @foreach($dbNotifications as $notification)
+                                                <div class="px-6 py-5 hover:bg-white/90 transition-colors border-b border-luxury-alabas last:border-0 {{ $notification->unread() ? 'bg-luxury-gold/10' : '' }}">
+                                                    <div class="flex gap-4">
+                                                        <div class="mt-1">
+                                                            @if(($notification->data['status'] ?? '') == 'completed')
+                                                                <div class="bg-luxury-forest/10 p-2 rounded-xl">
+                                                                    <i data-lucide="check-circle" class="w-4 h-4 text-luxury-forest"></i>
+                                                                </div>
+                                                            @elseif(($notification->data['status'] ?? '') == 'cancelled')
+                                                                <div class="bg-red-50 p-2 rounded-xl">
+                                                                    <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+                                                                </div>
+                                                            @else
+                                                                <div class="bg-luxury-gold/10 p-2 rounded-xl">
+                                                                    <i data-lucide="info" class="w-4 h-4 text-luxury-gold"></i>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                        <div class="flex-1">
+                                                            <div class="text-sm font-bold text-luxury-charcoal">{{ $notification->data['title'] ?? 'Notifikasi' }}</div>
+                                                            <div class="text-xs text-luxury-slate mt-1 leading-relaxed">{{ $notification->data['message'] ?? '' }}</div>
+                                                            <div class="text-[10px] text-luxury-gold mt-2 uppercase font-bold tracking-widest">{{ $notification->created_at->diffForHumans() }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        @else
                                             <div class="px-6 py-12 text-center">
                                                 <div class="bg-luxury-ivory w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-luxury-alabas">
                                                     <i data-lucide="bell-off" class="w-8 h-8 text-luxury-alabas"></i>
                                                 </div>
                                                 <p class="text-sm text-luxury-slate font-medium italic">Belum ada notifikasi baru</p>
                                             </div>
-                                        @endforelse
+                                        @endif
                                     @endif
                                 </div>
                                 <div class="px-6 py-4 border-t border-luxury-alabas text-center bg-white/80">

@@ -110,7 +110,7 @@
                             <label class="text-sm font-semibold text-gray-700">Nomor Telepon</label>
                             <div class="flex gap-2">
                                 <div class="relative flex-1">
-                                    <input type="text" name="phone" id="phone" value="{{ old('phone', $currentPhone) }}" readonly class="w-full rounded-xl border-gray-200 bg-gray-100 p-3 text-sm text-gray-500 cursor-not-allowed">
+                                    <input type="text" name="phone" id="phone" value="{{ old('phone', $currentPhone) }}" readonly class="w-full rounded-xl border border-gray-200 bg-gray-100 p-3 pr-28 text-sm text-gray-500 cursor-not-allowed">
                                     @if($user->phone_verified_at)
                                         <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-100">
                                             <i data-lucide="shield-check" class="w-3 h-3"></i>
