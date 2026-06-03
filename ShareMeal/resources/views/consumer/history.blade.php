@@ -32,15 +32,30 @@
     },
     isReceiptDialogOpen: false,
     receiptData: null,
+    isPrinting: false,
+    printProgress: 0,
+    showPrintSuccess: false,
     openReceiptModal(data) {
         this.receiptData = data;
         this.isReceiptDialogOpen = true;
+        this.isPrinting = false;
+        this.printProgress = 0;
+        this.showPrintSuccess = false;
     },
     downloadReceipt() {
-        alert('Memulai unduhan struk digital untuk pesanan ' + this.receiptData.id + '...');
-        setTimeout(() => {
-            this.isReceiptDialogOpen = false;
-        }, 500);
+        this.isPrinting = true;
+        this.printProgress = 0;
+        this.showPrintSuccess = false;
+        
+        let timer = setInterval(() => {
+            if (this.printProgress < 100) {
+                this.printProgress += 10;
+            } else {
+                clearInterval(timer);
+                this.isPrinting = false;
+                this.showPrintSuccess = true;
+            }
+        }, 150);
     },
     isReportDialogOpen: false,
     selectedOrderForReport: null,
@@ -156,9 +171,25 @@
                             <span class="bg-luxury-emerald/10 text-luxury-emerald px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-luxury-emerald/20">
                                 Selesai
                             </span>
+                            @elseif($t->status === 'processing')
+                            <span class="bg-amber-50 text-amber-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-200">
+                                Sedang Dibuat
+                            </span>
+                            @elseif($t->status === 'ready')
+                            <span class="bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-200 animate-pulse">
+                                {{ $t->receiving_method === 'delivery' ? 'Siap Dikirim' : 'Siap Diambil' }}
+                            </span>
+                            @elseif($t->status === 'shipping')
+                            <span class="bg-indigo-50 text-indigo-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-200">
+                                Dalam Perjalanan
+                            </span>
+                            @elseif($t->status === 'cancelled')
+                            <span class="bg-red-50 text-red-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-200">
+                                Dibatalkan
+                            </span>
                             @else
                             <span class="bg-orange-50 text-orange-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-100">
-                                Dalam Proses
+                                Menunggu Konfirmasi
                             </span>
                             @endif
                         </div>
@@ -186,7 +217,7 @@
                             </div>
                         </div>
 
-                        @if($t->status === 'pending')
+                        @if($t->status === 'pending' || $t->status === 'ready' || $t->status === 'shipping')
                         <div x-data="{
                             endTime: new Date('{{ $t->expires_at->toIso8601String() }}').getTime(),
                             timeRemaining: '',
@@ -236,7 +267,7 @@
                 </div>
 
                 <!-- Pickup Code -->
-                @if($t->status === 'pending')
+                @if(($t->status === 'pending' || $t->status === 'ready') && $t->receiving_method === 'pickup')
                 <div class="bg-white/40 border border-luxury-alabas/80 rounded-[2rem] p-8 flex flex-col sm:flex-row items-center justify-between gap-8 mt-10">
                     <div class="flex items-center gap-6">
                         <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-luxury-gold luxury-shadow mx-auto sm:mx-0">
@@ -332,6 +363,17 @@
                         </svg>
                         Struk Digital
                     </button>
+                    @if($t->receiving_method === 'delivery' && $t->status === 'shipping')
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($t->storeAddress . ' ' . $t->store) }}" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="flex-1 min-w-[160px] bg-blue-50/80 border border-blue-200/60 text-blue-700 px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-blue-100 hover:text-blue-800 transition-all duration-500 flex items-center justify-center gap-3 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/>
+                        </svg>
+                        Buka Navigasi
+                    </a>
+                    @endif
                     <button @click="openReportModal({
                         id: {{ $t->id }},
                         store: '{{ addslashes($t->store) }}'
@@ -437,117 +479,210 @@
          x-cloak>
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-luxury-forest/65 backdrop-blur-xl" @click="isReceiptDialogOpen = false"></div>
-
+        
         <!-- Receipt Content -->
         <div x-show="isReceiptDialogOpen"
              x-transition:enter="ease-out duration-700"
              x-transition:enter-start="opacity-0 translate-y-24 scale-95"
              x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-             class="relative glass-panel w-full max-w-2xl rounded-[3.5rem] overflow-hidden shadow-2xl border border-white/40">
+             class="relative glass-panel w-full max-w-4xl rounded-[2.5rem] shadow-2xl border border-white/40 max-h-[85vh] overflow-y-auto scrollbar-thin"
+             :class="{ 'overflow-y-hidden': isPrinting || showPrintSuccess }">
             
             <!-- Top Elegant Accent -->
             <div class="h-2 w-full bg-gradient-to-r from-luxury-forest via-luxury-gold to-luxury-emerald"></div>
             
-            <div class="p-12 lg:p-16 text-center">
-                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-8 luxury-shadow border border-luxury-alabas">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-luxury-forest mx-auto">
+            <!-- Loading Overlay -->
+            <div x-show="isPrinting" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="absolute inset-0 bg-luxury-forest/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center"
+                 x-cloak>
+                
+                <!-- Circular Spinner with progress -->
+                <div class="relative w-24 h-24 mb-6">
+                    <!-- Outer Ring -->
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="6" class="text-white/10" fill="transparent" />
+                        <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="6" class="text-luxury-gold transition-all duration-150" 
+                                fill="transparent" 
+                                :stroke-dasharray="2 * Math.PI * 40" 
+                                :stroke-dashoffset="2 * Math.PI * 40 * (1 - printProgress / 100)" />
+                    </svg>
+                    <!-- Progress Text -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-white font-mono text-lg font-black" x-text="printProgress + '%'"></span>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-serif font-bold text-white mb-2">Menyiapkan Struk</h3>
+                <p class="text-luxury-alabas/70 text-xs tracking-wide max-w-xs leading-relaxed">
+                    Sedang memproses dokumen dan mengunduh struk digital Anda secara aman...
+                </p>
+            </div>
+
+            <!-- Success Overlay -->
+            <div x-show="showPrintSuccess" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center"
+                 x-cloak>
+                
+                <!-- Animated Success Icon -->
+                <div class="w-20 h-20 bg-luxury-emerald/10 rounded-full flex items-center justify-center mb-6 border border-luxury-emerald/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-luxury-emerald animate-bounce">
                         <polyline points="20 6 9 17 4 12"/>
                     </svg>
                 </div>
+
+                <h3 class="text-2xl font-serif font-bold text-luxury-forest mb-2">Unduhan Berhasil!</h3>
+                <p class="text-luxury-slate text-xs font-semibold tracking-wide mb-1" x-text="receiptData ? 'ID: ' + receiptData.id : ''"></p>
+                <p class="text-luxury-slate/85 text-xs max-w-xs leading-relaxed mb-6">
+                    Struk digital telah berhasil diunduh dan disimpan di perangkat Anda.
+                </p>
                 
-                <h2 class="text-4xl font-serif font-bold text-luxury-forest mb-2">Struk Digital</h2>
-                <p class="text-luxury-slate font-medium mb-10 tracking-wide" x-text="receiptData ? receiptData.store : ''"></p>
-
-                <div class="bg-white/40 rounded-[2.5rem] border border-luxury-alabas p-10 mb-10 text-left relative overflow-hidden">
-                    <!-- Invoice Decoration -->
-                    <div class="absolute top-0 right-0 p-8 opacity-5">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-32 h-32 text-luxury-forest -rotate-12">
-                            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 2 5.5a7 7 0 0 1-10 12.5ZM19 2v4"/>
-                        </svg>
-                    </div>
-
-                    <div class="flex justify-between items-center mb-8 pb-6 border-b border-luxury-alabas/50">
-                        <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">ID Transaksi</span>
-                            <span class="font-mono text-xs font-bold text-luxury-forest tracking-tighter" x-text="receiptData ? receiptData.id : ''"></span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">Status</span>
-                            <span class="text-[10px] font-black text-luxury-emerald uppercase tracking-widest bg-luxury-emerald/10 px-3 py-1 rounded-lg">Lunas</span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-10 mb-8" x-show="receiptData">
-                        <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3">Metode Pengambilan</span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm font-bold text-luxury-forest uppercase tracking-widest" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? 'Kirim ke Lokasi' : 'Ambil Sendiri'"></span>
-                            </div>
+                <button @click="showPrintSuccess = false; isReceiptDialogOpen = false" 
+                        class="bg-luxury-forest text-white py-3 px-8 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg hover:bg-luxury-gold transition-all duration-300">
+                    Selesai
+                </button>
+            </div>
+            
+            <div class="p-6 sm:p-8 lg:p-10">
+                <!-- Header: Icon, Title, and Store Name -->
+                <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-luxury-alabas/50 pb-4 text-left gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center luxury-shadow border border-luxury-alabas flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-luxury-forest">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
                         </div>
                         <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3">Pembayaran</span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-sm font-bold text-luxury-forest uppercase" x-text="receiptData && receiptData.paymentMethod ? receiptData.paymentMethod.toUpperCase() : 'SALDO SHAREMEAL'"></span>
-                            </div>
+                            <h2 class="text-2xl font-serif font-bold text-luxury-forest">Struk Digital</h2>
+                            <p class="text-luxury-slate text-xs font-semibold tracking-wide" x-text="receiptData ? receiptData.store : ''"></p>
                         </div>
                     </div>
-
-                    <div class="mb-8 p-6 bg-white rounded-2xl border border-luxury-alabas/50 shadow-sm" x-show="receiptData">
-                        <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? 'Alamat Pengiriman' : 'Lokasi Toko'"></span>
-                        <div class="text-sm font-bold text-luxury-forest mb-1" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? receiptData.customerName : receiptData.store"></div>
-                        <div class="text-xs text-luxury-slate leading-relaxed font-medium italic opacity-85" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? receiptData.customerAddress : receiptData.storeAddress"></div>
-                    </div>
-
-                    <div class="flex justify-between items-end mb-8" x-show="receiptData">
-                        <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? 'Perkiraan Tiba' : 'Jadwal Pengambilan'"></span>
-                            <div class="text-sm font-black text-luxury-forest uppercase tracking-widest" x-text="receiptData ? receiptData.pickupTime : ''"></div>
-                        </div>
-                        <div class="text-right" x-show="receiptData && receiptData.receivingMethod === 'pickup'">
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">Kode Klaim</span>
-                            <div class="font-mono text-3xl font-black text-luxury-forest tracking-tighter" x-text="receiptData ? receiptData.pickupCode : ''"></div>
-                        </div>
-                    </div>
-
-                    <!-- Items Detail Section -->
-                    <div class="mb-8 pt-6 border-t border-luxury-alabas/50 space-y-4" x-show="receiptData">
-                        <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3">Rincian Pembelian</span>
-                        <template x-for="(item, index) in (receiptData ? receiptData.items : [])" :key="index">
-                            <div class="flex justify-between items-start gap-4">
-                                <div class="flex-1">
-                                    <div class="text-sm font-bold text-luxury-forest" x-text="item.name"></div>
-                                    <div class="text-[10px] text-luxury-slate font-black uppercase tracking-widest mt-1" x-text="'Jumlah: ' + item.qty"></div>
-                                </div>
-                                <div class="text-sm font-bold text-luxury-forest" x-text="'Rp ' + (item.price * item.qty).toLocaleString('id-ID')"></div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Price Calculation Section -->
-                    <div class="mt-8 pt-6 border-t border-luxury-alabas/60 space-y-3" x-show="receiptData">
-                        <div class="flex justify-between text-xs font-medium text-luxury-slate">
-                            <span>Harga Awal</span>
-                            <span x-text="'Rp ' + receiptData.subtotal.toLocaleString('id-ID')"></span>
-                        </div>
-                        <div class="flex justify-between text-xs font-bold text-luxury-emerald uppercase tracking-widest">
-                            <span>Total Hemat</span>
-                            <span x-text="'- Rp ' + receiptData.savedAmount.toLocaleString('id-ID')"></span>
-                        </div>
-                    </div>
-
-                    <!-- Total Row -->
-                    <div class="mt-8 pt-8 border-t-2 border-dashed border-luxury-alabas/50" x-show="receiptData">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em]">Total Pembayaran</span>
-                            <div class="text-3xl font-serif font-black text-luxury-forest" x-text="'Rp ' + receiptData.total.toLocaleString('id-ID')"></div>
-                        </div>
+                    
+                    <!-- Invoice Info at Top Right -->
+                    <div class="text-left sm:text-right">
+                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">ID Transaksi</span>
+                        <span class="font-mono text-xs font-bold text-luxury-forest tracking-tighter" x-text="receiptData ? receiptData.id : ''"></span>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-6 justify-center">
-                    <button @click="isReceiptDialogOpen = false" class="flex-1 py-5 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-luxury-slate hover:text-luxury-forest transition-colors">Tutup</button>
-                    <button @click="downloadReceipt()" class="flex-[2] flex items-center justify-center gap-3 bg-luxury-forest text-white py-5 px-10 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-luxury-gold transition-all duration-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-luxury-gold">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left" x-show="receiptData">
+                    
+                    <!-- Left Column: Transaction Details, Method, Address -->
+                    <div class="space-y-4">
+                        <div class="bg-white/40 rounded-2xl border border-luxury-alabas p-5 relative overflow-hidden h-full flex flex-col justify-between">
+                            <!-- Background Decoration -->
+                            <div class="absolute top-0 right-0 p-3 opacity-[0.03] pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20 h-20 text-luxury-forest -rotate-12">
+                                    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 2 5.5a7 7 0 0 1-10 12.5ZM19 2v4"/>
+                                </svg>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center pb-3 border-b border-luxury-alabas/50">
+                                    <div>
+                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">Status Pembayaran</span>
+                                        <span class="text-[9px] font-black text-luxury-emerald uppercase tracking-widest bg-luxury-emerald/10 px-2 py-0.5 rounded">Lunas</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">Pembayaran via</span>
+                                        <span class="text-xs font-bold text-luxury-forest uppercase" x-text="receiptData && receiptData.paymentMethod ? receiptData.paymentMethod.toUpperCase() : 'SALDO SHAREMEAL'"></span>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1">Metode Pengambilan</span>
+                                        <span class="text-xs font-bold text-luxury-forest uppercase tracking-wider" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? 'Kirim ke Lokasi' : 'Ambil Sendiri'"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? 'Perkiraan Tiba' : 'Jadwal Pengambilan'"></span>
+                                        <span class="text-xs font-black text-luxury-forest uppercase tracking-wider" x-text="receiptData ? receiptData.pickupTime : ''"></span>
+                                    </div>
+                                </div>
+
+                                <div class="p-3.5 bg-white rounded-xl border border-luxury-alabas/50 shadow-sm">
+                                    <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1.5" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? 'Alamat Pengiriman' : 'Lokasi Toko'"></span>
+                                    <div class="text-xs font-bold text-luxury-forest mb-0.5" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? receiptData.customerName : receiptData.store"></div>
+                                    <div class="text-[11px] text-luxury-slate leading-relaxed font-medium italic opacity-85" x-text="receiptData && receiptData.receivingMethod === 'delivery' ? receiptData.customerAddress : receiptData.storeAddress"></div>
+                                </div>
+
+                                <div class="flex justify-between items-center pt-2" x-show="receiptData && receiptData.receivingMethod === 'pickup'">
+                                    <div>
+                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">Petunjuk</span>
+                                        <span class="text-[11px] font-medium text-luxury-slate">Tunjukkan kode ini ke kasir</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">Kode Klaim</span>
+                                        <div class="font-mono text-xl font-black text-luxury-forest tracking-tighter bg-luxury-gold/10 px-3 py-1 rounded-lg border border-luxury-gold/25 inline-block" x-text="receiptData ? receiptData.pickupCode : ''"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Purchased Items, Billing Details, Totals, Actions -->
+                    <div class="space-y-4">
+                        <div class="bg-white/40 rounded-2xl border border-luxury-alabas p-5 flex flex-col justify-between h-full">
+                            <div>
+                                <!-- Items Detail Section -->
+                                <div class="mb-4">
+                                    <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2 border-b border-luxury-alabas/50 pb-1">Rincian Pembelian</span>
+                                    <div class="space-y-2 max-h-[140px] overflow-y-auto pr-1 scrollbar-thin">
+                                        <template x-for="(item, index) in (receiptData ? receiptData.items : [])" :key="index">
+                                            <div class="flex justify-between items-start gap-4 text-xs">
+                                                <div class="flex-1">
+                                                    <span class="font-bold text-luxury-forest" x-text="item.name"></span>
+                                                    <span class="text-[9px] text-luxury-slate font-black uppercase tracking-widest ml-2" x-text="'x' + item.qty"></span>
+                                                </div>
+                                                <span class="font-bold text-luxury-forest" x-text="'Rp ' + (item.price * item.qty).toLocaleString('id-ID')"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Price Calculation Section -->
+                                <div class="mt-4 pt-3 border-t border-luxury-alabas/50 space-y-1.5">
+                                    <div class="flex justify-between text-[11px] font-medium text-luxury-slate">
+                                        <span>Harga Awal</span>
+                                        <span x-text="'Rp ' + receiptData.subtotal.toLocaleString('id-ID')"></span>
+                                    </div>
+                                    <div class="flex justify-between text-[11px] font-bold text-luxury-emerald uppercase tracking-widest">
+                                        <span>Total Hemat</span>
+                                        <span x-text="'- Rp ' + receiptData.savedAmount.toLocaleString('id-ID')"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <!-- Total Row -->
+                                <div class="mt-4 pt-4 border-t-2 border-dashed border-luxury-alabas/50">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em]">Total Pembayaran</span>
+                                        <div class="text-xl font-serif font-black text-luxury-forest" x-text="'Rp ' + receiptData.total.toLocaleString('id-ID')"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer CTA Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 justify-end mt-6 pt-4 border-t border-luxury-alabas/30">
+                    <button @click="isReceiptDialogOpen = false" class="py-3 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-luxury-slate hover:text-luxury-forest transition-colors sm:w-auto w-full">Tutup</button>
+                    <button @click="downloadReceipt()" class="flex items-center justify-center gap-2.5 bg-luxury-forest text-white py-3 px-8 rounded-[1.25rem] font-black uppercase tracking-[0.2em] text-[10px] shadow-lg hover:bg-luxury-gold transition-all duration-500 sm:w-auto w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-luxury-gold">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
                         </svg>
                         Cetak Struk

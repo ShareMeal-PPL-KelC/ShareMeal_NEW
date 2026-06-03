@@ -94,9 +94,11 @@
 @php
     $navUser = Auth::user() ?? \App\Models\User::with('profile')->find(session('sharemeal.current_user_id'));
     
-    // Determine active menu routes dynamically based on area
+    // Determine active menu routes dynamically based on user role or URL prefix
     $routes = [];
-    if(request()->is('admin*')) {
+    $userRole = $navUser?->role ?? 'consumer';
+    
+    if ($userRole === 'admin' || request()->is('admin*')) {
         $routes = [
             ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'admin.verification', 'label' => 'Verifikasi', 'icon' => 'shield-check'],
@@ -106,12 +108,12 @@
             ['route' => 'admin.problem-reports.index', 'label' => 'Laporan Masalah', 'icon' => 'alert-triangle'],
             ['route' => 'admin.reports', 'label' => 'Dampak & Distribusi', 'icon' => 'bar-chart-3'],
         ];
-    } elseif(request()->is('lembaga*')) {
+    } elseif ($userRole === 'lembaga' || request()->is('lembaga*')) {
         $routes = [
             ['route' => 'lembaga.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'lembaga.donations', 'label' => 'Donasi', 'icon' => 'heart'],
         ];
-    } elseif(request()->is('mitra*')) {
+    } elseif ($userRole === 'mitra' || request()->is('mitra*')) {
         $routes = [
             ['route' => 'mitra.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'mitra.inventory', 'label' => 'Inventaris', 'icon' => 'package'],
@@ -258,9 +260,9 @@
                                  x-transition:enter="transition ease-out duration-300"
                                  x-transition:enter-start="transform opacity-0 translate-y-4 scale-95"
                                  x-transition:enter-end="transform opacity-100 translate-y-0 scale-100"
-                                 class="absolute right-0 mt-4 w-96 glass-panel rounded-[2rem] luxury-shadow py-4 z-50 overflow-hidden"
+                                 class="absolute right-0 mt-4 w-96 bg-white/95 backdrop-blur-xl rounded-[2rem] border border-luxury-alabas luxury-shadow py-4 z-50 overflow-hidden"
                                  x-cloak>
-                                <div class="px-6 py-4 border-b border-luxury-alabas flex justify-between items-center bg-white/40">
+                                <div class="px-6 py-4 border-b border-luxury-alabas flex justify-between items-center bg-white/80">
                                     <h3 class="font-serif text-xl font-bold text-luxury-forest">Notifikasi</h3>
                                     @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
                                         <form method="POST" action="{{ route('notifications.markRead') }}">
@@ -269,10 +271,10 @@
                                         </form>
                                     @endif
                                 </div>
-                                <div class="max-h-[32rem] overflow-y-auto custom-scrollbar bg-white/10">
+                                <div class="max-h-[32rem] overflow-y-auto custom-scrollbar bg-white/50">
                                     @if(Auth::check())
                                         @forelse(Auth::user()->notifications()->latest()->take(5)->get() as $notification)
-                                            <div class="px-6 py-5 hover:bg-white/50 transition-colors border-b border-luxury-alabas last:border-0 {{ $notification->unread() ? 'bg-luxury-gold/5' : '' }}">
+                                            <div class="px-6 py-5 hover:bg-white/90 transition-colors border-b border-luxury-alabas last:border-0 {{ $notification->unread() ? 'bg-luxury-gold/10' : '' }}">
                                                 <div class="flex gap-4">
                                                     <div class="mt-1">
                                                         @if(($notification->data['status'] ?? '') == 'completed')
@@ -306,7 +308,7 @@
                                         @endforelse
                                     @endif
                                 </div>
-                                <div class="px-6 py-4 border-t border-luxury-alabas text-center bg-white/40">
+                                <div class="px-6 py-4 border-t border-luxury-alabas text-center bg-white/80">
                                     <a href="{{ route('notifications.index') }}" class="text-xs font-bold text-luxury-forest hover:text-luxury-gold transition-colors uppercase tracking-widest">Lihat Semua</a>
                                 </div>
                             </div>
@@ -349,7 +351,7 @@
                                     <div class="py-3 px-3">
                                         <a href="{{ $navUser->role === 'mitra' ? route('mitra.profile') : route('profile.edit') }}" class="flex items-center gap-4 px-4 py-3 text-sm font-bold text-luxury-slate hover:bg-luxury-forest hover:text-white rounded-2xl transition-all duration-300">
                                             <i data-lucide="{{ $navUser->role === 'mitra' ? 'store' : 'user' }}" class="w-4 h-4 stroke-[2.5]"></i>
-                                            {{ $navUser->role === 'mitra' ? 'Profil Bisnis' : 'Profil Saya' }}
+                                            {{ $navUser->role === 'mitra' ? 'Pengaturan Profil Usaha' : 'Profil Saya' }}
                                         </a>
                                         <div class="h-px bg-luxury-alabas my-2 mx-4"></div>
                                         <form method="POST" action="{{ route('logout') }}" id="logout-form-desktop">
@@ -514,6 +516,9 @@
         @endif
         @if(session('error'))
             window.dispatchEvent(new CustomEvent('notify', { detail: { title: 'Terjadi Kesalahan', message: '{{ session('error') }}', type: 'error' } }));
+        @endif
+        @if(session('error_different_store'))
+            window.dispatchEvent(new CustomEvent('notify', { detail: { title: 'Keranjang Terisi', message: '{{ session('error_different_store') }}', type: 'error' } }));
         @endif
 
         // Global Intersection Observer for scroll reveals

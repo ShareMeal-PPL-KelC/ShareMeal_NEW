@@ -96,10 +96,10 @@
                             @foreach($booking->deliverySlots as $slot)
                                 @if($slot->is_full)
                                     <!-- Penuh / Disabled Button -->
-                                    <div class="p-4 bg-gray-100/50 border border-gray-200 text-gray-400 rounded-2xl text-sm font-bold opacity-60 cursor-not-allowed flex flex-col justify-center items-center">
+                                    <button type="button" class="p-4 bg-gray-100/50 border border-gray-200 text-gray-400 rounded-2xl text-sm font-bold opacity-60 cursor-not-allowed flex flex-col justify-center items-center w-full" disabled>
                                         <span>{{ $slot->label }}</span>
-                                        <span class="text-[8px] font-black uppercase tracking-wider text-red-500 mt-1">Penuh</span>
-                                    </div>
+                                        <span class="text-[8px] font-black uppercase tracking-wider text-red-500 mt-1">(Penuh)</span>
+                                    </button>
                                 @else
                                     <!-- Clickable Option Button -->
                                     <button type="button" 
@@ -342,7 +342,7 @@
             deliveryFee: {{ (int)($booking->deliveryFee ?? 0) }},
             canDelivery: {{ $booking->canDelivery ? 'true' : 'false' }},
             subtotal: {{ (int)($booking->price * $booking->quantity) }},
-            countdown: 600,
+            countdown: {{ $booking->remainingSeconds ?? 300 }},
             isProcessing: false,
             processingMessage: 'Memverifikasi pembayaran...',
             paymentComplete: false,
@@ -358,6 +358,10 @@
                 setInterval(() => {
                     if (this.countdown > 0 && !this.paymentComplete && !this.isProcessing) {
                         this.countdown--;
+                        if (this.countdown <= 0) {
+                            alert("Sesi reservasi Anda telah berakhir dan stok produk telah dilepaskan.");
+                            window.location.href = "{{ route('consumer.cart.index') }}";
+                        }
                     }
                 }, 1000);
                 
@@ -367,8 +371,9 @@
             },
 
             formatTime(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
+                const totalSecs = Math.floor(seconds);
+                const mins = Math.floor(totalSecs / 60);
+                const secs = totalSecs % 60;
                 return mins + ':' + (secs < 10 ? '0' : '') + secs;
             },
 

@@ -65,18 +65,13 @@ class Order extends Model
 
     public function getExpiresAtAttribute()
     {
-        if ($this->relationLoaded('items') && $this->items->count() > 0) {
-            $minExpiresAt = $this->items->min(function($item) {
-                return $item->product ? $item->product->expires_at : null;
-            });
-            
-            if ($minExpiresAt) {
-                return \Carbon\Carbon::parse($minExpiresAt);
-            }
+        if (!empty($this->attributes['pickup_end_time'])) {
+            $date = $this->created_at ? $this->created_at->toDateString() : now()->toDateString();
+            return \Carbon\Carbon::parse($date . ' ' . $this->attributes['pickup_end_time']);
         }
         
-        // Fallback if relation not loaded or no product data
-        return $this->created_at ? $this->created_at->addHours(2) : now()->addHours(2);
+        // Fallback if no pickup_end_time data
+        return $this->created_at ? $this->created_at->addHour() : now()->addHour();
     }
 
     public function getAmountAttribute()
@@ -167,7 +162,7 @@ class Order extends Model
 
     public function getSavedAmountAttribute()
     {
-        return $this->getTotalAttribute();
+        return $this->getDiscountAttribute();
     }
 
     public function getStoreAttribute()

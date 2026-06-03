@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Review;
+use App\Models\CartItem;
 use App\Services\AutoDonationService;
 use Illuminate\Support\Str;
 
@@ -117,22 +118,45 @@ class ConsumerController extends Controller
 
     public function checkout(Request $request)
     {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+
         try {
-            app(AutoDonationService::class)->processProducts();
+            app(AutoDonationService::class)->releaseExpiredCartReservations();
         } catch (\Exception $e) {
-            \Log::error('AutoDonationService error in checkout: ' . $e->getMessage());
+            \Log::error('Error cleaning up carts in checkout: ' . $e->getMessage());
         }
 
-        $product = Product::with('user.profile')->findOrFail($request->product_id);
+        if ($request->has('product_id')) {
+            $prodId = $request->product_id;
+            $existing = CartItem::where('user_id', $userId)->where('product_id', $prodId)->first();
+            if (!$existing) {
+                // Clear any other store's items to avoid conflicts
+                CartItem::where('user_id', $userId)->delete();
 
-        if (!$product->user) {
-            return redirect()->route('consumer.search')->withErrors(['product_id' => 'Data mitra tidak ditemukan untuk produk ini.']);
+                $product = Product::findOrFail($prodId);
+                $qty = $request->input('quantity', 1);
+
+                CartItem::create([
+                    'user_id' => $userId,
+                    'product_id' => $product->id,
+                    'quantity' => $qty,
+                    'expires_at' => now()->addMinutes(5),
+                ]);
+                $product->decrement('stock', $qty);
+            }
         }
 
-        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->stock <= 0 || ($product->expires_at && $product->expires_at->isPast())) {
-            return redirect()->route('consumer.search')->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.']);
+        $cartItems = CartItem::with(['product.user.profile'])
+            ->where('user_id', $userId)
+            ->get();
+
+        if ($cartItems->isEmpty()) {
+            return redirect()->route('consumer.search')->with('error', 'Keranjang Anda kosong.');
         }
 
+        $firstItem = $cartItems->first();
+        $product = $firstItem->product;
+        
         $pickupStart = $product->pickup_start_time ?? '18:00';
         $pickupEnd = $product->pickup_end_time ?? '20:00';
 
@@ -175,29 +199,52 @@ class ConsumerController extends Controller
                     'is_full' => $isFull,
                     'remaining' => max(0, $slotLimit - $currentCount)
                 ];
-                $maxSlots--;
+            }
+            if (empty($slots)) {
+                $slotLabel = \Carbon\Carbon::parse($startStr)->format('H:i') . ' - ' . \Carbon\Carbon::parse($endStr)->format('H:i');
+                $currentCount = $orderCounts[$slotLabel] ?? 0;
+                $isFull = $currentCount >= $slotLimit;
+                $slots[] = (object) [
+                    'label' => $slotLabel,
+                    'is_full' => $isFull,
+                    'remaining' => max(0, $slotLimit - $currentCount)
+                ];
             }
         } catch (\Exception $e) {
             \Log::error('Error generating slots: ' . $e->getMessage());
         }
 
+        // Calculate subtotal and details from cart items
+        $subtotal = 0;
+        $itemsString = [];
+        foreach ($cartItems as $item) {
+            $itemPrice = ($item->product->status === 'flash-sale' && $item->product->discount_price > 0) ? $item->product->discount_price : $item->product->price;
+            $subtotal += $itemPrice * $item->quantity;
+            $itemsString[] = $item->product->name . ' (' . $item->quantity . ' pcs)';
+        }
+
+        // Hitung sisa detik dari expires_at keranjang
+        $expiresAt = $firstItem->expires_at;
+        $remainingSeconds = max(0, now()->diffInSeconds($expiresAt, false));
+
         $booking = (object) [
             'id' => "BK-" . strtoupper(Str::random(6)),
+            'product_id' => $product->id,
             'storeName' => $product->user->displayName,
-            'dealItem' => $product->name,
-            'quantity' => $request->quantity ?? 1,
-            'price' => $product->discount_price > 0 ? $product->discount_price : $product->price,
+            'dealItem' => implode(', ', $itemsString),
+            'quantity' => 1,
+            'price' => $subtotal,
             'status' => 'pending',
-            'pickupTime' => $product->pickupTime,
-            'pickupStart' => $pickupStart,
-            'pickupEnd' => $pickupEnd,
+            'pickupTime' => now()->format('H:i') . ' - ' . now()->addHour()->format('H:i'),
+            'pickupStart' => now()->format('H:i:s'),
+            'pickupEnd' => now()->addHour()->format('H:i:s'),
             'distance' => "0.5 km",
             'address' => $product->user->profile?->business_address ?? $product->user->profile?->address ?? 'Alamat tidak tersedia',
-            'product_id' => $product->id,
             'mitra_id' => $product->user_id,
             'canDelivery' => (bool) ($product->user->profile?->can_delivery ?? false),
             'deliveryFee' => (int) ($product->user->profile?->delivery_fee ?? 0),
             'deliverySlots' => $slots,
+            'remainingSeconds' => $remainingSeconds, // disinkronkan ke view checkout
         ];
 
         $paymentMethods = collect([
@@ -212,29 +259,64 @@ class ConsumerController extends Controller
 
     public function storeOrder(Request $request)
     {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+
+        try {
+            app(AutoDonationService::class)->releaseExpiredCartReservations();
+        } catch (\Exception $e) {}
+
+        if ($request->has('product_id')) {
+            $prodId = $request->product_id;
+            $existing = CartItem::where('user_id', $userId)->where('product_id', $prodId)->first();
+            if (!$existing) {
+                // Clear any other store's items to avoid conflicts
+                CartItem::where('user_id', $userId)->delete();
+
+                $product = Product::findOrFail($prodId);
+                $qty = $request->input('quantity', 1);
+
+                CartItem::create([
+                    'user_id' => $userId,
+                    'product_id' => $product->id,
+                    'quantity' => $qty,
+                    'expires_at' => now()->addMinutes(5),
+                ]);
+                $product->decrement('stock', $qty);
+            }
+        }
+
+        $cartItems = CartItem::with('product')
+            ->where('user_id', $userId)
+            ->get();
+
+        if ($cartItems->isEmpty()) {
+            if (request()->wantsJson() || request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Keranjang kosong atau batas waktu reservasi telah habis.',
+                ]);
+            }
+            return redirect()->route('consumer.search')->with('error', 'Keranjang Anda kosong atau batas waktu reservasi telah habis.');
+        }
+
+        if (!$request->has('receiving_method')) {
+            $request->merge(['receiving_method' => 'pickup']);
+        }
+
+        if ($request->receiving_method === 'delivery' && !$request->has('delivery_time_slot')) {
+            $request->merge(['delivery_time_slot' => '18:00 - 19:00']);
+        }
+
         $request->validate([
-            'product_id' => 'required|exists:products,id',
             'mitra_id' => 'required|exists:users,id',
-            'quantity' => 'required|integer|min:1',
-            'price' => 'required|numeric',
             'receiving_method' => 'required|in:pickup,delivery',
             'delivery_time_slot' => 'required_if:receiving_method,delivery|string|nullable',
             'payment_method' => 'nullable|string|in:qris,gopay,ovo,dana',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $firstItem = $cartItems->first();
+        $product = $firstItem->product;
         $mitra = User::with('profile')->findOrFail($request->mitra_id);
-
-        app(AutoDonationService::class)->processProducts($product->user_id);
-        $product->refresh();
-        
-        if (!in_array($product->status, ['normal', 'flash-sale'], true) || $product->expires_at->isPast()) {
-            return back()->withErrors(['product_id' => 'Produk sudah kedaluwarsa atau tidak tersedia.'])->withInput();
-        }
-
-        if ($product->stock < $request->quantity) {
-            return back()->withErrors(['quantity' => 'Stok produk tidak mencukupi.'])->withInput();
-        }
 
         $receivingMethod = $request->receiving_method;
         $deliveryFee = 0;
@@ -242,11 +324,13 @@ class ConsumerController extends Controller
 
         if ($receivingMethod === 'delivery') {
             if (!$mitra->profile || !$mitra->profile->can_delivery) {
+                if ($request->wantsJson() || $request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Mitra ini tidak menyediakan jasa pengiriman.']);
+                }
                 return back()->withErrors(['receiving_method' => 'Mitra ini tidak menyediakan jasa pengiriman.'])->withInput();
             }
             $deliveryFee = $mitra->profile->delivery_fee;
 
-            // PBI #38: Delivery Slot Limits
             if ($deliveryTimeSlot) {
                 $slotLimit = $mitra->profile->delivery_slot_limit ?? 10;
                 $currentSlotCount = Order::where('mitra_id', $request->mitra_id)
@@ -255,35 +339,49 @@ class ConsumerController extends Controller
                     ->count();
 
                 if ($currentSlotCount >= $slotLimit) {
-                    return back()->withErrors(['delivery_time_slot' => 'Slot waktu pengantaran ini sudah penuh. Silakan pilih waktu lain.'])->withInput();
+                    if ($request->wantsJson() || $request->expectsJson()) {
+                        return response()->json(['success' => false, 'message' => 'Slot waktu pengantaran ini sudah penuh.']);
+                    }
+                    return back()->withErrors(['delivery_time_slot' => 'Slot waktu pengantaran ini sudah penuh.'])->withInput();
                 }
             }
         }
 
+        // Hitung total dari keranjang
+        $subtotal = 0;
+        foreach ($cartItems as $item) {
+            $itemPrice = ($item->product->status === 'flash-sale' && $item->product->discount_price > 0) ? $item->product->discount_price : $item->product->price;
+            $subtotal += $itemPrice * $item->quantity;
+        }
+
         $order = Order::create([
-            'customer_id' => Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1,
+            'customer_id' => $userId,
             'mitra_id' => $request->mitra_id,
-            'total_amount' => ($request->price * $request->quantity) + $deliveryFee,
+            'total_amount' => $subtotal + $deliveryFee,
             'status' => 'pending',
             'pickup_code' => 'PICK-' . strtoupper(Str::random(4)),
-            'pickup_start_time' => $product->pickup_start_time,
-            'pickup_end_time' => $product->pickup_end_time,
+            'pickup_start_time' => now()->format('H:i:s'),
+            'pickup_end_time' => now()->addHour()->format('H:i:s'),
             'receiving_method' => $receivingMethod,
             'delivery_fee' => $deliveryFee,
             'delivery_time_slot' => $deliveryTimeSlot,
             'payment_method' => $request->payment_method ?? 'qris',
         ]);
 
-        OrderItem::create([
-            'order_id' => $order->id,
-            'product_id' => $request->product_id,
-            'quantity' => $request->quantity,
-            'price' => $request->price,
-        ]);
+        foreach ($cartItems as $item) {
+            $itemPrice = ($item->product->status === 'flash-sale' && $item->product->discount_price > 0) ? $item->product->discount_price : $item->product->price;
+            
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+                'price' => $itemPrice,
+            ]);
 
-        $product->decrement('stock', $request->quantity);
+            // Hapus item dari keranjang (stok sudah dikurangi saat add to cart)
+            $item->delete();
+        }
 
-        $mitra = User::find($request->mitra_id);
         if ($mitra) {
             $mitra->notify(new \App\Notifications\IncomingOrderNotification($order));
         }
@@ -299,6 +397,106 @@ class ConsumerController extends Controller
         }
 
         return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
+    }
+
+    public function viewCart()
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+
+        try {
+            app(AutoDonationService::class)->releaseExpiredCartReservations();
+        } catch (\Exception $e) {}
+
+        $cartItems = CartItem::with(['product.user.profile'])
+            ->where('user_id', $userId)
+            ->get();
+
+        $remainingSeconds = 0;
+        if ($cartItems->isNotEmpty()) {
+            $expiresAt = $cartItems->first()->expires_at;
+            $remainingSeconds = max(0, now()->diffInSeconds($expiresAt, false));
+        }
+
+        $subtotal = $this->getCartSubtotal($userId);
+
+        return view('consumer.cart', compact('cartItems', 'remainingSeconds', 'subtotal'));
+    }
+
+    public function addToCart(Request $request)
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+
+        try {
+            app(AutoDonationService::class)->releaseExpiredCartReservations();
+        } catch (\Exception $e) {}
+
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+
+        if ($product->stock < $request->quantity) {
+            return back()->with('error', 'Stok produk tidak mencukupi.');
+        }
+
+        // Cek jika ada produk dari mitra berbeda di keranjang
+        $firstItem = CartItem::with('product.user')->where('user_id', $userId)->first();
+        if ($firstItem && $firstItem->product->user_id !== $product->user_id) {
+            $storeName = $firstItem->product->user->displayName ?? 'toko lain';
+            return back()->with('error_different_store', "Keranjang Anda berisi produk dari toko {$storeName}. Selesaikan atau kosongkan keranjang tersebut terlebih dahulu.");
+        }
+
+        $expiresAt = now()->addMinutes(5);
+
+        // Update all other items in the cart to have the same new expiration time
+        CartItem::where('user_id', $userId)->update(['expires_at' => $expiresAt]);
+
+        $cartItem = CartItem::where('user_id', $userId)
+            ->where('product_id', $product->id)
+            ->first();
+
+        if ($cartItem) {
+            $cartItem->increment('quantity', $request->quantity);
+            $cartItem->update(['expires_at' => $expiresAt]);
+        } else {
+            CartItem::create([
+                'user_id' => $userId,
+                'product_id' => $product->id,
+                'quantity' => $request->quantity,
+                'expires_at' => $expiresAt,
+            ]);
+        }
+
+        // Kurangi stok sementara untuk dikunci (reserve)
+        $product->decrement('stock', $request->quantity);
+
+        return redirect()->route('consumer.cart.index')->with('success', 'Makanan berhasil ditambahkan ke keranjang.');
+    }
+
+    public function removeFromCart(int $id)
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+
+        $cartItem = CartItem::where('user_id', $userId)->findOrFail($id);
+
+        // Kembalikan stok
+        if ($cartItem->product) {
+            $cartItem->product->increment('stock', $cartItem->quantity);
+        }
+
+        $cartItem->delete();
+
+        if (request()->wantsJson() || request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil dihapus dari keranjang.',
+                'cart_subtotal' => $this->getCartSubtotal($userId),
+            ]);
+        }
+
+        return redirect()->route('consumer.cart.index')->with('success', 'Produk berhasil dihapus dari keranjang.');
     }
 
     public function submitReview(Request $request)
@@ -466,6 +664,130 @@ class ConsumerController extends Controller
             ->map(fn($a) => (object) $a);
 
         return view('consumer.article', compact('article', 'relatedArticles'));
+    }
+
+    public function updateCartQuantity(Request $request, int $id)
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+
+        try {
+            app(AutoDonationService::class)->releaseExpiredCartReservations();
+        } catch (\Exception $e) {}
+
+        $request->validate([
+            'quantity' => 'required|integer|min:0',
+        ]);
+
+        $cartItem = CartItem::where('user_id', $userId)->find($id);
+        if (!$cartItem) {
+            if ($request->wantsJson() || $request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Batas waktu reservasi makanan ini telah berakhir.',
+                ], 422);
+            }
+            return redirect()->route('consumer.cart.index')->with('error', 'Batas waktu reservasi makanan ini telah berakhir.');
+        }
+
+        $product = $cartItem->product;
+        
+        $oldQty = $cartItem->quantity;
+        $newQty = $request->quantity;
+
+        // Extend reservation time for all items of this user in the cart since they are actively modifying it
+        $newExpiresAt = now()->addMinutes(5);
+        CartItem::where('user_id', $userId)->update(['expires_at' => $newExpiresAt]);
+
+        if ($newQty == $oldQty) {
+            if ($request->wantsJson() || $request->expectsJson() || $request->ajax()) {
+                $price = ($product->status === 'flash-sale' && $product->discount_price > 0) ? $product->discount_price : $product->price;
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Kuantitas keranjang berhasil diperbarui.',
+                    'quantity' => $newQty,
+                    'item_subtotal' => $newQty * $price,
+                    'cart_subtotal' => $this->getCartSubtotal($userId),
+                    'product_stock' => $product ? $product->stock : 0,
+                    'remaining_seconds' => 300,
+                ]);
+            }
+            return redirect()->route('consumer.cart.index');
+        }
+
+        if ($newQty <= 0) {
+            // Hapus item dari keranjang, kembalikan seluruh stok
+            if ($product) {
+                $product->increment('stock', $oldQty);
+            }
+            $cartItem->delete();
+
+            if ($request->wantsJson() || $request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Produk berhasil dihapus dari keranjang.',
+                    'quantity' => 0,
+                    'item_subtotal' => 0,
+                    'cart_subtotal' => $this->getCartSubtotal($userId),
+                    'product_stock' => $product ? $product->fresh()->stock : 0,
+                    'deleted' => true,
+                    'remaining_seconds' => 300,
+                ]);
+            }
+            return redirect()->route('consumer.cart.index')->with('success', 'Produk berhasil dihapus dari keranjang.');
+        }
+
+        $diff = $newQty - $oldQty;
+
+        if ($diff > 0) {
+            // Ingin menambah kuantitas, cek apakah sisa stok produk mencukupi
+            if ($product) {
+                if ($product->stock < $diff) {
+                    if ($request->wantsJson() || $request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Stok produk tidak mencukupi. Sisa stok tersedia: {$product->stock} pcs.",
+                        ], 422);
+                    }
+                    return back()->with('error', "Stok produk tidak mencukupi. Sisa stok tersedia: {$product->stock} pcs.");
+                }
+                $product->decrement('stock', $diff);
+            }
+            $cartItem->update(['quantity' => $newQty]);
+        } else {
+            // Ingin mengurangi kuantitas
+            $cartItem->update(['quantity' => $newQty]);
+            if ($product) {
+                $product->increment('stock', abs($diff));
+            }
+        }
+
+        if ($request->wantsJson() || $request->expectsJson() || $request->ajax()) {
+            $price = ($product->status === 'flash-sale' && $product->discount_price > 0) ? $product->discount_price : $product->price;
+            return response()->json([
+                'success' => true,
+                'message' => 'Kuantitas keranjang berhasil diperbarui.',
+                'quantity' => $newQty,
+                'item_subtotal' => $newQty * $price,
+                'cart_subtotal' => $this->getCartSubtotal($userId),
+                'product_stock' => $product ? $product->fresh()->stock : 0,
+                'remaining_seconds' => 300,
+            ]);
+        }
+
+        return redirect()->route('consumer.cart.index')->with('success', 'Kuantitas keranjang berhasil diperbarui.');
+    }
+
+    private function getCartSubtotal($userId)
+    {
+        $cartItems = CartItem::with('product')->where('user_id', $userId)->get();
+        $subtotal = 0;
+        foreach ($cartItems as $item) {
+            if ($item->product) {
+                $itemPrice = ($item->product->status === 'flash-sale' && $item->product->discount_price > 0) ? $item->product->discount_price : $item->product->price;
+                $subtotal += $itemPrice * $item->quantity;
+            }
+        }
+        return $subtotal;
     }
 
 }

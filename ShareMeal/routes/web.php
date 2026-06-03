@@ -30,6 +30,11 @@ Route::prefix('consumer')->name('consumer.')->group(function () {
     
     Route::get('/education', [ConsumerController::class, 'education'])->name('education');
     Route::get('/education/{id}', [ConsumerController::class, 'showArticle'])->name('education.show');
+    Route::get('/cart', [ConsumerController::class, 'viewCart'])->name('cart.index');
+    Route::post('/cart/add', [ConsumerController::class, 'addToCart'])->name('cart.add');
+    Route::post('/cart/remove/{id}', [ConsumerController::class, 'removeFromCart'])->name('cart.remove');
+    Route::post('/cart/update/{id}', [ConsumerController::class, 'updateCartQuantity'])->name('cart.update');
+    
     Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [ConsumerController::class, 'storeOrder'])->name('checkout.store');
     Route::post('/report', [ConsumerController::class, 'submitProblemReport'])->name('report.submit');
@@ -84,6 +89,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/transactions', [ShareMealController::class, 'adminTransactions'])->name('transactions');
     Route::get('/transactions/export-csv', [ShareMealController::class, 'adminExportTransactionsCsv'])->name('transactions.export-csv');
     Route::get('/reports', [ShareMealController::class, 'adminReports'])->name('reports');
+    Route::get('/reports/export-pdf', [ShareMealController::class, 'adminExportReportsPdf'])->name('reports.export-pdf');
+    Route::get('/reports/export-excel', [ShareMealController::class, 'adminExportReportsExcel'])->name('reports.export-excel');
     
     // PBI #47 & #48: Moderation Reports
     Route::get('/problem-reports', [ShareMealController::class, 'adminProblemReports'])->name('problem-reports.index');

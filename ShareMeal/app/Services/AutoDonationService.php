@@ -132,4 +132,23 @@ class AutoDonationService
             );
         }
     }
+
+    public function releaseExpiredCartReservations(): int
+    {
+        return DB::transaction(function () {
+            $expiredCarts = \App\Models\CartItem::with('product')->where('expires_at', '<=', now())->get();
+            if ($expiredCarts->isEmpty()) {
+                return 0;
+            }
+
+            foreach ($expiredCarts as $item) {
+                if ($item->product) {
+                    $item->product->increment('stock', $item->quantity);
+                }
+                $item->delete();
+            }
+
+            return $expiredCarts->count();
+        });
+    }
 }

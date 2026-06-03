@@ -47,20 +47,20 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <template x-for="product in products" :key="product.id">
             <div class="rounded-3xl border backdrop-blur-md shadow-sm overflow-hidden group hover:scale-[1.02] hover:shadow-md transition-all duration-300 flex flex-col justify-between" 
-                 :class="product.status === 'expired' ? 'bg-red-50/30 border-red-200/40' : (product.status === 'donation' ? 'bg-emerald-50/30 border-emerald-200/40' : 'bg-white/80 border-white/40')">
+                 :class="product.status === 'expired' || product.stock <= 0 ? 'bg-red-50/30 border-red-200/40' : (product.status === 'donation' ? 'bg-emerald-50/30 border-emerald-200/40' : 'bg-white/80 border-white/40')">
                 
                 <!-- Product Image Area -->
                 <div class="relative h-48 overflow-hidden bg-gray-100">
-                    <img :src="product.image" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" :class="['donation', 'expired'].includes(product.status) ? 'opacity-60 grayscale' : ''">
+                    <img :src="product.image" :alt="product.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" :class="['donation', 'expired'].includes(product.status) || product.stock <= 0 ? 'opacity-60 grayscale' : ''">
                     
                     <!-- Badges -->
-                    <template x-if="product.status === 'flash-sale'">
+                    <template x-if="product.status === 'flash-sale' && product.stock > 0">
                         <span class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
                             Flash Sale
                         </span>
                     </template>
-                    <template x-if="product.status === 'donation'">
+                    <template x-if="product.status === 'donation' && product.stock > 0">
                         <span class="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
                             Sudah Didonasikan
@@ -69,6 +69,11 @@
                     <template x-if="product.status === 'expired'">
                         <span class="absolute top-4 right-4 bg-red-700 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-lg">
                             Kedaluwarsa
+                        </span>
+                    </template>
+                    <template x-if="product.status !== 'expired' && product.stock <= 0">
+                        <span class="absolute top-4 right-4 bg-neutral-800 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-lg">
+                            HABIS
                         </span>
                     </template>
                 </div>
@@ -109,19 +114,19 @@
 
                         <!-- Action Buttons -->
                         <div class="flex gap-2">
-                            <template x-if="product.status === 'normal'">
+                            <template x-if="product.status === 'normal' && product.stock > 0">
                                 <button @click="setFlashSale(product.id)" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition flex items-center justify-center gap-1.5 border border-orange-200/30">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                                     Flash Sale
                                 </button>
                             </template>
-                            <template x-if="product.status === 'flash-sale'">
+                            <template x-if="product.status === 'flash-sale' && product.stock > 0">
                                 <div class="flex-1 bg-emerald-50 text-emerald-700 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-100/50">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                                     Aktif Jual
                                 </div>
                             </template>
-                            <template x-if="product.status === 'donation'">
+                            <template x-if="product.status === 'donation' && product.stock > 0">
                                 <div class="flex-1 bg-emerald-100/60 text-emerald-800 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-200/30">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><path d="M12 22V7"></path><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
                                     Masuk Donasi
@@ -133,18 +138,25 @@
                                     Tidak Layak
                                 </div>
                             </template>
+                            <template x-if="product.status !== 'expired' && product.stock <= 0">
+                                <div class="flex-1 bg-gray-100 text-gray-500 px-3 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border border-gray-200 text-center leading-tight">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                    HABIS
+                                </div>
+                            </template>
 
                             <!-- Donatable Auto Toggle -->
                             <button @click="toggleDonation(product.id)" 
-                                    :class="product.donatable ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-400 border-gray-200'" 
+                                    :class="product.status === 'expired' || product.stock <= 0 ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed opacity-50' : (product.donatable ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-400 border-gray-200')" 
+                                    :disabled="product.status === 'expired' || product.stock <= 0"
                                     class="w-12 h-12 rounded-xl flex items-center justify-center border transition" 
-                                    :title="product.donatable ? 'Donasi otomatis diaktifkan' : 'Aktifkan donasi otomatis'">
+                                    :title="product.status === 'expired' || product.stock <= 0 ? 'Produk habis atau kedaluwarsa' : (product.donatable ? 'Donasi otomatis diaktifkan' : 'Aktifkan donasi otomatis')">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                             </button>
                             
                             <!-- Edit Button -->
                             <button @click="openEditDialog(product)" 
-                                    :disabled="product.status === 'expired'" 
+                                    :disabled="product.status === 'expired' || product.stock <= 0" 
                                     class="w-12 h-12 bg-gray-50 text-gray-400 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-50 disabled:hover:text-gray-400 disabled:hover:border-gray-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                             </button>

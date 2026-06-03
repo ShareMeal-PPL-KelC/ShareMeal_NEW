@@ -71,19 +71,81 @@
         if (this.selectedFilters.includes(id)) {
             this.selectedFilters = this.selectedFilters.filter(f => f !== id);
         } else {
-            this.selectedFilters.push(id);
+            this.selectedFilters = [...this.selectedFilters, id];
         }
     },
-    get filteredStores() {
-        return this.stores.filter(store => {
+    addToCart(productId) {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "{{ route('consumer.cart.add') }}";
+        
+        const csrfToken = document.createElement("input");
+        csrfToken.type = "hidden";
+        csrfToken.name = "_token";
+        csrfToken.value = "{{ csrf_token() }}";
+        form.appendChild(csrfToken);
+
+        const prodIdInput = document.createElement("input");
+        prodIdInput.type = "hidden";
+        prodIdInput.name = "product_id";
+        prodIdInput.value = productId;
+        form.appendChild(prodIdInput);
+
+        const qtyInput = document.createElement("input");
+        qtyInput.type = "hidden";
+        qtyInput.name = "quantity";
+        qtyInput.value = "1";
+        form.appendChild(qtyInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    },
+    getFilteredProducts(store) {
+        if (!store || !store.products) return [];
+        return store.products.filter(product => {
+            if (!product) return false;
+            // Cocokkan teks pencarian pada nama produk atau kategori produk
             const matchesSearch = this.searchQuery === "" || 
-                (store.profile?.business_name || store.organization_name || store.name).toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                (store.profile?.business_type || store.category).toLowerCase().includes(this.searchQuery.toLowerCase());
+                (product.name && product.name.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+                (product.category && product.category.toLowerCase().includes(this.searchQuery.toLowerCase()));
             
-            const matchesFilters = this.selectedFilters.length === 0 ||
-                this.selectedFilters.every(f => store.tags.includes(f));
+            if (!this.selectedFilters || this.selectedFilters.length === 0) return matchesSearch;
             
-            return matchesSearch && matchesFilters;
+            // Produk harus memenuhi filter yang dipilih
+            return this.selectedFilters.every(f => {
+                if (f === "halal") {
+                    return store.tags && Array.isArray(store.tags) && store.tags.includes("halal");
+                }
+                return product.category && product.category.toLowerCase() === f;
+            });
+        });
+    },
+
+    get filteredStores() {
+        if (!this.stores) return [];
+        return this.stores.filter(store => {
+            if (!store) return false;
+            const filteredProds = this.getFilteredProducts(store);
+            
+            const selected = this.selectedFilters || [];
+            
+            // Jika filter kategori aktif (selain halal), toko harus memiliki produk di kategori tersebut
+            const activeCategories = selected.filter(f => f !== "halal");
+            if (activeCategories.length > 0 && filteredProds.length === 0) {
+                return false;
+            }
+            
+            // Jika filter halal aktif, toko harus memiliki sertifikasi halal
+            if (selected.includes("halal") && !(store.tags && Array.isArray(store.tags) && store.tags.includes("halal"))) {
+                return false;
+            }
+            
+            const matchesSearch = this.searchQuery === "" || 
+                (store.profile?.business_name || store.organization_name || store.name || "").toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                (store.profile?.business_type || store.category || "").toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                filteredProds.length > 0;
+                
+            return matchesSearch;
         });
     }
 }'>
@@ -148,10 +210,10 @@
     <!-- Results Info -->
     <div class="flex items-center justify-between mb-10 px-4 reveal">
         <h2 class="text-2xl font-serif font-bold text-luxury-forest italic">
-            <span x-text="filteredStores.length"></span> curators found
+            <span x-text="filteredStores.length"></span> toko makanan ditemukan
         </h2>
         <div class="text-[10px] text-luxury-gold font-black uppercase tracking-[0.2em] bg-white/40 backdrop-blur-md px-4 py-2 rounded-full border border-luxury-alabas/80">
-            Sorted by proximity
+            Diurutkan berdasarkan jarak terdekat
         </div>
     </div>
     <!-- Store Results -->
@@ -166,7 +228,7 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                         <div class="absolute bottom-4 left-4">
                             <div class="bg-black/45 backdrop-blur-md px-3.5 py-1.5 rounded-full text-[9px] font-black text-white uppercase tracking-[0.2em] border border-white/20 shadow-md">
-                                <span x-text="store.distance"></span> away
+                                Jarak <span x-text="store.distance"></span>
                             </div>
                         </div>
                     </div>
@@ -203,11 +265,11 @@
                         <!-- Operational Details Cards -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="p-3.5 rounded-xl bg-white/30 border border-luxury-alabas/85 hover:bg-white/60 hover:shadow-sm transition-all duration-500 flex flex-col justify-center">
-                                <div class="text-[9px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-0.5">Operating Hours</div>
+                                <div class="text-[9px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-0.5">Jam Operasional</div>
                                 <div class="text-xs font-bold text-luxury-forest" x-text="store.profile?.business_opening_hours || store.profile?.opening_hours || '-'"></div>
                             </div>
                             <div class="p-3.5 rounded-xl bg-white/30 border border-luxury-alabas/85 hover:bg-white/60 hover:shadow-sm transition-all duration-500 flex flex-col justify-center">
-                                <div class="text-[9px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-0.5">Contact</div>
+                                <div class="text-[9px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-0.5">Kontak</div>
                                 <div class="text-xs font-bold text-luxury-forest" x-text="store.profile?.business_contact || store.phone || '-'"></div>
                             </div>
                         </div>
@@ -217,15 +279,15 @@
                     </div>
                 </div>
 
-                <!-- Products Selection (Daily Selection spanning full width below) -->
+                <!-- Products Selection (Pilihan Hari Ini spanning full width below) -->
                 <div class="space-y-6 pt-6 border-t border-luxury-alabas/60">
                     <div class="flex items-center gap-4">
-                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold whitespace-nowrap">Daily Selection</span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold whitespace-nowrap">Pilihan Hari Ini</span>
                         <div class="h-px w-full bg-luxury-alabas/60"></div>
                     </div>
                     
                     <div class="space-y-4">
-                        <template x-for="deal in store.products" :key="deal.id">
+                        <template x-for="deal in getFilteredProducts(store)" :key="deal.id">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-white/40 border border-luxury-alabas/80 rounded-[2rem] hover:bg-white/80 hover:shadow-md hover:border-luxury-gold/20 transition-all duration-700">
                                 <div class="flex-1 min-w-0">
                                     <div class="font-serif text-2xl font-bold text-luxury-forest truncate" x-text="deal.item"></div>
@@ -242,7 +304,7 @@
                                             </svg>
                                             <span x-text="deal.pickupTime"></span>
                                         </div>
-                                        <span class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em] shrink-0" x-text="'Stock: ' + deal.stock"></span>
+                                        <span class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em] shrink-0" x-text="'Stok: ' + deal.stock"></span>
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto pt-6 md:pt-0 border-t md:border-t-0 border-luxury-alabas/60">
@@ -251,11 +313,11 @@
                                         <div class="text-[11px] text-luxury-slate line-through mt-2 font-bold tracking-widest" x-show="deal.discountPrice > 0 && deal.discountPrice != deal.originalPrice" x-text="'Rp ' + deal.originalPrice.toLocaleString('id-ID')"></div>
                                     </div>
                                     <button 
-                                        @click="window.location.href = '{{ route('consumer.checkout') }}?product_id=' + deal.id"
+                                        @click="addToCart(deal.id)"
                                         :disabled="deal.stock === 0"
                                         :class="deal.stock === 0 ? 'bg-luxury-alabas/60 text-luxury-slate cursor-not-allowed opacity-40' : 'bg-luxury-forest text-white hover:bg-luxury-gold'"
                                         class="h-14 px-8 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] transition-all duration-700 luxury-shadow active:scale-95 whitespace-nowrap"
-                                        x-text="deal.stock === 0 ? 'Sold' : 'Reserve Now'"
+                                        x-text="deal.stock === 0 ? 'Habis' : 'Pesan Sekarang'"
                                     ></button>
                                 </div>
                             </div>
@@ -272,8 +334,8 @@
                     <path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
                 </svg>
             </div>
-            <h3 class="text-4xl font-serif font-bold text-luxury-forest mb-4 italic">No matching treasures.</h3>
-            <p class="text-luxury-slate font-medium max-w-sm mx-auto leading-relaxed">Adjust your selection to explore other exceptional surplus opportunities waiting to be rescued.</p>
+            <h3 class="text-4xl font-serif font-bold text-luxury-forest mb-4 italic">Tidak ada makanan yang cocok.</h3>
+            <p class="text-luxury-slate font-medium max-w-sm mx-auto leading-relaxed">Sesuaikan filter atau kata kunci Anda untuk menemukan pilihan makanan lezat lainnya.</p>
         </div>
     </div>
 

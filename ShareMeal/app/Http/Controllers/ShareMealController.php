@@ -217,11 +217,15 @@ class ShareMealController extends Controller
         return back();
     }
 
-    public function allNotifications(): View
+    public function allNotifications(): View|RedirectResponse
     {
         $user = Auth::user();
-        $notifications = $user?->notifications()->paginate(15);
-        $role = $user?->role ?? 'consumer';
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login untuk mengakses notifikasi.');
+        }
+        
+        $notifications = $user->notifications()->paginate(15);
+        $role = $user->role ?? 'consumer';
 
         return view('pages.notifications', $this->dashboardData($role, 'Semua Notifikasi', 'Pantau semua aktivitas dan pemberitahuan Anda') + [
             'notificationsList' => $notifications,
@@ -874,12 +878,17 @@ class ShareMealController extends Controller
 
         $expiresAt = $this->parseLocalDateTime($data['expires_at']);
 
+        $discountPrice = $data['discount_price'] ?? 0;
+        if ($data['status'] === 'flash-sale' && $discountPrice <= 0) {
+            $discountPrice = floor($data['price'] * 0.7);
+        }
+
         $product = Product::create([
             'user_id' => Auth::id() ?? \App\Models\User::where('role', 'mitra')->first()?->id,
             'name' => $data['name'],
             'category' => $data['category'],
             'price' => $data['price'],
-            'discount_price' => $data['discount_price'] ?? 0,
+            'discount_price' => $discountPrice,
             'stock' => $data['stock'],
             'expires_at' => $expiresAt,
             'pickup_start_time' => $data['pickup_start_time'],
@@ -906,6 +915,10 @@ class ShareMealController extends Controller
     {
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         $product = Product::where('user_id', $userId)->findOrFail($productId);
+
+        if ($product->status === 'expired' || $product->expires_at->isPast() || $product->stock <= 0) {
+            return back()->with('error', 'Produk sudah habis atau kedaluwarsa dan tidak dapat diubah.');
+        }
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -942,11 +955,16 @@ class ShareMealController extends Controller
         $wasNotFlashSale = $product->getOriginal('status') !== 'flash-sale';
         $expiresAt = $this->parseLocalDateTime($data['expires_at']);
 
+        $discountPrice = $data['discount_price'] ?? 0;
+        if ($data['status'] === 'flash-sale' && $discountPrice <= 0) {
+            $discountPrice = floor($data['price'] * 0.7);
+        }
+
         $product->update([
             'name' => $data['name'],
             'category' => $data['category'],
             'price' => $data['price'],
-            'discount_price' => $data['discount_price'] ?? 0,
+            'discount_price' => $discountPrice,
             'stock' => $data['stock'],
             'expires_at' => $expiresAt,
             'pickup_start_time' => $data['pickup_start_time'],
@@ -978,8 +996,8 @@ class ShareMealController extends Controller
 
         $product = Product::where('user_id', $userId)->findOrFail($productId);
 
-        if ($product->status === 'expired' || $product->expires_at->isPast()) {
-            return back()->with('error', 'Produk sudah kedaluwarsa dan tidak bisa dijadikan flash sale.');
+        if ($product->status === 'expired' || $product->expires_at->isPast() || $product->stock <= 0) {
+            return back()->with('error', 'Produk sudah habis atau kedaluwarsa.');
         }
 
         $product->update([
@@ -1002,6 +1020,10 @@ class ShareMealController extends Controller
     {
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         $product = Product::where('user_id', $userId)->findOrFail($productId);
+
+        if ($product->status === 'expired' || $product->expires_at->isPast() || $product->stock <= 0) {
+            return back()->with('error', 'Produk sudah habis atau kedaluwarsa.');
+        }
 
         $product->update([
             'donatable' => !$product->donatable,
@@ -1129,7 +1151,7 @@ class ShareMealController extends Controller
     public function mitraOrders(): View
     {
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
-        $orders = \App\Models\Order::with(['customer', 'items.product', 'reviewRelation'])
+        $orders = \App\Models\Order::with(['customer.profile', 'items.product', 'reviewRelation'])
             ->where('mitra_id', $userId)
             ->latest()
             ->get();
@@ -1169,7 +1191,7 @@ class ShareMealController extends Controller
         $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
 
         $request->validate([
-            'status' => ['required', 'in:pending,ready,shipping,completed,cancelled'],
+            'status' => ['required', 'in:pending,processing,ready,shipping,completed,cancelled'],
         ]);
 
         $order->update(['status' => $request->status]);
@@ -1391,13 +1413,15 @@ class ShareMealController extends Controller
             ],
         ];
 
+        $applications = ShareMealState::get('applications');
+
         return view('pages.admin.dashboard', $this->dashboardData('admin', 'Dashboard Admin', 'Kelola sistem, verifikasi akun, dan moderasi platform') + [
-            'applications' => ShareMealState::get('applications'),
+            'applications' => $applications,
             'users' => ShareMealState::get('users'),
             'activities' => $activities,
             'stats' => [
                 'total_user' => 1250,
-                'pending' => 15,
+                'pending' => count($applications),
                 'mitra_aktif' => 142,
                 'lembaga_aktif' => 38,
                 'transaksi' => 5420,
@@ -1604,6 +1628,67 @@ class ShareMealController extends Controller
             'reviews' => $reviews,
             'stats' => $stats,
         ]);
+    }
+
+    public function adminExportReportsExcel()
+    {
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="Laporan_Distribusi_ShareMeal.xls"',
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            fputcsv($file, ['Laporan Penyaluran & Distribusi ShareMeal']);
+            fputcsv($file, []);
+            fputcsv($file, ['Mitra', 'Lembaga', 'Item Makanan', 'Jumlah', 'Tipe', 'Status', 'Tanggal']);
+            
+            $distributions = [
+                ['Toko Roti Sejahtera', 'Yayasan Kasih Ibu', 'Roti Manis, Brownies', '25 Kg', 'Donasi', 'Diterima', '2026-03-31'],
+                ['Warung Makan Barokah', 'Panti Asuhan Al-Falah', 'Nasi Bungkus, Lauk Pauk', '15 Kg', 'Donasi', 'Diterima', '2026-03-30'],
+                ['Healthy Cafe', '-', 'Salad Bowl, Juice', '8 Kg', 'Flash Sale', 'Terjual', '2026-03-29'],
+                ['Bakery Delight', 'Rumah Singgah', 'Croissant, Danish', '12 Kg', 'Donasi', 'Dalam Perjalanan', '2026-03-31'],
+                ['Resto Sedap Malam', 'Yayasan Yatim Piatu', 'Ayam Bakar, Nasi', '30 Kg', 'Donasi', 'Diterima', '2026-03-28']
+            ];
+            
+            foreach ($distributions as $row) {
+                fputcsv($file, $row);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function adminExportReportsPdf()
+    {
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="Laporan_Distribusi_ShareMeal.pdf"',
+        ];
+
+        $callback = function() {
+            echo "%PDF-1.4\n";
+            echo "1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj\n";
+            echo "2 0 obj <</Type /Pages /Kids [3 0 R] /Count 1>> endobj\n";
+            echo "3 0 obj <</Type /Page /Parent 2 0 R /Resources <</Font <</F1 4 0 R>>>> /MediaBox [0 0 595 842] /Contents 5 0 R>> endobj\n";
+            echo "4 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Helvetica>> endobj\n";
+            
+            $content = "BT /F1 12 Tf 50 750 Td (Laporan Penyaluran & Distribusi ShareMeal) Tj ET\n";
+            $content .= "BT /F1 10 Tf 50 720 Td (Total Makanan Terselamatkan: 12.480 Kg) Tj ET\n";
+            $content .= "BT /F1 10 Tf 50 700 Td (Reduksi Emisi CO2: 31.200 Kg) Tj ET\n";
+            $content .= "BT /F1 10 Tf 50 680 Td (Estimasi Nilai Ekonomi: Rp 245.8M) Tj ET\n";
+            
+            $len = strlen($content);
+            echo "5 0 obj <</Length $len>> stream\n" . $content . "endstream\nendobj\n";
+            echo "xref\n0 6\n0000000000 65535 f\n";
+            echo "trailer <</Size 6 /Root 1 0 R>>\n";
+            echo "startxref\n350\n%%EOF\n";
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function adminReports(Request $request): View

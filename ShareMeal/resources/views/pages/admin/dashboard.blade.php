@@ -84,33 +84,26 @@
                 <a href="{{ route('admin.verification') }}" class="px-5 py-2.5 rounded-xl bg-white/80 border border-luxury-alabas/85 text-[10px] font-black uppercase tracking-widest text-luxury-forest hover:bg-luxury-forest hover:text-white transition-all duration-300">Lihat Semua</a>
             </div>
             <div class="p-8 space-y-4 flex-1 bg-white/10">
-                <!-- Item 1 -->
+                @forelse(collect($applications)->take(3) as $app)
                 <div class="border border-luxury-alabas rounded-[1.5rem] p-6 flex justify-between items-center bg-white/40 hover:bg-white hover:shadow-md transition-all duration-500 group">
                     <div>
-                        <h4 class="font-bold text-luxury-forest text-base mb-1 group-hover:text-luxury-gold transition-colors">Toko Roti Sejahtera</h4>
-                        <p class="text-xs text-luxury-slate font-medium">Mitra • 3 dokumen legalitas</p>
-                        <p class="text-[10px] text-gray-400 font-mono mt-2 uppercase tracking-wide">Diajukan: 2026-03-31 09:00</p>
+                        <h4 class="font-bold text-luxury-forest text-base mb-1 group-hover:text-luxury-gold transition-colors">{{ $app['name'] }}</h4>
+                        <p class="text-xs text-luxury-slate font-medium">
+                            {{ $app['type'] === 'mitra' ? 'Mitra' : 'Lembaga Sosial' }} • {{ count($app['documents']) }} dokumen legalitas
+                        </p>
+                        <p class="text-[10px] text-gray-400 font-mono mt-2 uppercase tracking-wide">Diajukan: {{ $app['submitted_at'] }}</p>
                     </div>
                     <a href="{{ route('admin.verification') }}" class="bg-luxury-forest text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-xl hover:bg-luxury-gold transition active:scale-95">Review</a>
                 </div>
-                <!-- Item 2 -->
-                <div class="border border-luxury-alabas rounded-[1.5rem] p-6 flex justify-between items-center bg-white/40 hover:bg-white hover:shadow-md transition-all duration-500 group">
-                    <div>
-                        <h4 class="font-bold text-luxury-forest text-base mb-1 group-hover:text-luxury-gold transition-colors">Yayasan Harapan Bangsa</h4>
-                        <p class="text-xs text-luxury-slate font-medium">Lembaga Sosial • 4 dokumen legalitas</p>
-                        <p class="text-[10px] text-gray-400 font-mono mt-2 uppercase tracking-wide">Diajukan: 2026-03-31 08:30</p>
+                @empty
+                <div class="h-full flex flex-col items-center justify-center py-10 text-center">
+                    <div class="w-16 h-16 bg-gradient-to-tr from-[#174413]/5 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 border border-luxury-alabas/80">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-luxury-forest/40"></i>
                     </div>
-                    <a href="{{ route('admin.verification') }}" class="bg-luxury-forest text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-xl hover:bg-luxury-gold transition active:scale-95">Review</a>
+                    <h4 class="font-serif font-black text-xl text-luxury-forest mb-1">Semua Terverifikasi</h4>
+                    <p class="text-sm text-luxury-slate font-medium">Tidak ada pendaftaran baru yang menunggu verifikasi saat ini.</p>
                 </div>
-                <!-- Item 3 -->
-                <div class="border border-luxury-alabas rounded-[1.5rem] p-6 flex justify-between items-center bg-white/40 hover:bg-white hover:shadow-md transition-all duration-500 group">
-                    <div>
-                        <h4 class="font-bold text-luxury-forest text-base mb-1 group-hover:text-luxury-gold transition-colors">Healthy Cafe</h4>
-                        <p class="text-xs text-luxury-slate font-medium">Mitra • 3 dokumen legalitas</p>
-                        <p class="text-[10px] text-gray-400 font-mono mt-2 uppercase tracking-wide">Diajukan: 2026-03-30 16:45</p>
-                    </div>
-                    <a href="{{ route('admin.verification') }}" class="bg-luxury-forest text-white text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-xl hover:bg-luxury-gold transition active:scale-95">Review</a>
-                </div>
+                @endforelse
             </div>
         </div>
 

@@ -105,59 +105,83 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            @foreach($flashSales as $sale)
-            <div class="group relative glass-card glass-card-hover rounded-[2.5rem] overflow-hidden transition-all duration-500 reveal delay-{{ $loop->iteration * 100 }} flex flex-col justify-between">
-                <div class="relative h-56 overflow-hidden flex-shrink-0">
-                    <img src="{{ $sale->image }}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
-                    <div class="absolute inset-0 bg-gradient-to-t from-luxury-forest/80 via-transparent to-transparent opacity-60"></div>
-                    
-                    <div class="absolute top-4 right-4">
-                        <div class="glass-panel px-4 py-2 rounded-full text-xs font-black text-luxury-forest uppercase tracking-widest border border-white/40 shadow-sm">
-                            -{{ $sale->discount }}%
+        @if($flashSales && count($flashSales) > 0)
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                @foreach($flashSales as $sale)
+                <div class="group relative glass-card glass-card-hover rounded-[2.5rem] overflow-hidden transition-all duration-500 reveal delay-{{ $loop->iteration * 100 }} flex flex-col justify-between">
+                    <div class="relative h-56 overflow-hidden flex-shrink-0">
+                        <img src="{{ $sale->image }}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-luxury-forest/80 via-transparent to-transparent opacity-60"></div>
+                        
+                        <div class="absolute top-4 right-4">
+                            <div class="glass-panel px-4 py-2 rounded-full text-xs font-black text-luxury-forest uppercase tracking-widest border border-white/40 shadow-sm">
+                                -{{ $sale->discount }}%
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-4 left-4">
+                            <div class="flex items-center gap-2 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/50 shadow-sm">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-orange-650 animate-pulse"></i>
+                                <span class="text-[10px] font-bold text-orange-650 uppercase tracking-wider">{{ $sale->expiresIn }}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="absolute bottom-4 left-4">
-                        <div class="flex items-center gap-2 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/50 shadow-sm">
-                            <i data-lucide="clock" class="w-3.5 h-3.5 text-orange-650 animate-pulse"></i>
-                            <span class="text-[10px] font-bold text-orange-650 uppercase tracking-wider">{{ $sale->expiresIn }}</span>
+                    <div class="p-8 flex-1 flex flex-col justify-between bg-white/10">
+                        <div>
+                            <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-1.5 leading-snug">{{ $sale->item }}</h3>
+                            <div class="flex items-center gap-2 text-[10px] font-bold text-luxury-slate uppercase tracking-widest mb-4">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-luxury-gold"></i>
+                                <span>{{ $sale->store }}</span>
+                                <span class="text-luxury-alabas">•</span>
+                                <span>{{ $sale->distance }}</span>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 mb-6">
+                                <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                                <span class="font-black text-luxury-forest text-sm">{{ $sale->rating }}</span>
+                                <span class="text-luxury-alabas/80">•</span>
+                                <span class="text-luxury-slate text-xs font-semibold">Stok: {{ $sale->stock }}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end justify-between border-t border-luxury-alabas/60 pt-6 mt-auto">
+                            <div>
+                                <div class="text-2xl font-serif font-black text-luxury-forest">Rp {{ number_format($sale->discountPrice, 0, ',', '.') }}</div>
+                                <div class="text-[10px] text-luxury-slate font-bold line-through mt-1">Rp {{ number_format($sale->originalPrice, 0, ',', '.') }}</div>
+                            </div>
+                            <form action="{{ route('consumer.cart.add') }}" method="POST" class="inline">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $sale->id }}">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" 
+                                        class="bg-luxury-forest text-white w-14 h-14 rounded-[1.2rem] flex items-center justify-center hover:bg-luxury-gold transition-all duration-500 luxury-shadow hover:scale-105 active:scale-95 shadow-lg">
+                                    <i data-lucide="plus" class="w-6 h-6 text-white"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
-
-                <div class="p-8 flex-1 flex flex-col justify-between bg-white/10">
-                    <div>
-                        <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-1.5 leading-snug">{{ $sale->item }}</h3>
-                        <div class="flex items-center gap-2 text-[10px] font-bold text-luxury-slate uppercase tracking-widest mb-4">
-                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-luxury-gold"></i>
-                            <span>{{ $sale->store }}</span>
-                            <span class="text-luxury-alabas">•</span>
-                            <span>{{ $sale->distance }}</span>
-                        </div>
-
-                        <div class="flex items-center gap-1.5 mb-6">
-                            <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-                            <span class="font-black text-luxury-forest text-sm">{{ $sale->rating }}</span>
-                            <span class="text-luxury-alabas/80">•</span>
-                            <span class="text-luxury-slate text-xs font-semibold">Stok: {{ $sale->stock }}</span>
-                        </div>
-                    </div>
-
-                    <div class="flex items-end justify-between border-t border-luxury-alabas/60 pt-6 mt-auto">
-                        <div>
-                            <div class="text-2xl font-serif font-black text-luxury-forest">Rp {{ number_format($sale->discountPrice, 0, ',', '.') }}</div>
-                            <div class="text-[10px] text-luxury-slate font-bold line-through mt-1">Rp {{ number_format($sale->originalPrice, 0, ',', '.') }}</div>
-                        </div>
-                        <a href="{{ route('consumer.checkout', ['product_id' => $sale->id]) }}" 
-                           class="bg-luxury-forest text-white w-14 h-14 rounded-[1.2rem] flex items-center justify-center hover:bg-luxury-gold transition-all duration-500 luxury-shadow hover:scale-105 active:scale-95 shadow-lg">
-                            <i data-lucide="plus" class="w-6 h-6 text-white"></i>
-                        </a>
-                    </div>
+                @endforeach
+            </div>
+        @else
+            <!-- Empty state design for Flash Sales -->
+            <div class="glass-card rounded-[2.5rem] p-16 text-center max-w-2xl mx-auto reveal">
+                <div class="w-20 h-20 bg-luxury-ivory border border-luxury-alabas/55 rounded-3xl flex items-center justify-center mx-auto mb-6 text-luxury-slate/40 shadow-inner">
+                    <i data-lucide="shopping-bag" class="w-10 h-10 stroke-[1.5]"></i>
+                </div>
+                <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-2.5">Belum Ada Flash Sale Terdekat</h3>
+                <p class="text-sm font-medium text-luxury-slate max-w-md mx-auto leading-relaxed">
+                    Saat ini belum ada produk flash sale terdekat di sekitar lokasi Anda. Silakan cek kembali nanti atau cari kuliner lezat lainnya!
+                </p>
+                <div class="mt-8">
+                    <a href="{{ route('consumer.search') }}" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-luxury-forest text-white border border-luxury-forest text-xs font-black uppercase tracking-widest hover:bg-transparent hover:text-luxury-forest transition-all duration-300 shadow-md shadow-emerald-950/10">
+                        <i data-lucide="search" class="w-4 h-4 stroke-[2.5]"></i>
+                        Cari Makanan Lainnya
+                    </a>
                 </div>
             </div>
-            @endforeach
-        </div>
+        @endif
     </div>
 
     <!-- Favorite Stores -->

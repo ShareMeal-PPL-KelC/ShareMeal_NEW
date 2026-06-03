@@ -85,7 +85,11 @@ class Product extends Model
 
         public function getDiscountPriceAttribute()
         {
-        return $this->attributes['discount_price'] ?? 0;
+            $discountPrice = $this->attributes['discount_price'] ?? 0;
+            if (($this->status ?? '') === 'flash-sale' && $discountPrice <= 0) {
+                return floor(($this->price ?? 0) * 0.7);
+            }
+            return $discountPrice;
         }
 
         public function getDiscountAttribute()

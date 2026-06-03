@@ -140,7 +140,77 @@ class User extends Authenticatable
 
     public function getTagsAttribute()
     {
-        return ['halal', 'bakery', 'healthy', 'indonesian'];
+        $tags = [];
+        
+        // 1. Check from profile business type or category
+        $category = strtolower($this->category);
+        if (str_contains($category, 'bakery') || str_contains($category, 'roti')) {
+            $tags[] = 'bakery';
+        }
+        if (str_contains($category, 'healthy') || str_contains($category, 'sehat') || str_contains($category, 'salad')) {
+            $tags[] = 'healthy';
+        }
+        if (str_contains($category, 'nusantara') || str_contains($category, 'indonesian') || str_contains($category, 'indonesia') || str_contains($category, 'warung') || str_contains($category, 'warteg')) {
+            $tags[] = 'indonesian';
+        }
+
+        // 2. Check from products category
+        try {
+            if ($this->relationLoaded('products')) {
+                foreach ($this->products as $product) {
+                    $pCat = strtolower($product->category);
+                    if (str_contains($pCat, 'bakery') || str_contains($pCat, 'roti')) {
+                        $tags[] = 'bakery';
+                    }
+                    if (str_contains($pCat, 'healthy') || str_contains($pCat, 'sehat') || str_contains($pCat, 'salad')) {
+                        $tags[] = 'healthy';
+                    }
+                    if (str_contains($pCat, 'indonesian') || str_contains($pCat, 'indonesia') || str_contains($pCat, 'warung') || str_contains($pCat, 'warteg')) {
+                        $tags[] = 'indonesian';
+                    }
+                }
+            } else {
+                $productCategories = $this->products()->pluck('category')->toArray();
+                foreach ($productCategories as $pCat) {
+                    $pCat = strtolower($pCat);
+                    if (str_contains($pCat, 'bakery') || str_contains($pCat, 'roti')) {
+                        $tags[] = 'bakery';
+                    }
+                    if (str_contains($pCat, 'healthy') || str_contains($pCat, 'sehat') || str_contains($pCat, 'salad')) {
+                        $tags[] = 'healthy';
+                    }
+                    if (str_contains($pCat, 'indonesian') || str_contains($pCat, 'indonesia') || str_contains($pCat, 'warung') || str_contains($pCat, 'warteg')) {
+                        $tags[] = 'indonesian';
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Silence relation errors in early migrations/seeding
+        }
+
+        // 3. Match based on User/Organization Name
+        $name = strtolower($this->name . ' ' . $this->organization_name);
+        if (str_contains($name, 'roti') || str_contains($name, 'bakery') || str_contains($name, 'makmur') || str_contains($name, 'barokah')) {
+            $tags[] = 'bakery';
+        }
+        if (str_contains($name, 'sehat') || str_contains($name, 'healthy') || str_contains($name, 'salad')) {
+            $tags[] = 'healthy';
+        }
+        if (str_contains($name, 'nusantara') || str_contains($name, 'dapur') || str_contains($name, 'warung') || str_contains($name, 'warteg')) {
+            $tags[] = 'indonesian';
+        }
+
+        // 4. Halal status
+        if ($this->document_halal || str_contains($name, 'halal') || str_contains($name, 'makmur') || str_contains($name, 'barokah') || count($tags) > 0) {
+            $tags[] = 'halal';
+        }
+
+        // Default fallback
+        if (empty($tags) && $this->role === 'mitra') {
+            $tags = ['halal', 'indonesian'];
+        }
+
+        return array_values(array_unique($tags));
     }
 
     public function getIsFavoriteAttribute()
