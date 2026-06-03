@@ -18,7 +18,7 @@ Route::get('/profile', [ShareMealController::class, 'editProfile'])->name('profi
 Route::post('/profile', [ShareMealController::class, 'updateProfile'])->name('profile.update');
 Route::post('/profile/phone/verify', [ShareMealController::class, 'verifyProfilePhone'])->name('profile.phone.verify');
 
-Route::prefix('consumer')->name('consumer.')->group(function () {
+Route::prefix('consumer')->name('consumer.')->middleware('role:consumer')->group(function () {
     Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
     Route::get('/search', [ConsumerController::class, 'search'])->name('search');
     Route::get('/history', [ConsumerController::class, 'history'])->name('history');
@@ -63,7 +63,7 @@ Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function
     Route::post('/donations/{donationId}/cancel', [ShareMealController::class, 'mitraDonationCancel'])->name('donations.cancel');
 });
 
-Route::prefix('lembaga')->name('lembaga.')->group(function () {
+Route::prefix('lembaga')->name('lembaga.')->middleware('role:lembaga')->group(function () {
     Route::get('/', [ShareMealController::class, 'lembagaDashboard'])->name('dashboard');
     Route::post('/upload-document', [ShareMealController::class, 'uploadBusinessDocument'])->name('upload.document');
     Route::get('/donations', [ShareMealController::class, 'lembagaDonations'])->name('donations');
@@ -72,7 +72,7 @@ Route::prefix('lembaga')->name('lembaga.')->group(function () {
     Route::post('/report', [ShareMealController::class, 'lembagaSubmitProblemReport'])->name('report.submit');
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
     Route::get('/', [ShareMealController::class, 'adminDashboard'])->name('dashboard');
     Route::get('/verification', [ShareMealController::class, 'adminVerification'])->name('verification');
     Route::post('/verification/{applicationId}/approve', [ShareMealController::class, 'adminApproveApplication'])->name('verification.approve');
