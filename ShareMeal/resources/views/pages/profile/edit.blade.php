@@ -328,7 +328,20 @@
                     clearTimeout(safetyTimeout);
                     
                     if (!response.ok) {
-                        this.errorMsgPhone = 'Gagal mengirim OTP. Terjadi kesalahan pada server (Status ' + response.status + ').';
+                        if (response.status === 422) {
+                            try {
+                                const json = await response.json();
+                                let errorMsg = json.message || 'Validasi gagal.';
+                                if (json.errors) {
+                                    errorMsg = Object.values(json.errors).flat().join(' ');
+                                }
+                                this.errorMsgPhone = errorMsg;
+                            } catch (e) {
+                                this.errorMsgPhone = 'Validasi gagal di server.';
+                            }
+                        } else {
+                            this.errorMsgPhone = 'Gagal mengirim OTP. Terjadi kesalahan pada server (Status ' + response.status + ').';
+                        }
                         this.loadingOtp = false;
                         this.phoneStep = 1;
                         return;
