@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Jalankan auto-donasi rutin untuk memindahkan item yang kedaluwarsa < 2 jam
 Schedule::command('sharemeal:auto-donate')->everyMinute()->withoutOverlapping();
+
+// Kirim peringatan batas waktu pengambilan pesanan konsumen 30 menit sebelum berakhir
+Schedule::command('sharemeal:send-pickup-reminders')->everyMinute()->withoutOverlapping();
