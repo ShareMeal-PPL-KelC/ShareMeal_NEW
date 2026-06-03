@@ -22,12 +22,10 @@ Route::prefix('consumer')->name('consumer.')->group(function () {
     Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
     Route::get('/search', [ConsumerController::class, 'search'])->name('search');
     Route::get('/history', [ConsumerController::class, 'history'])->name('history');
-    
     // PBI #32: Edit & Delete Review - Dikerjakan oleh: Muh Irfan Ubaidillah
     Route::post('/review', [ConsumerController::class, 'submitReview'])->name('review.submit');
     Route::put('/review/{review}', [ConsumerController::class, 'updateReview'])->name('review.update');
     Route::delete('/review/{review}', [ConsumerController::class, 'deleteReview'])->name('review.delete');
-    
     Route::get('/education', [ConsumerController::class, 'education'])->name('education');
     Route::get('/education/{id}', [ConsumerController::class, 'showArticle'])->name('education.show');
     Route::get('/checkout', [ConsumerController::class, 'checkout'])->name('checkout');

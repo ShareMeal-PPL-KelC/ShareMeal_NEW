@@ -2,6 +2,7 @@
 
 namespace Tests\Browser;
 
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use App\Models\User;
@@ -14,6 +15,8 @@ use App\Models\User;
  */
 class RegisterLembagaTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+
     public function test_register_lembaga_berhasil()
     {
         $uniqueEmail = 'lembagabaru_' . time() . '@example.com';
@@ -22,6 +25,7 @@ class RegisterLembagaTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($uniqueEmail, $dummyFilePath) {
             $browser->driver->manage()->deleteAllCookies();
             $browser->visit('/register')
+                    ->waitForText('Buat Akun Baru', 15)
                     ->waitFor('input[name="user_type"]', 15) // Wait for form to be ready
                     
                     // Pilih peran Lembaga

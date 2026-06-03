@@ -10,18 +10,36 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-2 p-1 bg-gray-100 rounded-2xl w-fit">
+    <div class="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-2xl w-fit">
         <button @click="activeTab = 'pending'" 
                 :class="activeTab === 'pending' ? 'bg-white text-[#174413] shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                 class="px-6 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
             <i data-lucide="clock" class="w-4 h-4"></i>
             Menunggu (<span x-text="orders.filter(o => o.status === 'pending').length"></span>)
         </button>
+        <button @click="activeTab = 'ready'" 
+                :class="activeTab === 'ready' ? 'bg-white text-[#174413] shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                class="px-6 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
+            <i data-lucide="package" class="w-4 h-4"></i>
+            Siap (<span x-text="orders.filter(o => o.status === 'ready').length"></span>)
+        </button>
+        <button @click="activeTab = 'shipping'" 
+                :class="activeTab === 'shipping' ? 'bg-white text-[#174413] shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                class="px-6 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
+            <i data-lucide="truck" class="w-4 h-4"></i>
+            Dikirim (<span x-text="orders.filter(o => o.status === 'shipping').length"></span>)
+        </button>
         <button @click="activeTab = 'completed'" 
                 :class="activeTab === 'completed' ? 'bg-white text-[#174413] shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                 class="px-6 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
             <i data-lucide="check-circle" class="w-4 h-4"></i>
             Selesai (<span x-text="orders.filter(o => o.status === 'completed').length"></span>)
+        </button>
+        <button @click="activeTab = 'cancelled'" 
+                :class="activeTab === 'cancelled' ? 'bg-white text-[#174413] shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                class="px-6 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+            Batal (<span x-text="orders.filter(o => o.status === 'cancelled').length"></span>)
         </button>
     </div>
 
@@ -35,10 +53,26 @@
                         <div>
                             <div class="flex items-center gap-3">
                                 <h3 class="text-2xl font-black text-gray-900" x-text="'Pesanan #' + order.id"></h3>
-                                <span :class="order.status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-orange-100 text-orange-700 border-orange-200'" 
+                                <span :class="{
+                                    'bg-orange-100 text-orange-700 border-orange-200': order.status === 'pending',
+                                    'bg-blue-100 text-blue-700 border-blue-200': order.status === 'ready',
+                                    'bg-indigo-100 text-indigo-700 border-indigo-200': order.status === 'shipping',
+                                    'bg-green-100 text-green-700 border-green-200': order.status === 'completed',
+                                    'bg-red-100 text-red-700 border-red-200': order.status === 'cancelled'
+                                }" 
                                       class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
-                                      x-text="order.status === 'completed' ? 'Selesai' : 'Menunggu Diambil'">
+                                      x-text="getStatusLabel(order.status)">
                                 </span>
+                                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1">
+                                    <i :data-lucide="order.receiving_method === 'delivery' ? 'truck' : 'store'" class="w-3 h-3"></i>
+                                    <span x-text="order.receiving_method === 'delivery' ? 'Delivery' : 'Pickup'"></span>
+                                </span>
+                                <template x-if="order.status === 'completed' && order.rating > 0">
+                                    <div class="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg border border-yellow-100">
+                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 fill-yellow-500"></i>
+                                        <span class="text-xs font-black text-yellow-700" x-text="order.rating"></span>
+                                    </div>
+                                </template>
                             </div>
                             <p class="text-sm text-gray-400 font-medium mt-2" x-text="'Waktu Pesan: ' + order.orderTime"></p>
                         </div>
@@ -90,17 +124,53 @@
                     </div>
 
                     <!-- Action -->
-                    <div class="pt-6 border-t border-gray-50">
+                    <div class="pt-6 border-t border-gray-50 flex flex-wrap gap-3">
                         <template x-if="order.status === 'pending'">
-                            <button @click="confirmPickup(order.id)" class="w-full bg-[#174413] text-white py-4 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition flex items-center justify-center gap-3">
+                            <div class="flex flex-1 gap-3">
+                                <button @click="updateStatus(order.id, 'ready')" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition flex items-center justify-center gap-3">
+                                    <i data-lucide="package" class="w-5 h-5"></i>
+                                    Pesanan Siap
+                                </button>
+                                <button @click="updateStatus(order.id, 'cancelled')" class="px-6 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition">
+                                    Batalkan
+                                </button>
+                            </div>
+                        </template>
+                        
+                        <template x-if="order.status === 'ready'">
+                            <div class="flex flex-1 gap-3">
+                                <button x-show="order.receiving_method === 'delivery'" @click="updateStatus(order.id, 'shipping')" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition flex items-center justify-center gap-3">
+                                    <i data-lucide="truck" class="w-5 h-5"></i>
+                                    Kirim Sekarang
+                                </button>
+                                <button x-show="order.receiving_method === 'pickup'" @click="updateStatus(order.id, 'completed')" class="flex-1 bg-[#174413] text-white py-4 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition flex items-center justify-center gap-3">
+                                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                    Konfirmasi Diambil
+                                </button>
+                                <button @click="updateStatus(order.id, 'cancelled')" class="px-6 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition">
+                                    Batalkan
+                                </button>
+                            </div>
+                        </template>
+
+                        <template x-if="order.status === 'shipping'">
+                            <button @click="updateStatus(order.id, 'completed')" class="w-full bg-[#174413] text-white py-4 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition flex items-center justify-center gap-3">
                                 <i data-lucide="check-circle" class="w-5 h-5"></i>
-                                Konfirmasi Sudah Diambil
+                                Konfirmasi Sampai & Selesai
                             </button>
                         </template>
+
                         <template x-if="order.status === 'completed'">
-                            <div class="text-center text-green-600 font-bold text-sm flex items-center justify-center gap-2">
+                            <div class="w-full text-center text-green-600 font-bold text-sm flex items-center justify-center gap-2">
                                 <i data-lucide="check-circle" class="w-4 h-4"></i>
-                                Selesai pada <span x-text="order.completedTime"></span>
+                                Pesanan Selesai pada <span x-text="order.completedTime"></span>
+                            </div>
+                        </template>
+
+                        <template x-if="order.status === 'cancelled'">
+                            <div class="w-full text-center text-red-600 font-bold text-sm flex items-center justify-center gap-2">
+                                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                Pesanan Dibatalkan
                             </div>
                         </template>
                     </div>
@@ -125,29 +195,48 @@
             activeTab: 'pending',
             orders: @json($orders),
             
-            async confirmPickup(id) {
-                if(confirm('Konfirmasi bahwa pesanan ini sudah diambil?')) {
+            getStatusLabel(status) {
+                const labels = {
+                    'pending': 'Menunggu',
+                    'ready': 'Siap Diambil/Kirim',
+                    'shipping': 'Dalam Perjalanan',
+                    'completed': 'Selesai',
+                    'cancelled': 'Dibatalkan'
+                };
+                return labels[status] || status;
+            },
+
+            async updateStatus(id, newStatus) {
+                const confirmMsg = newStatus === 'cancelled' 
+                    ? 'Apakah Anda yakin ingin membatalkan pesanan ini?' 
+                    : `Ubah status pesanan ke "${this.getStatusLabel(newStatus)}"?`;
+
+                if(confirm(confirmMsg)) {
                     try {
-                        const response = await fetch(`/mitra/orders/${id}/confirm`, {
+                        const response = await fetch(`/mitra/orders/${id}/update-status`, {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json'
-                            }
+                            },
+                            body: JSON.stringify({ status: newStatus })
                         });
 
                         if (response.ok) {
+                            const data = await response.json();
                             const order = this.orders.find(o => o.id === id);
                             if (order) {
-                                order.status = 'completed';
-                                order.completedTime = new Date().toLocaleString('id-ID', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                                alert('Pesanan dikonfirmasi sebagai sudah diambil!');
-                                this.activeTab = 'completed';
+                                order.status = newStatus;
+                                if (data.completed_time) {
+                                    order.completedTime = data.completed_time;
+                                }
+                                alert('Status pesanan berhasil diperbarui!');
+                                this.activeTab = newStatus;
                                 setTimeout(() => lucide.createIcons(), 50);
                             }
                         } else {
-                            alert('Gagal mengonfirmasi pesanan. Silakan coba lagi.');
+                            alert('Gagal memperbarui status. Silakan coba lagi.');
                         }
                     } catch (error) {
                         console.error('Error:', error);

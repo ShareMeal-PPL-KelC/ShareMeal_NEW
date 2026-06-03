@@ -14,24 +14,28 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Dummy Consumer
-        $consumer = User::create([
-            'name' => 'Budi Santoso',
-            'email' => 'budi@example.com',
-            'password' => bcrypt('password'),
-            'role' => 'consumer',
-            'phone' => '081234567890',
-            'is_verified' => true,
-        ]);
+        $consumer = User::updateOrCreate(
+            ['email' => 'budi@example.com'],
+            [
+                'name' => 'Budi Santoso',
+                'password' => bcrypt('password'),
+                'role' => 'consumer',
+                'phone' => '081234567890',
+                'is_verified' => true,
+            ]
+        );
 
         // Dummy Mitra
-        $mitra = User::create([
-            'name' => 'Toko Roti Makmur',
-            'email' => 'mitra@example.com',
-            'password' => bcrypt('password'),
-            'role' => 'mitra',
-            'phone' => '089876543210',
-            'is_verified' => true,
-        ]);
+        $mitra = User::updateOrCreate(
+            ['email' => 'mitra@example.com'],
+            [
+                'name' => 'Toko Roti Makmur',
+                'password' => bcrypt('password'),
+                'role' => 'mitra',
+                'phone' => '089876543210',
+                'is_verified' => true,
+            ]
+        );
 
         // Dummy Products
         $product1 = \App\Models\Product::create([
@@ -92,6 +96,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AdminSeeder::class,
+            LembagaSeeder::class,
+            DonationDummySeeder::class,
         ]);
     }
 }

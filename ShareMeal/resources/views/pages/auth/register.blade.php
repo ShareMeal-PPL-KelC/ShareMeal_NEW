@@ -116,7 +116,15 @@
                     <div class="grid gap-5">
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">Nama Lengkap</label>
-                            <input class="input @error('name') border-red-500 @enderror" type="text" name="name" value="{{ old('name') }}" placeholder="John Doe" required>
+                            <input class="input @error('name') border-red-500 @enderror" 
+                                   type="text" 
+                                   name="name" 
+                                   value="{{ old('name') }}" 
+                                   placeholder="John Doe" 
+                                   required
+                                   pattern="[a-zA-Z\s]+"
+                                   oninvalid="this.setCustomValidity('Nama lengkap hanya boleh berisi huruf dan spasi')"
+                                   oninput="this.setCustomValidity(''); this.value = this.value.replace(/[0-9]/g, '')">
                             @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
