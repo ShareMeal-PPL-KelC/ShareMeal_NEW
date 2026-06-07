@@ -8,12 +8,19 @@
     isEditMode: false,
     rating: 0,
     review: '',
+    isReviewSubmitting: false,
+    isReviewSuccess: false,
+    init() {
+        this.$watch('isReviewDialogOpen', val => document.body.style.overflow = val ? 'hidden' : '');
+    },
     openReviewModal(id) {
         this.isEditMode = false;
         this.selectedOrderId = id;
         this.editingReviewId = null;
         this.rating = 0;
         this.review = '';
+        this.isReviewSubmitting = false;
+        this.isReviewSuccess = false;
         this.isReviewDialogOpen = true;
     },
     openEditReviewModal(reviewId, currentRating, currentComment) {
@@ -21,13 +28,56 @@
         this.editingReviewId = reviewId;
         this.rating = currentRating;
         this.review = currentComment;
+        this.isReviewSubmitting = false;
+        this.isReviewSuccess = false;
         this.isReviewDialogOpen = true;
     },
-    submitReview(e) {
+    async submitReview(e) {
+        e.preventDefault();
         if (this.rating === 0) {
-            e.preventDefault();
             alert('Pilih rating terlebih dahulu');
             return false;
+        }
+        
+        const form = e.target;
+        this.isReviewSubmitting = true;
+        this.isReviewSuccess = false;
+        
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            if (response.ok) {
+                this.isReviewSubmitting = false;
+                this.isReviewSuccess = true;
+                
+                setTimeout(() => {
+                    this.isReviewDialogOpen = false;
+                    window.location.reload();
+                }, 2000);
+            } else {
+                let errorMessage = 'Gagal mengirim ulasan';
+                try {
+                    const errorData = await response.json();
+                    if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+                } catch (err) {}
+                alert(errorMessage);
+                this.isReviewSubmitting = false;
+            }
+        } catch (error) {
+            this.isReviewSubmitting = false;
+            alert(error.message || 'Terjadi kesalahan sistem');
         }
     },
     isReceiptDialogOpen: false,
@@ -446,29 +496,76 @@
 
     <!-- Review Modal Overlay -->
     <div x-show="isReviewDialogOpen" 
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" 
+         class="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-24 sm:p-6 sm:pt-32 overflow-y-auto" 
          x-cloak>
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-luxury-forest/60 backdrop-blur-md" @click="isReviewDialogOpen = false"></div>
+        <div class="fixed inset-0 bg-luxury-forest/60 backdrop-blur-md" @click="if (!isReviewSubmitting && !isReviewSuccess) isReviewDialogOpen = false"></div>
 
         <!-- Modal Content -->
         <div x-show="isReviewDialogOpen"
              x-transition:enter="ease-out duration-500"
              x-transition:enter-start="opacity-0 translate-y-12 scale-95"
              x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-             class="relative glass-panel w-full max-w-md rounded-[3rem] overflow-hidden shadow-2xl border border-white/40 p-12">
+             class="relative bg-white/95 backdrop-blur-lg w-full max-w-md rounded-[2.5rem] shadow-2xl border border-white/60 p-8 sm:p-10 mx-auto overflow-hidden">
             
-            <div class="text-center mb-10">
-                <div class="w-16 h-16 bg-white/80 rounded-full flex items-center justify-center mx-auto mb-6 luxury-shadow">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-luxury-gold mx-auto">
+            <!-- Loading Overlay -->
+            <div x-show="isReviewSubmitting" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem]"
+                 x-cloak>
+                
+                <!-- Elegant Circular Spinner -->
+                <div class="relative w-20 h-20 mb-6">
+                    <div class="absolute inset-0 border-4 border-luxury-forest/10 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-luxury-forest border-t-transparent rounded-full animate-spin"></div>
+                </div>
+
+                <h3 class="text-2xl font-serif font-bold text-luxury-forest mb-2">Mengirim Ulasan</h3>
+                <p class="text-luxury-slate/75 text-xs max-w-xs leading-relaxed">
+                    Sedang memproses ulasan dan rating Anda secara aman...
+                </p>
+            </div>
+
+            <!-- Success Overlay -->
+            <div x-show="isReviewSuccess" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem]"
+                 x-cloak>
+                
+                <!-- Animated Success Icon -->
+                <div class="w-20 h-20 bg-luxury-emerald/10 rounded-full flex items-center justify-center mb-6 border border-luxury-emerald/20 animate-bounce">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-luxury-emerald">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+
+                <h3 class="text-2xl font-serif font-bold text-luxury-forest mb-2">Ulasan Terkirim!</h3>
+                <p class="text-luxury-slate/85 text-xs max-w-xs leading-relaxed">
+                    Terima kasih atas ulasan dan apresiasi yang Anda berikan.
+                </p>
+            </div>
+
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-amber-100 to-amber-200 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner rotate-3 hover:rotate-12 transition-transform duration-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-amber-600">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                     </svg>
                 </div>
-                <h3 class="text-3xl font-serif font-bold text-luxury-forest leading-tight">Bagikan Pengalaman Anda</h3>
-                <p class="text-xs text-luxury-slate font-medium uppercase tracking-[0.2em] mt-2">Apresiasi Anda sangat berarti bagi kami</p>
+                <h3 class="text-3xl font-serif font-bold text-luxury-forest leading-tight">Bagikan Pengalaman</h3>
+                <p class="text-[10px] text-luxury-gold font-black uppercase tracking-[0.2em] mt-2">Apresiasi Anda sangat berarti bagi kami</p>
             </div>
 
-            <form :action="isEditMode ? '{{ url('/consumer/review') }}/' + editingReviewId : '{{ route('consumer.review.submit') }}'" method="POST" class="space-y-8" @submit="submitReview($event)">
+            <form :action="isEditMode ? '{{ url('/consumer/review') }}/' + editingReviewId : '{{ route('consumer.review.submit') }}'" method="POST" class="space-y-6" @submit="submitReview($event)">
                 @csrf
                 <template x-if="isEditMode">
                     <input type="hidden" name="_method" value="PUT">
@@ -477,10 +574,10 @@
                 <input type="hidden" name="rating" :value="rating">
 
                 <div class="text-center">
-                    <div class="flex justify-center gap-3">
+                    <div class="flex justify-center gap-3 bg-amber-50/50 py-4 px-6 rounded-2xl border border-amber-100/40">
                         <template x-for="i in 5">
-                            <button type="button" @click="rating = i" class="transition-all duration-300 transform hover:scale-125 group focus:outline-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-10 h-10 transition-all duration-300" :class="i <= rating ? 'text-luxury-gold fill-luxury-gold' : 'text-luxury-alabas fill-transparent stroke-current'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <button type="button" @click="rating = i" class="transition-all duration-300 transform hover:scale-125 active:scale-95 focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-10 h-10 transition-all duration-300" :class="i <= rating ? 'text-amber-500 fill-amber-400 filter drop-shadow-sm' : 'text-gray-300 fill-transparent stroke-current'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                 </svg>
                             </button>
@@ -488,19 +585,19 @@
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <label class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em]">Komentar atau Ulasan Anda</label>
-                    <textarea name="comment" x-model="review" rows="4" 
-                              class="w-full bg-white/60 border border-luxury-alabas/85 rounded-[1.5rem] p-6 outline-none focus:ring-2 focus:ring-luxury-forest transition-all font-medium text-luxury-forest placeholder:text-luxury-slate/40" 
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest block">Komentar atau Ulasan Anda</label>
+                    <textarea name="comment" x-model="review" rows="3" 
+                              class="w-full bg-gray-50/50 border border-gray-200/50 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition font-semibold text-gray-800 placeholder:text-gray-400 text-sm" 
                               placeholder="Ceritakan tentang rasa makanan dan pengalaman Anda..."></textarea>
                 </div>
 
-                <div class="pt-4 flex flex-col gap-4">
-                    <button type="submit" :disabled="rating === 0" 
-                            class="w-full bg-luxury-forest text-white py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-luxury-gold transition-all duration-500 disabled:opacity-30 disabled:cursor-not-allowed" 
-                            x-text="isEditMode ? 'Simpan Perubahan' : 'Kirim Apresiasi'"></button>
-                    <button type="button" @click="isReviewDialogOpen = false" 
-                            class="w-full py-4 text-luxury-slate font-black uppercase tracking-[0.2em] text-[10px] hover:text-luxury-forest transition-colors">Batal</button>
+                <div class="pt-2 flex flex-col gap-3">
+                    <button type="submit" :disabled="rating === 0 || isReviewSubmitting" 
+                            class="w-full bg-[#174413] hover:bg-[#0f2d0c] text-white py-4 rounded-xl font-bold uppercase tracking-wider text-xs shadow-lg shadow-green-900/20 transition disabled:opacity-40 disabled:cursor-not-allowed" 
+                            x-text="isReviewSubmitting ? 'Mengirim...' : (isEditMode ? 'Simpan Perubahan' : 'Kirim Apresiasi')"></button>
+                    <button type="button" @click="isReviewDialogOpen = false" :disabled="isReviewSubmitting"
+                            class="w-full py-2.5 text-gray-500 hover:text-gray-800 font-bold uppercase tracking-wider text-[11px] transition disabled:opacity-40">Batal</button>
                 </div>
             </form>
         </div>

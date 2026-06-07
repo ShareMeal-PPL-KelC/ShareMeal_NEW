@@ -112,12 +112,14 @@
         $routes = [
             ['route' => 'lembaga.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'lembaga.donations', 'label' => 'Donasi', 'icon' => 'heart'],
+            ['route' => 'lembaga.history', 'label' => 'Riwayat Donasi', 'icon' => 'history'],
         ];
     } elseif ($userRole === 'mitra' || request()->is('mitra*')) {
         $routes = [
             ['route' => 'mitra.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'mitra.inventory', 'label' => 'Inventaris', 'icon' => 'package'],
             ['route' => 'mitra.orders', 'label' => 'Pesanan', 'icon' => 'shopping-cart'],
+            ['route' => 'mitra.history', 'label' => 'Riwayat', 'icon' => 'history'],
             ['route' => 'mitra.reviews', 'label' => 'Ulasan', 'icon' => 'star'],
             ['route' => 'mitra.donations', 'label' => 'Donasi', 'icon' => 'heart'],
         ];

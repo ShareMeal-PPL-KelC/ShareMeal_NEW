@@ -8,10 +8,12 @@
     rejectModalOpen: false,
     rejectUserId: null,
     rejectUserName: '',
+    isPreviewLoading: false,
     
     openPreview(url, title) {
         this.previewUrl = url;
         this.previewTitle = title;
+        this.isPreviewLoading = true;
         this.previewModalOpen = true;
     },
     
@@ -160,12 +162,23 @@
             </div>
             
             <!-- Document Frame Content -->
-            <div class="p-8 bg-gray-50/50 flex justify-center items-center overflow-y-auto flex-1 min-h-[500px]">
+            <div class="p-8 bg-gray-50/50 flex justify-center items-center overflow-y-auto flex-1 min-h-[500px] relative">
+                <!-- Loading Indicator -->
+                <div x-show="isPreviewLoading" 
+                     class="absolute inset-0 bg-white/80 backdrop-blur-sm z-25 flex flex-col items-center justify-center p-6 text-center"
+                     x-cloak>
+                    <div class="relative w-16 h-16 mb-4">
+                        <div class="absolute inset-0 border-4 border-luxury-forest/10 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-luxury-forest border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <span class="text-xs font-bold text-luxury-forest uppercase tracking-wider">Memuat Berkas...</span>
+                </div>
+
                 <template x-if="previewUrl.toLowerCase().endsWith('.pdf')">
-                    <iframe :src="previewUrl" class="w-full h-[600px] rounded-2xl shadow-xl border border-luxury-alabas bg-white"></iframe>
+                    <iframe :src="previewUrl" x-on:load="isPreviewLoading = false" class="w-full h-[600px] rounded-2xl shadow-xl border border-luxury-alabas bg-white z-10"></iframe>
                 </template>
                 <template x-if="!previewUrl.toLowerCase().endsWith('.pdf')">
-                    <img :src="previewUrl" class="max-w-full h-auto rounded-2xl shadow-xl border-4 border-white object-contain max-h-[600px]">
+                    <img :src="previewUrl" x-on:load="isPreviewLoading = false" x-on:error="isPreviewLoading = false" class="max-w-full h-auto rounded-2xl shadow-xl border-4 border-white object-contain max-h-[600px] z-10">
                 </template>
             </div>
         </div>

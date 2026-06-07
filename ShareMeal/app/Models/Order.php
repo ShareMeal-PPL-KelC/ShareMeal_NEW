@@ -97,7 +97,7 @@ class Order extends Model
     {
         if ($this->relationLoaded('items')) {
             return $this->items->map(function($item) {
-                return ($item->product ? $item->product->name : 'Item') . ' (' . $item->quantity . ' pcs)';
+                return ($item->product ? $item->product->name : 'Produk') . ' (' . $item->quantity . ' pcs)';
             })->implode(', ');
         }
         return '-';

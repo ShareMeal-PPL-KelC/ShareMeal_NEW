@@ -280,42 +280,6 @@
         </div>
     </div>
 
-    <!-- Recent History -->
-    <div class="glass-card rounded-[3rem] overflow-hidden mb-16 reveal">
-        <div class="p-10 border-b border-luxury-alabas/60 flex items-center justify-between bg-white/30">
-            <div class="flex items-center gap-3">
-                <i data-lucide="history" class="w-6 h-6 text-indigo-600"></i>
-                <h2 class="text-2xl font-serif font-bold text-luxury-forest">Riwayat Penerimaan Donasi</h2>
-            </div>
-            <a href="{{ route('lembaga.donations', ['tab' => 'completed']) }}" class="px-6 py-3 rounded-2xl bg-white/80 border border-luxury-alabas/85 text-[10px] font-black uppercase tracking-[0.2em] text-luxury-forest hover:bg-luxury-forest hover:text-white transition-all duration-500 luxury-shadow">
-                Lihat Semua
-            </a>
-        </div>
-        <div class="p-10 space-y-4 bg-white/10">
-            @forelse($recentDonations as $rd)
-            <div class="flex flex-col md:flex-row md:items-center justify-between p-6 bg-white/40 border border-luxury-alabas rounded-[2rem] gap-6 hover:bg-white/80 transition-all duration-500 group animate-in fade-in duration-500">
-                <div class="flex-1">
-                    <div class="font-serif text-xl font-bold text-luxury-forest group-hover:text-luxury-gold transition-colors">{{ $rd['store']['name'] }}</div>
-                    <div class="text-sm text-gray-700 font-medium mt-1">
-                        {{ collect($rd['items'])->map(fn($i) => $i['name'])->join(', ') }}
-                    </div>
-                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2">{{ $rd['claimed_at'] ?? now()->toDateString() }}</div>
-                </div>
-                <div>
-                    <span class="bg-green-50 text-green-700 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200 flex items-center gap-1.5 shadow-sm">
-                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> 
-                        {{ $rd['status'] === 'completed' ? 'Diterima' : 'Diproses' }}
-                    </span>
-                </div>
-            </div>
-            @empty
-            <div class="text-center py-16 bg-white/20 rounded-[2rem] border border-dashed border-gray-200">
-                 <i data-lucide="history" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
-                 <p class="text-gray-500 font-serif italic text-lg">Belum ada riwayat donasi.</p>
-            </div>
-            @endforelse
-        </div>
-    </div>
 
     <!-- Impact Section -->
     <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0f361d] to-[#175330] p-10 text-white border border-white/10 shadow-2xl reveal mb-10">

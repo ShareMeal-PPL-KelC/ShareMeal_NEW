@@ -106,7 +106,7 @@ class Product extends Model
         public function getExpiresInAttribute()
         {
         if (isset($this->attributes['expires_at']) && $this->expires_at) {
-            return $this->expires_at->diffForHumans();
+            return $this->expires_at->locale('id')->diffForHumans();
         }
         return '2 jam';
         }

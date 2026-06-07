@@ -5,6 +5,10 @@ namespace App\Support;
 use App\Models\User;
 use App\Models\Article;
 use App\Models\Donation;
+use App\Models\Store;
+use App\Models\Deal;
+use App\Models\Booking;
+use App\Models\InventoryProduct;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
@@ -86,7 +90,7 @@ class ShareMealState
                     'status' => ($donation->status === 'pending' && $donation->expires_at && \Carbon\Carbon::parse($donation->expires_at)->isPast()) ? 'expired' : ($donation->status === 'pending' ? 'available' : $donation->status),
                 ];
             })->all(),
-            'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
+            'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->whereNull('verification_rejection_reason')->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
             'users' => User::query()->orderBy('id')->get()->map(fn (User $user) => self::transformUser($user))->all(),
             'articles' => \App\Models\Article::query()->orderByDesc('id')->get()->map(fn (\App\Models\Article $article) => self::transformArticle($article))->all(),
             default => $default,
@@ -125,6 +129,10 @@ class ShareMealState
 
         if ($consumerId) {
             User::query()->whereKey($consumerId)->increment('transactions_count');
+        }
+
+        if ($store && $store->owner_user_id) {
+            User::query()->whereKey($store->owner_user_id)->increment('transactions_count');
         }
 
         return $bookingId;

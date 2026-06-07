@@ -43,7 +43,7 @@ class PickupDeadlineReminderNotification extends Notification
             'order_id' => $this->order->id,
             'order_number' => $this->order->orderId,
             'status' => 'warning',
-            'message' => 'Peringatan: Batas waktu pengambilan pesanan ' . $this->order->orderId . ' Anda tinggal 30 menit lagi (sebelum pukul ' . $pickupEndTime . '). Harap segera mengambil pesanan Anda di mitra.',
+            'message' => 'Peringatan: Batas waktu pengambilan pesanan ' . $this->order->orderId . ' Anda tinggal 55 menit lagi (sebelum pukul ' . $pickupEndTime . '). Harap segera mengambil pesanan Anda di mitra.',
             'title' => 'Batas Waktu Pengambilan Hampir Habis',
         ];
     }

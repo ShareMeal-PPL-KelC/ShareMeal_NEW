@@ -43,6 +43,20 @@
     </div>
     @endif
 
+    <!-- Info Section (Eco-Glass Box) -->
+    <div class="bg-gradient-to-r from-emerald-500/5 to-teal-500/10 backdrop-blur-md border border-white/40 p-8 rounded-[2rem] flex flex-col md:flex-row gap-6 shadow-sm">
+        <div class="w-14 h-14 bg-emerald-100/60 rounded-2xl flex items-center justify-center text-emerald-700 flex-shrink-0 border border-emerald-200/30">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+        <div>
+            <h3 class="text-xl font-bold text-[#174413] mb-2 uppercase tracking-wide">Sistem Klasifikasi Otomatis</h3>
+            <p class="text-emerald-950/80 font-semibold leading-relaxed text-sm">
+                Produk akan otomatis dikategorikan ke <span class="font-bold text-emerald-800">"Jual" (Flash Sale)</span> atau <span class="font-bold text-emerald-800">"Donasi"</span> berdasarkan waktu expired dan kelayakan. 
+                Produk yang mendekati batas waktu namun masih layak konsumsi akan masuk sistem donasi untuk lembaga sosial.
+            </p>
+        </div>
+    </div>
+
     <!-- Products Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <template x-for="product in products" :key="product.id">
@@ -172,19 +186,7 @@
         </template>
     </div>
 
-    <!-- Info Section (Eco-Glass Box) -->
-    <div class="bg-gradient-to-r from-emerald-500/5 to-teal-500/10 backdrop-blur-md border border-white/40 p-8 rounded-[2rem] flex flex-col md:flex-row gap-6 shadow-sm">
-        <div class="w-14 h-14 bg-emerald-100/60 rounded-2xl flex items-center justify-center text-emerald-700 flex-shrink-0 border border-emerald-200/30">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        </div>
-        <div>
-            <h3 class="text-xl font-bold text-[#174413] mb-2 uppercase tracking-wide">Sistem Klasifikasi Otomatis</h3>
-            <p class="text-emerald-950/80 font-semibold leading-relaxed text-sm">
-                Produk akan otomatis dikategorikan ke <span class="font-bold text-emerald-800">"Jual" (Flash Sale)</span> atau <span class="font-bold text-emerald-800">"Donasi"</span> berdasarkan waktu expired dan kelayakan. 
-                Produk yang mendekati batas waktu namun masih layak konsumsi akan masuk sistem donasi untuk lembaga sosial.
-            </p>
-        </div>
-    </div>
+
 
     <!-- Add/Edit Product Modal -->
     <div x-show="isDialogOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
@@ -207,9 +209,27 @@
                 <div class="space-y-2">
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest block">Gambar Produk</label>
                     <div class="relative group">
-                        <input type="file" name="image" accept="image/*" class="w-full bg-gray-50/50 border border-gray-200/50 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                        <input type="file" name="image" accept="image/*" 
+                               @change="
+                                   const file = $el.files[0];
+                                   if (file) {
+                                       if (file.size > 2 * 1024 * 1024) {
+                                           imageError = 'Ukuran gambar kebesaran! Maksimal ukuran gambar adalah 2MB.';
+                                           $el.value = '';
+                                       } else {
+                                           imageError = '';
+                                       }
+                                   } else {
+                                       imageError = '';
+                                   }
+                               "
+                               class="w-full bg-gray-50/50 border border-gray-200/50 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-1 italic">Unggah foto produk baru (kosongkan jika tidak ingin mengubah gambar).</p>
+                    <p x-show="imageError" class="text-xs text-red-600 font-bold mt-1.5 flex items-center gap-1.5 animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-4 h-4"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span x-text="imageError"></span>
+                    </p>
+                    <p x-show="!imageError" class="text-[10px] text-gray-400 mt-1 italic">Unggah foto produk baru (maksimal 2MB. Kosongkan jika tidak ingin mengubah gambar).</p>
                 </div>
 
                 <!-- Product Name -->
@@ -291,6 +311,7 @@
             products: @json($products),
             isDialogOpen: {{ $errors->any() ? 'true' : 'false' }},
             isEditing: false,
+            imageError: '',
             formData: {
                 id: null,
                 name: '',
@@ -307,6 +328,7 @@
             
             openAddDialog() {
                 this.isEditing = false;
+                this.imageError = '';
                 this.formData = {
                     id: null,
                     name: '',
@@ -325,6 +347,7 @@
             
             openEditDialog(product) {
                 this.isEditing = true;
+                this.imageError = '';
                 this.formData = { ...product };
                 this.formData.expires_at = product.expires_at_input || '';
                 this.formData.pickup_start_time = product.pickup_start_time_input || '18:00';

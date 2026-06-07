@@ -1,7 +1,26 @@
 @extends('layouts.dashboard')
 
+@php
+    $user = Auth::user()?->load('profile');
+    $profile = $user?->profile;
+    $openingHours = $profile?->business_opening_hours ?? $profile?->opening_hours;
+    $defaultStart = '18:00';
+    $defaultEnd = '20:00';
+
+    if ($openingHours && str_contains($openingHours, ' - ')) {
+        [$opStart, $opEnd] = explode(' - ', $openingHours, 2);
+        try {
+            $startCarbon = \Carbon\Carbon::createFromFormat('H:i', trim($opStart));
+            $defaultStart = $startCarbon->addHour()->format('H:i');
+        } catch (\Exception $e) {
+            // fallback
+        }
+        $defaultEnd = trim($opEnd);
+    }
+@endphp
+
 @section('content')
-<div class="space-y-6" x-data="{ isDialogOpen: false }">
+<div class="space-y-6" x-data="{ isDialogOpen: false, expiresDate: '', expiresTime: '' }" x-effect="document.body.style.overflow = isDialogOpen ? 'hidden' : ''">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Riwayat Donasi</h1>
@@ -149,7 +168,7 @@
 
     <!-- Add Donation Modal -->
     <div x-show="isDialogOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-cloak>
-        <div class="bg-white w-full max-w-xl rounded-3xl p-8 shadow-2xl space-y-6" @click.away="isDialogOpen = false">
+        <div class="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 sm:space-y-6" @click.away="isDialogOpen = false">
             <div class="flex items-center justify-between">
                 <h3 class="text-2xl font-black text-gray-900">Tambah Donasi Makanan</h3>
                 <button type="button" @click="isDialogOpen = false" class="text-gray-400 hover:text-gray-600">
@@ -157,22 +176,22 @@
                 </button>
             </div>
 
-            <form action="{{ route('mitra.donations.store') }}" method="POST" class="space-y-5">
+            <form action="{{ route('mitra.donations.store') }}" method="POST" class="space-y-4">
                 @csrf
                 
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Judul/Nama Makanan</label>
-                    <input type="text" name="title" required placeholder="Contoh: Roti Sisa Produksi Hari Ini" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                    <input type="text" name="title" required placeholder="Contoh: Roti Sisa Produksi Hari Ini" class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
+                    <div class="space-y-1.5">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jumlah</label>
-                        <input type="number" name="quantity" required min="1" placeholder="10" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <input type="number" name="quantity" required min="1" placeholder="10" class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
                     </div>
-                    <div class="space-y-2">
+                    <div class="space-y-1.5">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Satuan</label>
-                        <select name="unit" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <select name="unit" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
                             <option value="bungkus">Bungkus</option>
                             <option value="porsi">Porsi</option>
                             <option value="pcs">Pcs</option>
@@ -181,29 +200,39 @@
                     </div>
                 </div>
 
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Batas Waktu Layak Konsumsi</label>
-                    <input type="datetime-local" name="expires_at" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tanggal</span>
+                            <input type="date" x-model="expiresDate" @change="$el.blur()" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm text-gray-900">
+                        </div>
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Jam & Menit</span>
+                            <input type="time" x-model="expiresTime" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm text-gray-900">
+                        </div>
+                    </div>
+                    <input type="hidden" name="expires_at" :value="expiresDate && expiresTime ? expiresDate + ' ' + expiresTime : ''">
                     <p class="text-[10px] text-gray-400 mt-1 italic">Tentukan batas akhir waktu makanan ini aman dan layak untuk dikonsumsi.</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
+                    <div class="space-y-1.5">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Mulai Ambil</label>
-                        <input type="time" name="pickup_start_time" value="18:00" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <input type="time" name="pickup_start_time" value="{{ $defaultStart }}" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
                     </div>
-                    <div class="space-y-2">
+                    <div class="space-y-1.5">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Akhir Ambil</label>
-                        <input type="time" name="pickup_end_time" value="20:00" required class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition">
+                        <input type="time" name="pickup_end_time" value="{{ $defaultEnd }}" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
                     </div>
                 </div>
 
-                <div class="space-y-2">
+                <div class="space-y-1.5">
                     <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Deskripsi/Catatan (Opsional)</label>
-                    <textarea name="description" rows="3" placeholder="Tambahkan catatan khusus untuk lembaga pengambil..." class="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:ring-2 focus:ring-[#174413] transition"></textarea>
+                    <textarea name="description" rows="2" placeholder="Tambahkan catatan khusus untuk lembaga pengambil..." class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm"></textarea>
                 </div>
 
-                <button type="submit" class="w-full bg-[#174413] hover:bg-[#0f2d0c] text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-green-900/20">
+                <button type="submit" class="w-full bg-[#174413] hover:bg-[#0f2d0c] text-white px-6 py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-green-900/20">
                     <i data-lucide="check" class="w-5 h-5"></i>
                     Daftarkan Donasi
                 </button>

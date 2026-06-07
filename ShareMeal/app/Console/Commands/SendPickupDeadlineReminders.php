@@ -21,7 +21,7 @@ class SendPickupDeadlineReminders extends Command
      *
      * @var string
      */
-    protected $description = 'Send pickup deadline reminders to customers 30 minutes before expiration';
+    protected $description = 'Send pickup deadline reminders to customers 55 minutes before expiration';
 
     /**
      * Execute the console command.
@@ -42,8 +42,8 @@ class SendPickupDeadlineReminders extends Command
             // Hitung selisih menit antara sekarang dan waktu batas ambil
             $diffInMinutes = now()->diffInMinutes($expiresAt, false);
 
-            // Jika batas waktu ambil tersisa antara 25 sampai 35 menit
-            if ($diffInMinutes >= 25 && $diffInMinutes <= 35) {
+            // Jika batas waktu ambil tersisa antara 51 sampai 55 menit (5 menit setelah pemesanan 1 jam)
+            if ($diffInMinutes >= 51 && $diffInMinutes <= 55) {
                 // Pastikan belum pernah dikirim notifikasi untuk order ini
                 $alreadyNotified = DB::table('notifications')
                     ->where('notifiable_id', $order->customer_id)

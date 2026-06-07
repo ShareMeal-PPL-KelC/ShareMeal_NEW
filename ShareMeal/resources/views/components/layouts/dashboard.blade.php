@@ -81,6 +81,10 @@
                                 <i data-lucide="heart" class="w-5 h-5"></i>
                                 <span>Donasi</span>
                             </a>
+                            <a href="{{ route('lembaga.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('lembaga.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="history" class="w-5 h-5"></i>
+                                <span>Riwayat Donasi</span>
+                            </a>
                         @elseif(request()->is('mitra*'))
                             <a href="{{ route('mitra.dashboard') }}" 
                                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -94,6 +98,10 @@
                             <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="shopping-cart" class="w-5 h-5"></i>
                                 <span>Pesanan</span>
+                            </a>
+                            <a href="{{ route('mitra.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="history" class="w-5 h-5"></i>
+                                <span>Riwayat</span>
                             </a>
                             <a href="{{ route('mitra.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('mitra.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="heart" class="w-5 h-5"></i>
@@ -155,6 +163,9 @@
                             <a href="{{ route('lembaga.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('lembaga.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="heart" class="w-5 h-5"></i><span>Donasi</span>
                             </a>
+                            <a href="{{ route('lembaga.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('lembaga.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="history" class="w-5 h-5"></i><span>Riwayat Donasi</span>
+                            </a>
                         @elseif(request()->is('mitra*'))
                             <a href="{{ route('mitra.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
@@ -164,6 +175,9 @@
                             </a>
                             <a href="{{ route('mitra.orders') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.orders') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="shopping-cart" class="w-5 h-5"></i><span>Pesanan</span>
+                            </a>
+                            <a href="{{ route('mitra.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                <i data-lucide="history" class="w-5 h-5"></i><span>Riwayat</span>
                             </a>
                             <a href="{{ route('mitra.donations') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('mitra.donations') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="heart" class="w-5 h-5"></i><span>Donasi</span>

@@ -212,7 +212,7 @@
                     </div>
                     <div class="flex items-center gap-6">
                         <span x-show="store.activeDeals > 0" class="text-[10px] font-black text-luxury-forest uppercase tracking-[0.2em] px-4 py-2 bg-luxury-ivory/80 rounded-xl border border-luxury-alabas/80">
-                            <span x-text="store.activeDeals"></span> deals aktif
+                            <span x-text="store.activeDeals"></span> promo aktif
                         </span>
                         <button @click.stop="toggleFavorite(store.id)" class="text-luxury-alabas hover:text-red-500 transition-all duration-300 transform hover:scale-125 p-2 rounded-full hover:bg-red-50/50">
                             <i data-lucide="heart" class="w-6 h-6 fill-red-500 text-red-500"></i>
@@ -255,7 +255,7 @@
 
             <div class="p-10 border-b border-luxury-alabas/60 flex items-center justify-between bg-white/40">
                 <div>
-                    <h3 class="text-3xl font-serif font-bold text-luxury-forest">Explore Stores</h3>
+                    <h3 class="text-3xl font-serif font-bold text-luxury-forest">Jelajahi Toko</h3>
                     <p class="text-[10px] text-luxury-gold font-black uppercase tracking-[0.2em] mt-1">Personalisasi pengalaman belanja Anda</p>
                 </div>
                 <button @click="openManage = false" class="w-12 h-12 flex items-center justify-center rounded-full bg-white text-luxury-slate hover:text-luxury-forest transition-all shadow-sm">
@@ -276,13 +276,13 @@
                             </div>
                         </div>
                         <button @click="toggleFavorite(store.id)"
-                                :class="store.isFavorite ? 'bg-red-50 text-red-500 border-red-100' : 'bg-luxury-forest text-white border-luxury-forest'"
+                                :class="store.isFavorite ? 'bg-red-50 text-red-600 border-red-200' : 'bg-luxury-forest text-white border-luxury-forest'"
                                 class="w-12 h-12 rounded-2xl border transition-all duration-500 flex items-center justify-center luxury-shadow active:scale-90">
                             <template x-if="store.isFavorite">
-                                <i data-lucide="heart" class="w-5 h-5 fill-red-500"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-red-600"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </template>
                             <template x-if="!store.isFavorite">
-                                <i data-lucide="plus" class="w-5 h-5"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </template>
                         </button>
                     </div>

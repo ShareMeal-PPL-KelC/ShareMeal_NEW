@@ -40,19 +40,19 @@
                     :class="{'bg-green-55 text-green-700 border-green-200 shadow-sm': activeTab === 'available', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'available'}" 
                     class="px-6 py-3 font-bold text-xs flex items-center gap-2 border border-transparent rounded-xl transition-all duration-300 uppercase tracking-widest">
                 <i data-lucide="package" class="w-4 h-4"></i>
-                Tersedia (<span x-text="availableDonations().length"></span>)
+                TERSEDIA (<span x-text="availableDonations().length"></span>)
             </button>
             <button @click="activeTab = 'claimed'"
                     :class="{'bg-purple-55 text-purple-700 border-purple-200 shadow-sm': activeTab === 'claimed', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'claimed'}" 
                     class="px-6 py-3 font-bold text-xs flex items-center gap-2 border border-transparent rounded-xl transition-all duration-300 uppercase tracking-widest">
                 <i data-lucide="truck" class="w-4 h-4"></i>
-                Diproses (<span x-text="claimedDonations().length"></span>)
+                DIPROSES (<span x-text="claimedDonations().length"></span>)
             </button>
             <button @click="activeTab = 'completed'"
                     :class="{'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm': activeTab === 'completed', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'completed'}" 
                     class="px-6 py-3 font-bold text-xs flex items-center gap-2 border border-transparent rounded-xl transition-all duration-300 uppercase tracking-widest">
                 <i data-lucide="check-circle" class="w-4 h-4"></i>
-                Riwayat (<span x-text="completedDonations().length"></span>)
+                SELESAI (<span x-text="completedDonations().length"></span>)
             </button>
         </div>
 
@@ -255,8 +255,8 @@
             <template x-if="completedDonations().length === 0">
                 <div class="bg-white/40 rounded-[2.5rem] border border-dashed border-gray-200 p-16 text-center shadow-sm">
                     <i data-lucide="history" class="w-16 h-16 text-gray-300 mx-auto mb-4 animate-spin-slow"></i>
-                    <h3 class="text-xl font-serif font-bold text-gray-900 mb-2">Belum Ada Riwayat</h3>
-                    <p class="text-gray-500 max-w-sm mx-auto text-sm">Riwayat donasi surplus yang berhasil disalurkan oleh lembaga Anda akan terkumpul rapi di sini.</p>
+                    <h3 class="text-xl font-serif font-bold text-gray-900 mb-2">Belum Ada Donasi Selesai</h3>
+                    <p class="text-gray-500 max-w-sm mx-auto text-sm">Donasi surplus yang berhasil disalurkan oleh lembaga Anda akan terkumpul rapi di sini.</p>
                 </div>
             </template>
         </div>

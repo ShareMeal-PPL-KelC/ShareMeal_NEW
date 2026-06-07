@@ -31,6 +31,7 @@ class ShareMealController extends Controller
                 ['label' => 'Dashboard', 'route' => 'mitra.dashboard', 'icon' => 'layout-dashboard'],
                 ['label' => 'Inventaris', 'route' => 'mitra.inventory', 'icon' => 'package'],
                 ['label' => 'Pesanan', 'route' => 'mitra.orders', 'icon' => 'shopping-cart'],
+                ['label' => 'Riwayat', 'route' => 'mitra.history', 'icon' => 'history'],
                 ['label' => 'Donasi', 'route' => 'mitra.donations', 'icon' => 'heart'],
             ],
             'consumer' => [
@@ -42,6 +43,7 @@ class ShareMealController extends Controller
             'lembaga' => [
                 ['label' => 'Dashboard', 'route' => 'lembaga.dashboard', 'icon' => 'layout-dashboard'],
                 ['label' => 'Donasi', 'route' => 'lembaga.donations', 'icon' => 'heart'],
+                ['label' => 'Riwayat Donasi', 'route' => 'lembaga.history', 'icon' => 'history'],
             ],
             'admin' => [
                 ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
@@ -114,6 +116,9 @@ class ShareMealController extends Controller
 
         // Verification Guard for Mitra Only
         if ($user->role === 'mitra' && !$user->is_verified) {
+            if ($user->verification_rejection_reason) {
+                return back()->with('error', 'Akun Anda ditolak dengan alasan: ' . $user->verification_rejection_reason . '. Tolong lakukan registrasi ulang dan perbarui dokumennya.');
+            }
             return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
         }
 
@@ -401,9 +406,21 @@ class ShareMealController extends Controller
         }
 
         $updates = [];
-        foreach (['document_ktp', 'document_siup', 'document_nib', 'document_halal'] as $field) {
-            if ($request->hasFile($field)) {
-                $updates[$field] = $request->file($field)->store('documents', 'public');
+        if ($user->role === 'lembaga') {
+            if ($request->hasFile('document_ktp')) {
+                $updates['document_legalitas'] = $request->file('document_ktp')->store('documents', 'public');
+            }
+            if ($request->hasFile('document_siup')) {
+                $updates['document_izin'] = $request->file('document_siup')->store('documents', 'public');
+            }
+            if ($request->hasFile('document_nib')) {
+                $updates['document_identitas'] = $request->file('document_nib')->store('documents', 'public');
+            }
+        } else {
+            foreach (['document_ktp', 'document_siup', 'document_nib', 'document_halal'] as $field) {
+                if ($request->hasFile($field)) {
+                    $updates[$field] = $request->file($field)->store('documents', 'public');
+                }
             }
         }
 
@@ -859,6 +876,9 @@ class ShareMealController extends Controller
             'pickup_start_time.required' => 'Jam mulai pengambilan wajib diisi.',
             'pickup_end_time.required' => 'Jam akhir pengambilan wajib diisi.',
             'pickup_end_time.after' => 'Jam akhir pengambilan harus lebih akhir dari jam mulai.',
+            'image.max' => 'Ukuran gambar tidak boleh melebihi 2MB.',
+            'image.image' => 'File harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
         ]);
 
         $user = Auth::user()?->load('profile');
@@ -935,6 +955,9 @@ class ShareMealController extends Controller
             'pickup_start_time.required' => 'Jam mulai pengambilan wajib diisi.',
             'pickup_end_time.required' => 'Jam akhir pengambilan wajib diisi.',
             'pickup_end_time.after' => 'Jam akhir pengambilan harus lebih akhir dari jam mulai.',
+            'image.max' => 'Ukuran gambar tidak boleh melebihi 2MB.',
+            'image.image' => 'File harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
         ]);
 
         $user = Auth::user()?->load('profile');
@@ -1159,6 +1182,29 @@ class ShareMealController extends Controller
         return view('pages.mitra.orders', compact('orders'));
     }
 
+    public function mitraHistory(): View
+    {
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        
+        $orders = \App\Models\Order::with(['customer.profile', 'items.product', 'reviewRelation'])
+            ->where('mitra_id', $userId)
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->latest()
+            ->get();
+
+        $stats = (object) [
+            'total_orders' => $orders->count(),
+            'completed_orders' => $orders->where('status', 'completed')->count(),
+            'cancelled_orders' => $orders->where('status', 'cancelled')->count(),
+            'total_revenue' => $orders->where('status', 'completed')->sum('total_amount'),
+        ];
+
+        return view('pages.mitra.history', $this->dashboardData('mitra', 'Riwayat Transaksi', 'Manajemen histori transaksi penjualan') + [
+            'orders' => $orders,
+            'stats' => $stats,
+        ]);
+    }
+
     public function mitraReviews(): View
     {
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
@@ -1196,10 +1242,7 @@ class ShareMealController extends Controller
 
         $order->update(['status' => $request->status]);
 
-        // Send notification to consumer (PBI #43)
-        if ($order->customer) {
-            $order->customer->notify(new \App\Notifications\OrderStatusUpdated($order));
-        }
+        // Send notification to consumer (handled automatically via Order model booted observer)
 
         if ($request->wantsJson() || $request->expectsJson()) {
             return response()->json([
@@ -1218,10 +1261,7 @@ class ShareMealController extends Controller
         $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
         $order->update(['status' => 'completed']);
 
-        // Send notification to consumer (Diva's PBI #43)
-        if ($order->customer) {
-            $order->customer->notify(new \App\Notifications\OrderStatusUpdated($order));
-        }
+        // Send notification to consumer (handled automatically via Order model booted observer)
 
         if (request()->wantsJson() || request()->expectsJson()) {
             return response()->json([
@@ -1242,7 +1282,7 @@ class ShareMealController extends Controller
         // Filter donations: show available ones, and only show claimed/completed if claimed by this user
         $donations = collect($allDonations)->filter(function ($donation) use ($userObj) {
             return $donation['status'] === 'available' || $donation['lembaga_id'] == $userObj->id;
-        })->all();
+        })->values()->all();
 
         // PBI #45: Add critical alert for active claimed donations
         $criticalAlerts = [];
@@ -1274,11 +1314,26 @@ class ShareMealController extends Controller
         // Filter donations: show available ones, and only show claimed/completed if claimed by this user
         $donations = collect($allDonations)->filter(function ($donation) use ($userId) {
             return $donation['status'] === 'available' || $donation['lembaga_id'] == $userId;
-        })->all();
+        })->values()->all();
 
         return view('pages.lembaga.donations', $this->dashboardData('lembaga', 'Kelola Donasi', 'Klaim & tracking donasi makanan') + [
             'donations' => $donations,
             'activeTab' => request('tab', 'available'),
+        ]);
+    }
+
+    public function lembagaHistory(): View
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $allDonations = ShareMealState::get('donations');
+
+        // Filter donations: only show completed donations for this user (lembaga_id == $userId && status == 'completed')
+        $completedDonations = collect($allDonations)->filter(function ($donation) use ($userId) {
+            return $donation['lembaga_id'] == $userId && $donation['status'] === 'completed';
+        })->values()->all();
+
+        return view('pages.lembaga.history', $this->dashboardData('lembaga', 'Riwayat Penerimaan Donasi', 'Daftar donasi makanan yang berhasil diterima') + [
+            'completedDonations' => $completedDonations,
         ]);
     }
 
@@ -1306,6 +1361,10 @@ class ShareMealController extends Controller
             'tracking_status' => 'confirmed',
             'lembaga_id' => $userId
         ]);
+
+        // Increment transaction counts for both Lembaga and Mitra
+        User::query()->whereKey($userId)->increment('transactions_count');
+        User::query()->whereKey($donation->mitra_id)->increment('transactions_count');
 
         // Notify the Mitra that their donation was claimed
         if ($donation->mitra) {

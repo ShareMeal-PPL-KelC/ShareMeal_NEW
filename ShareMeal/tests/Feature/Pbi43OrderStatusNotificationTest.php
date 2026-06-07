@@ -60,4 +60,28 @@ class Pbi43OrderStatusNotificationTest extends TestCase
         $this->assertEquals('Update Status Pesanan', $notification->data['title']);
         $this->assertEquals('Pesanan Anda sedang dalam perjalanan oleh kurir mitra.', $notification->data['message']);
     }
+
+    public function test_order_status_updates_dispatches_only_one_notification(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'pending',
+        ]);
+
+        // Clean any notification created during Order::create
+        $consumer->notifications()->delete();
+        $this->assertEquals(0, $consumer->notifications()->count());
+
+        $this->actingAs($mitra)->post(route('mitra.orders.update-status', $order->id), [
+            'status' => 'ready',
+        ]);
+
+        // Assert exactly one notification is created for status change
+        $this->assertEquals(1, $consumer->notifications()->count());
+    }
 }
