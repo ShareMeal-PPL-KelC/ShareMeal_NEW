@@ -20,7 +20,7 @@
 @endphp
 
 @section('content')
-<div class="space-y-6" x-data="{ isDialogOpen: false, expiresDate: '', expiresTime: '' }" x-effect="document.body.style.overflow = isDialogOpen ? 'hidden' : ''">
+<div class="space-y-6" x-data="{ isDialogOpen: false, expiresDate: '', expiresTime: '', selectedUnit: 'bungkus' }" x-effect="document.body.style.overflow = isDialogOpen ? 'hidden' : ''">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Riwayat Donasi</h1>
@@ -191,13 +191,24 @@
                     </div>
                     <div class="space-y-1.5">
                         <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Satuan</label>
-                        <select name="unit" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                        <select name="unit" x-model="selectedUnit" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm cursor-pointer">
                             <option value="bungkus">Bungkus</option>
                             <option value="porsi">Porsi</option>
                             <option value="pcs">Pcs</option>
                             <option value="kg">Kg</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- Info Satuan Dinamis -->
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-3.5 text-[11px] text-gray-500 leading-relaxed">
+                    <div class="font-black text-[#174413] uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5"></i> Info Satuan:
+                    </div>
+                    <span x-show="selectedUnit === 'bungkus'">Makanan siap saji yang sudah dikemas secara individual (contoh: nasi kotak, nasi bungkus, roti terbungkus). Praktis untuk langsung dibagikan.</span>
+                    <span x-show="selectedUnit === 'porsi'">Porsi saji curah/prasmanan (contoh: lauk katering, sayur di tray saji). Perlu piring/wadah tambahan saat didistribusikan.</span>
+                    <span x-show="selectedUnit === 'pcs'">Makanan satuan/butir utuh yang dihitung per buah (contoh: donat, roti satuan, buah apel/jeruk).</span>
+                    <span x-show="selectedUnit === 'kg'">Bahan makanan mentah atau curah yang diukur dengan timbangan berat (contoh: beras, sayur segar curah, daging mentah).</span>
                 </div>
 
                 <div class="space-y-1.5">
