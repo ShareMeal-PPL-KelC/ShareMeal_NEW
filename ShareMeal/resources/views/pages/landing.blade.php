@@ -119,7 +119,7 @@
         <header id="main-header" class="sticky top-0 z-40 glass-nav-effect">
             <div class="container-shell flex h-16 items-center justify-between">
                 <a href="{{ route('home') }}" class="flex items-center gap-3 group">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#174413] to-emerald-700 text-lg font-black text-white shadow-md shadow-emerald-950/20 group-hover:scale-105 transition duration-300">S</div>
+                    <img src="{{ asset('images/logo.png') }}" class="h-10 w-10 object-cover rounded-full group-hover:scale-105 transition duration-300" alt="ShareMeal Logo">
                     <span class="text-xl font-bold text-[#174413] tracking-tight group-hover:text-emerald-800 transition">ShareMeal</span>
                 </a>
                 <nav class="hidden items-center gap-8 md:flex">
@@ -413,7 +413,7 @@
             <div class="container-shell grid gap-12 md:grid-cols-4">
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-sm font-black text-[#174413]">S</div>
+                        <img src="{{ asset('images/logo.png') }}" class="h-8 w-8 object-cover rounded-full" alt="ShareMeal Logo">
                         <span class="font-bold text-white text-lg tracking-tight">ShareMeal</span>
                     </div>
                     <p class="text-sm leading-relaxed">Platform digital untuk mengoptimalkan pemanfaatan surplus pangan dan mengurangi food waste.</p>

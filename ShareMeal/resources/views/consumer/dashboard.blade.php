@@ -9,6 +9,13 @@
         this.allStores.forEach(store => {
             store.isFavorite = this.favorites.includes(store.id);
         });
+        this.$watch('openManage', value => {
+            if (value) {
+                document.body.classList.add('overflow-hidden');
+            } else {
+                document.body.classList.remove('overflow-hidden');
+            }
+        });
     },
     get favoriteList() {
         return this.allStores.filter(s => s.isFavorite);

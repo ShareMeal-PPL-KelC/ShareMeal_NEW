@@ -20,6 +20,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <a href="{{ url('/') }}" class="flex items-center gap-2">
+                    <img src="{{ asset('images/logo.png') }}" class="h-8 w-8 object-cover rounded-full" alt="ShareMeal Logo">
                     <span class="text-xl font-bold" style="color: #174413;">ShareMeal</span>
                 </a>
 

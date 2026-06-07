@@ -61,7 +61,7 @@
     <!-- Share & Actions -->
     <div class="flex flex-col md:flex-row items-center justify-between border-t border-b border-luxury-alabas/60 py-8 gap-6 reveal">
         <div class="flex items-center gap-4">
-            <span class="text-luxury-forest font-black uppercase text-xs tracking-wider">Bagikan Artikel:</span>
+            <span class="text-luxury-forest font-black uppercase text-xs tracking-wider">Bagikan Edukasi:</span>
             <div class="flex gap-2">
                 <button class="w-10 h-10 rounded-xl bg-white/60 border border-luxury-alabas text-luxury-slate flex items-center justify-center hover:bg-white hover:text-green-600 transition shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
@@ -82,7 +82,7 @@
 
     <!-- Related Articles -->
     <div class="space-y-6 pt-8 reveal">
-        <h2 class="text-2xl font-serif font-bold text-luxury-forest">Artikel Terkait</h2>
+        <h2 class="text-2xl font-serif font-bold text-luxury-forest">Edukasi Terkait</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             @foreach($relatedArticles as $related)
             <a href="{{ route('consumer.education.show', $related->id) }}" class="group block glass-card glass-card-hover rounded-3xl overflow-hidden reveal">

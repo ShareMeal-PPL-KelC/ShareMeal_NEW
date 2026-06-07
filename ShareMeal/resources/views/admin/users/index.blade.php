@@ -20,9 +20,7 @@
         <aside class="w-72 bg-white border-r border-gray-100 hidden lg:flex flex-col">
             <div class="p-8">
                 <div class="flex items-center gap-3 font-bold text-2xl text-green-600">
-                    <div class="bg-green-600 p-2 rounded-lg text-white">
-                        <i data-lucide="utensils-crosses" class="w-6 h-6"></i>
-                    </div>
+                    <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 object-cover rounded-full" alt="ShareMeal Logo">
                     <span>ShareMeal</span>
                 </div>
             </div>

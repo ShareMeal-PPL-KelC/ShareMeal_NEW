@@ -37,12 +37,12 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div>
                 <h1 class="text-5xl font-serif font-black text-luxury-forest leading-tight tracking-tight">Konten Edukasi</h1>
-                <p class="text-luxury-slate font-medium mt-3 text-lg leading-relaxed max-w-3xl">Kelola artikel dan panduan edukatif untuk pengguna platform ShareMeal.</p>
+                <p class="text-luxury-slate font-medium mt-3 text-lg leading-relaxed max-w-3xl">Kelola edukasi dan panduan edukatif untuk pengguna platform ShareMeal.</p>
             </div>
             <button @click="openCreate()"
                     class="flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-[#174413] to-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider hover:from-emerald-800 hover:to-emerald-700 transition active:scale-95 shadow-md shadow-emerald-950/10 cursor-pointer shrink-0">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                Buat Artikel Baru
+                Buat Edukasi Baru
             </button>
         </div>
     </div>
@@ -92,15 +92,15 @@
     <div class="glass-card rounded-[2rem] overflow-hidden relative z-10 reveal">
         <!-- Table Header -->
         <div class="px-8 py-5 border-b border-luxury-alabas/60">
-            <h2 class="text-xl font-serif font-black text-luxury-forest">Daftar Artikel</h2>
-            <p class="text-xs text-luxury-slate font-medium mt-0.5">{{ count($articles) }} artikel ditemukan</p>
+            <h2 class="text-xl font-serif font-black text-luxury-forest">Daftar Edukasi</h2>
+            <p class="text-xs text-luxury-slate font-medium mt-0.5">{{ count($articles) }} edukasi ditemukan</p>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left whitespace-nowrap">
                 <thead>
                     <tr class="bg-white/30 border-b border-luxury-alabas/50">
-                        <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-luxury-slate">Judul Artikel</th>
+                        <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-luxury-slate">Judul Edukasi</th>
                         <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-luxury-slate">Kategori</th>
                         <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-luxury-slate">Status</th>
                         <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-luxury-slate">Tanggal</th>
@@ -163,7 +163,7 @@
                                     Edit
                                 </button>
                                 <form action="{{ route('admin.education.delete', $article['id']) }}" method="POST"
-                                      onsubmit="return confirm('Hapus artikel ini?')">
+                                      onsubmit="return confirm('Hapus edukasi ini?')">
                                     @csrf
                                     <button type="submit"
                                             class="inline-flex items-center gap-1.5 px-4 py-2 border border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl transition duration-300 text-xs font-black uppercase tracking-wider active:scale-95 cursor-pointer">
@@ -181,7 +181,7 @@
                                 <div class="w-16 h-16 bg-gradient-to-tr from-[#174413]/5 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 border border-luxury-alabas/80">
                                     <i data-lucide="book-open" class="w-8 h-8 text-luxury-forest/40"></i>
                                 </div>
-                                <p class="font-serif font-black text-xl text-luxury-forest mb-1">Belum Ada Artikel</p>
+                                <p class="font-serif font-black text-xl text-luxury-forest mb-1">Belum Ada Edukasi</p>
                                 <p class="text-sm text-luxury-slate font-medium">Mulai buat konten edukasi untuk pengguna ShareMeal.</p>
                             </div>
                         </td>
@@ -214,7 +214,7 @@
              x-transition:leave="ease-in duration-200"
              x-transition:leave-start="opacity-100 translate-y-0 scale-100"
              x-transition:leave-end="opacity-0 translate-y-10 scale-95"
-             class="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl z-10 overflow-hidden border border-white/70 max-h-[90vh] overflow-y-auto"
+             class="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl z-10 overflow-hidden border border-white/70 max-h-[90vh] overflow-y-auto"
              @click.stop>
 
             <!-- Header Gradient -->
@@ -223,8 +223,8 @@
                      style="background-image: radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px); background-size: 40px 40px;"></div>
                 <div class="absolute inset-0 flex items-center px-8 justify-between">
                     <div>
-                        <h3 class="text-xl font-serif font-black text-white" x-text="editMode ? 'Edit Artikel' : 'Buat Artikel Baru'"></h3>
-                        <p class="text-white/70 text-xs font-medium mt-0.5" x-text="editMode ? 'Perbarui konten artikel yang ada.' : 'Isi detail artikel edukasi baru.'"></p>
+                        <h3 class="text-xl font-serif font-black text-white" x-text="editMode ? 'Edit Edukasi' : 'Buat Edukasi Baru'"></h3>
+                        <p class="text-white/70 text-xs font-medium mt-0.5" x-text="editMode ? 'Perbarui konten edukasi yang ada.' : 'Isi detail edukasi baru.'"></p>
                     </div>
                     <button type="button" @click="showModal = false"
                             class="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition cursor-pointer border border-white/30">
@@ -236,82 +236,84 @@
             <!-- Form -->
             <form :action="editMode ? '{{ url('admin/education') }}/' + currentArticle.id : '{{ route('admin.education.store') }}'" method="POST" enctype="multipart/form-data">
                 @csrf
-                <div class="p-8 space-y-5">
+                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    <!-- Judul -->
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Judul Artikel</label>
-                        <input type="text" name="title" x-model="currentArticle.title" required
-                               placeholder="Masukkan judul artikel..."
-                               class="w-full px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-medium text-luxury-forest placeholder:text-luxury-slate/40 transition duration-300 text-sm">
-                    </div>
-
-                    <!-- Kategori & Status -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <!-- Left Column (Form Fields & Cover Upload) -->
+                    <div class="space-y-5">
+                        <!-- Judul -->
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Kategori</label>
-                            <select name="category" x-model="currentArticle.category" required
-                                    class="w-full px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-bold text-luxury-forest transition duration-300 text-sm cursor-pointer">
-                                <option>Tips</option>
-                                <option>Artikel</option>
-                                <option>Panduan</option>
-                                <option>Edukasi</option>
-                            </select>
+                            <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Judul Edukasi</label>
+                            <input type="text" name="title" x-model="currentArticle.title" required
+                                   placeholder="Masukkan judul edukasi..."
+                                   class="w-full px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-medium text-luxury-forest placeholder:text-luxury-slate/40 transition duration-300 text-sm">
                         </div>
+
+                        <!-- Kategori & Status (Grid) -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Kategori</label>
+                                <select name="category" x-model="currentArticle.category" required
+                                        class="w-full px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-bold text-luxury-forest transition duration-300 text-sm cursor-pointer">
+                                    <option>Tips</option>
+                                    <option>Artikel</option>
+                                    <option>Panduan</option>
+                                    <option>Edukasi</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Status</label>
+                                <select name="status" x-model="currentArticle.status" required
+                                        class="w-full px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-bold text-luxury-forest transition duration-300 text-sm cursor-pointer">
+                                    <option value="Published">Published</option>
+                                    <option value="Draft">Draft</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Cover Image Upload -->
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Status</label>
-                            <select name="status" x-model="currentArticle.status" required
-                                    class="w-full px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-bold text-luxury-forest transition duration-300 text-sm cursor-pointer">
-                                <option value="Published">Published</option>
-                                <option value="Draft">Draft</option>
-                            </select>
+                            <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">
+                                Gambar Cover
+                                <span class="text-luxury-slate/60 normal-case font-medium ml-1">(opsional, maks. 2MB · JPG / PNG / WEBP)</span>
+                            </label>
+
+                            <!-- Preview jika ada -->
+                            <div x-show="imagePreview" class="relative w-full h-40 rounded-2xl overflow-hidden border border-luxury-alabas/60 shadow-sm">
+                                <img :src="imagePreview" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                                <button type="button"
+                                        @click="imagePreview = null; $refs.imageInput.value = ''"
+                                        class="absolute top-3 right-3 w-8 h-8 bg-white/90 text-red-500 rounded-xl flex items-center justify-center hover:bg-white transition shadow-sm cursor-pointer">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                                <span class="absolute bottom-3 left-3 text-white text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg">Preview</span>
+                            </div>
+
+                            <!-- Dropzone -->
+                            <label x-show="!imagePreview" class="w-full flex flex-col items-center justify-center gap-3 px-5 py-8 border-2 border-dashed rounded-2xl cursor-pointer transition duration-300 border-luxury-alabas/70 bg-gray-50 hover:border-emerald-300 hover:bg-emerald-50/20">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100 text-luxury-slate">
+                                    <i data-lucide="image-plus" class="w-5 h-5"></i>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs font-black text-luxury-forest">Klik untuk upload gambar cover</p>
+                                    <p class="text-[10px] text-luxury-slate font-medium mt-0.5">atau seret & lepas file ke sini</p>
+                                </div>
+                                <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
+                                       x-ref="imageInput"
+                                       @change="handleImageChange($event)"
+                                       class="hidden">
+                            </label>
                         </div>
                     </div>
 
-                    <!-- Cover Image Upload -->
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">
-                            Gambar Cover
-                            <span class="text-luxury-slate/60 normal-case font-medium ml-1">(opsional, maks. 2MB · JPG / PNG / WEBP)</span>
-                        </label>
-
-                        <!-- Preview jika ada -->
-                        <div x-show="imagePreview" class="relative w-full h-40 rounded-2xl overflow-hidden border border-luxury-alabas/60 shadow-sm mb-2">
-                            <img :src="imagePreview" class="w-full h-full object-cover">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-                            <button type="button"
-                                    @click="imagePreview = null; $refs.imageInput.value = ''"
-                                    class="absolute top-3 right-3 w-8 h-8 bg-white/90 text-red-500 rounded-xl flex items-center justify-center hover:bg-white transition shadow-sm cursor-pointer">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
-                            <span class="absolute bottom-3 left-3 text-white text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg">Preview</span>
-                        </div>
-
-                        <!-- Dropzone -->
-                        <label class="w-full flex flex-col items-center justify-center gap-3 px-5 py-8 border-2 border-dashed rounded-2xl cursor-pointer transition duration-300"
-                               :class="imagePreview ? 'border-emerald-200 bg-emerald-50/30' : 'border-luxury-alabas/70 bg-gray-50 hover:border-emerald-300 hover:bg-emerald-50/20'">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                                 :class="imagePreview ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-luxury-slate'">
-                                <i data-lucide="image-plus" class="w-5 h-5"></i>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-xs font-black text-luxury-forest" x-text="imagePreview ? 'Ganti gambar cover' : 'Klik untuk upload gambar cover'"></p>
-                                <p class="text-[10px] text-luxury-slate font-medium mt-0.5">atau seret & lepas file ke sini</p>
-                            </div>
-                            <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
-                                   x-ref="imageInput"
-                                   @change="handleImageChange($event)"
-                                   class="hidden">
-                        </label>
+                    <!-- Right Column (Content) -->
+                    <div class="flex flex-col h-full space-y-2">
+                        <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Konten Edukasi</label>
+                        <textarea name="content" x-model="currentArticle.content" required
+                                  placeholder="Tulis isi edukasi di sini..."
+                                  class="w-full flex-1 px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-medium text-luxury-forest placeholder:text-luxury-slate/40 transition duration-300 text-sm resize-none min-h-[300px] md:min-h-0 md:h-[calc(100%-1.75rem)]"></textarea>
                     </div>
 
-                    <!-- Konten -->
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-luxury-gold uppercase tracking-wider block">Konten Artikel</label>
-                        <textarea name="content" x-model="currentArticle.content" rows="7" required
-                                  placeholder="Tulis isi artikel di sini..."
-                                  class="w-full px-5 py-4 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-gray-50 font-medium text-luxury-forest placeholder:text-luxury-slate/40 transition duration-300 text-sm resize-none"></textarea>
-                    </div>
                 </div>
 
                 <!-- Footer Buttons -->
@@ -322,7 +324,7 @@
                     </button>
                     <button type="submit"
                             class="flex-1 py-4 px-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] text-white bg-gradient-to-r from-[#174413] to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 transition active:scale-95 shadow-md shadow-emerald-950/10 cursor-pointer"
-                            x-text="editMode ? 'Simpan Perubahan' : 'Terbitkan Artikel'">
+                            x-text="editMode ? 'Simpan Perubahan' : 'Terbitkan Edukasi'">
                     </button>
                 </div>
             </form>

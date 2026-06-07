@@ -191,9 +191,7 @@
         <div>
             <!-- Brand Logo -->
             <a href="{{ url('/') }}" class="flex items-center gap-3 group mb-10 px-4">
-                <div class="w-10 h-10 bg-gradient-to-tr from-[#174413] to-emerald-700 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-md shadow-emerald-900/10">
-                    <i data-lucide="leaf" class="w-6 h-6 text-luxury-gold"></i>
-                </div>
+                <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 object-cover rounded-full transition-transform group-hover:scale-105" alt="ShareMeal Logo">
                 <span class="text-2xl font-bold tracking-tight text-[#174413]">ShareMeal</span>
             </a>
 
@@ -238,9 +236,7 @@
                     
                     <!-- Mobile Logo (visible only on mobile) -->
                     <a href="{{ url('/') }}" class="flex lg:hidden items-center gap-3 group">
-                        <div class="w-10 h-10 bg-gradient-to-tr from-[#174413] to-emerald-700 rounded-xl flex items-center justify-center shadow-md">
-                            <i data-lucide="leaf" class="w-5 h-5 text-luxury-gold"></i>
-                        </div>
+                        <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 object-cover rounded-full" alt="ShareMeal Logo">
                         <span class="text-xl font-bold tracking-tight text-[#174413]">ShareMeal</span>
                     </a>
 
@@ -428,7 +424,7 @@
                 <div>
                     <div class="mb-10 flex justify-between items-center">
                         <div class="flex items-center gap-2">
-                            <i data-lucide="leaf" class="w-6 h-6 text-luxury-forest"></i>
+                            <img src="{{ asset('images/logo.png') }}" class="w-6 h-6 object-cover rounded-full" alt="ShareMeal Logo">
                             <span class="font-serif text-xl font-bold text-luxury-forest">ShareMeal</span>
                         </div>
                         <button @click="mobileMenuOpen = false" class="text-luxury-slate hover:text-luxury-forest p-2 bg-luxury-ivory rounded-full transition-all">

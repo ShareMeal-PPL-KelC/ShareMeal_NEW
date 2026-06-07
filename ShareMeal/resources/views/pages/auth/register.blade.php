@@ -74,7 +74,7 @@
             <!-- Top Header Logo -->
             <div class="relative z-10">
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-3 group">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-xl font-black text-emerald-300 transition-transform group-hover:scale-105">S</div>
+                    <img src="{{ asset('images/logo.png') }}" class="h-12 w-12 object-cover rounded-full transition-transform group-hover:scale-105" alt="ShareMeal Logo">
                     <span class="text-3xl font-extrabold text-white tracking-tight">ShareMeal</span>
                 </a>
             </div>
@@ -104,7 +104,7 @@
                 <!-- Mobile Logo Header -->
                 <div class="mb-8 lg:hidden">
                     <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-base font-black text-white">S</div>
+                        <img src="{{ asset('images/logo.png') }}" class="h-9 w-9 object-cover rounded-full" alt="ShareMeal Logo">
                         <span class="text-2xl font-extrabold text-[#174413] tracking-tight">ShareMeal</span>
                     </a>
                 </div>

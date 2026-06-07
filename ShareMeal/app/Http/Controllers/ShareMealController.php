@@ -6,6 +6,9 @@ use App\Models\User;
 use App\Models\Product;
 use App\Models\Donation;
 use App\Models\Review;
+use App\Models\VerificationApplication;
+use App\Models\ProblemReport;
+use App\Models\Order;
 use App\Services\AutoDonationService;
 use App\Support\ShareMealState;
 use Carbon\Carbon;
@@ -1434,59 +1437,122 @@ class ShareMealController extends Controller
 
     public function adminDashboard(): View
     {
-        $activities = [
-            [
-                'title' => 'Toko Roti Sejahtera',
-                'description' => 'Menunggu verifikasi dokumen',
-                'time' => '5 menit lalu',
-                'type' => 'warning',
-                'icon' => 'clock'
-            ],
-            [
-                'title' => 'Budi Santoso',
-                'description' => 'Registrasi akun konsumen baru',
-                'time' => '10 menit lalu',
-                'type' => 'success',
-                'icon' => 'check-circle'
-            ],
-            [
-                'title' => 'Yayasan Harapan Bangsa',
-                'description' => 'Menunggu verifikasi legalitas',
-                'time' => '30 menit lalu',
-                'type' => 'warning',
-                'icon' => 'clock'
-            ],
-            [
-                'title' => 'Sistem',
-                'description' => 'Laporan penyalahgunaan dari Toko ABC',
-                'time' => '1 jam lalu',
-                'type' => 'danger',
-                'icon' => 'alert-circle'
-            ],
-            [
-                'title' => 'Warung Makan Ibu Rina',
-                'description' => 'Dokumen disetujui',
-                'time' => '2 jam lalu',
-                'type' => 'success',
-                'icon' => 'check-circle'
-            ],
-        ];
+        $activities = collect();
+
+        // 1. New user registrations
+        $newUsers = User::latest()->take(5)->get();
+        foreach ($newUsers as $user) {
+            $roleLabel = match($user->role) {
+                'mitra' => 'Mitra Toko',
+                'lembaga' => 'Lembaga Sosial',
+                'consumer' => 'Konsumen',
+                'admin' => 'Admin',
+                default => $user->role
+            };
+            $activities->push([
+                'title' => $user->name,
+                'description' => 'Registrasi akun baru sebagai ' . $roleLabel,
+                'time' => $user->created_at ? $user->created_at->diffForHumans() : '-',
+                'type' => 'info',
+                'icon' => 'user-plus',
+                'timestamp' => $user->created_at
+            ]);
+        }
+
+        // 2. New verification applications
+        $newApps = VerificationApplication::latest()->take(5)->get();
+        foreach ($newApps as $app) {
+            $typeLabel = $app->type === 'mitra' ? 'Mitra Toko' : 'Lembaga Sosial';
+            $statusLabel = match($app->status) {
+                'pending' => 'Menunggu verifikasi dokumen',
+                'approved' => 'Dokumen verifikasi disetujui',
+                'rejected' => 'Dokumen verifikasi ditolak',
+                default => $app->status
+            };
+            $type = match($app->status) {
+                'approved' => 'success',
+                'rejected' => 'danger',
+                default => 'warning'
+            };
+            $icon = match($app->status) {
+                'approved' => 'check-circle',
+                'rejected' => 'x-circle',
+                default => 'clock'
+            };
+            $activities->push([
+                'title' => $app->name,
+                'description' => $statusLabel . ' (' . $typeLabel . ')',
+                'time' => $app->created_at ? $app->created_at->diffForHumans() : '-',
+                'type' => $type,
+                'icon' => $icon,
+                'timestamp' => $app->created_at
+            ]);
+        }
+
+        // 3. New problem reports
+        $newReports = ProblemReport::with('reporter')->latest()->take(5)->get();
+        foreach ($newReports as $report) {
+            $reporterName = $report->reporter ? $report->reporter->name : 'Pengguna';
+            $statusLabel = match($report->status) {
+                'pending' => 'Laporan masalah baru diajukan oleh ' . $reporterName,
+                'resolved' => 'Laporan masalah diselesaikan oleh Admin',
+                default => 'Laporan masalah status: ' . $report->status
+            };
+            $type = $report->status === 'resolved' ? 'success' : 'danger';
+            $icon = $report->status === 'resolved' ? 'check-circle' : 'alert-circle';
+            
+            $activities->push([
+                'title' => 'Laporan Masalah: ' . $report->issue_label,
+                'description' => $statusLabel . ' - "' . $report->description . '"',
+                'time' => $report->created_at ? $report->created_at->diffForHumans() : '-',
+                'type' => $type,
+                'icon' => $icon,
+                'timestamp' => $report->created_at
+            ]);
+        }
+
+        // Sort all by timestamp descending, take top 8, and transform
+        $activities = $activities->sortByDesc('timestamp')->take(8)->values()->all();
 
         $applications = ShareMealState::get('applications');
+
+        $totalUser = User::count();
+        $mitraAktif = User::where('role', 'mitra')->count();
+        $lembagaAktif = User::where('role', 'lembaga')->count();
+        $totalTransaksi = Order::count();
+        
+        $makananSavedRaw = Order::where('status', 'completed')
+            ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+            ->sum('order_items.quantity');
+            
+        $co2Raw = $makananSavedRaw * 2.5;
+        $gmvRaw = Order::where('status', 'completed')->sum('total_amount');
+
+        if ($makananSavedRaw >= 1000) {
+            $makanan_saved = number_format($makananSavedRaw / 1000, 1, ',', '.') . 'k';
+        } else {
+            $makanan_saved = number_format($makananSavedRaw, 0, ',', '.');
+        }
+
+        if ($gmvRaw >= 1000000) {
+            $gmv_platform = 'Rp ' . number_format($gmvRaw / 1000000, 1, ',', '.') . 'Jt';
+        } else {
+            $gmv_platform = 'Rp ' . number_format($gmvRaw, 0, ',', '.');
+        }
 
         return view('pages.admin.dashboard', $this->dashboardData('admin', 'Dashboard Admin', 'Kelola sistem, verifikasi akun, dan moderasi platform') + [
             'applications' => $applications,
             'users' => ShareMealState::get('users'),
             'activities' => $activities,
             'stats' => [
-                'total_user' => 1250,
+                'total_user' => $totalUser,
                 'pending' => count($applications),
-                'mitra_aktif' => 142,
-                'lembaga_aktif' => 38,
-                'transaksi' => 5420,
-                'makanan_saved' => '12.5k',
-                'co2_dikurangi' => '31250',
-                'gmv_platform' => 'Rp 189.7M',
+                'mitra_aktif' => $mitraAktif,
+                'lembaga_aktif' => $lembagaAktif,
+                'transaksi' => $totalTransaksi,
+                'makanan_saved' => $makanan_saved,
+                'co2_dikurangi' => number_format($co2Raw, 0, ',', '.'),
+                'gmv_platform' => $gmv_platform,
             ]
         ]);
     }
@@ -1536,88 +1602,67 @@ class ShareMealController extends Controller
     public function adminTransactions(Request $request): View
     {
         $page = (int) $request->query('page', 1);
+        $search = $request->query('search');
+        $perPage = 10;
 
-        if ($page === 1) {
-            $transactions = collect([
-                (object)[
-                    'id' => 5420,
-                    'customer' => (object)['name' => 'Budi Santoso'],
-                    'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
-                    'total_amount' => 45000,
-                    'status' => 'completed',
-                    'created_at' => now()->subMinutes(15)
-                ],
-                (object)[
-                    'id' => 5419,
-                    'customer' => (object)['name' => 'Siti Aminah'],
-                    'mitra' => (object)['name' => 'Warung Makan Ibu Rina'],
-                    'total_amount' => 28500,
-                    'status' => 'pending',
-                    'created_at' => now()->subMinutes(30)
-                ],
-                (object)[
-                    'id' => 5418,
-                    'customer' => (object)['name' => 'Andi Wijaya'],
-                    'mitra' => (object)['name' => 'Healthy Cafe'],
-                    'total_amount' => 120000,
-                    'status' => 'completed',
-                    'created_at' => now()->subHours(2)
-                ],
-                (object)[
-                    'id' => 5417,
-                    'customer' => (object)['name' => 'Rina Melati'],
-                    'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
-                    'total_amount' => 15000,
-                    'status' => 'cancelled',
-                    'created_at' => now()->subHours(5)
-                ],
-            ]);
-        } else {
-            $transactions = collect([
-                (object)[
-                    'id' => 5416,
-                    'customer' => (object)['name' => 'Dwi Cahyo'],
-                    'mitra' => (object)['name' => 'Toko Roti Sejahtera'],
-                    'total_amount' => 60000,
-                    'status' => 'completed',
-                    'created_at' => now()->subHours(6)
-                ],
-                (object)[
-                    'id' => 5415,
-                    'customer' => (object)['name' => 'Yuni Pertiwi'],
-                    'mitra' => (object)['name' => 'Healthy Cafe'],
-                    'total_amount' => 35000,
-                    'status' => 'completed',
-                    'created_at' => now()->subHours(7)
-                ],
-            ]);
+        $query = Order::with(['customer', 'mitra'])->latest();
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('mitra', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
         }
+
+        $totalTransactions = $query->count();
+        $totalPages = max(1, (int) ceil($totalTransactions / $perPage));
+
+        // Ensure page parameter is within valid range
+        if ($page < 1) {
+            $page = 1;
+        } elseif ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $transactions = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
         
+        $totalSelesai = Order::where('status', 'completed')->count();
+        $totalPending = Order::where('status', 'pending')->count();
+        $gmvRaw = Order::where('status', 'completed')->sum('total_amount');
+
+        if ($gmvRaw >= 1000000000) {
+            $gmv = 'Rp ' . number_format($gmvRaw / 1000000000, 1, ',', '.') . 'M';
+        } elseif ($gmvRaw >= 1000000) {
+            $gmv = 'Rp ' . number_format($gmvRaw / 1000000, 1, ',', '.') . 'Jt';
+        } else {
+            $gmv = 'Rp ' . number_format($gmvRaw, 0, ',', '.');
+        }
+
         $stats = [
-            'total_transaksi' => 5420,
-            'total_selesai' => 4150,
-            'total_pending' => 1270,
-            'gmv' => 'Rp 189.7M'
+            'total_transaksi' => Order::count(),
+            'total_selesai' => $totalSelesai,
+            'total_pending' => $totalPending,
+            'gmv' => $gmv
         ];
 
         return view('pages.admin.transactions', $this->dashboardData('admin', 'Pemantauan Transaksi', 'Pantau seluruh aktivitas transaksi di platform ShareMeal') + [
             'transactions' => $transactions,
             'stats' => $stats,
-            'page' => $page
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'search' => $search
         ]);
     }
 
     public function adminExportTransactionsCsv(): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         // Seluruh data transaksi (semua halaman)
-        $allTransactions = collect([
-            (object)['id' => 5420, 'customer' => (object)['name' => 'Budi Santoso'],  'mitra' => (object)['name' => 'Toko Roti Sejahtera'],   'total_amount' => 45000,  'status' => 'completed', 'created_at' => now()->subMinutes(15)],
-            (object)['id' => 5419, 'customer' => (object)['name' => 'Siti Aminah'],   'mitra' => (object)['name' => 'Warung Makan Ibu Rina'],  'total_amount' => 28500,  'status' => 'pending',   'created_at' => now()->subMinutes(30)],
-            (object)['id' => 5418, 'customer' => (object)['name' => 'Andi Wijaya'],   'mitra' => (object)['name' => 'Healthy Cafe'],           'total_amount' => 120000, 'status' => 'completed', 'created_at' => now()->subHours(2)],
-            (object)['id' => 5417, 'customer' => (object)['name' => 'Rina Melati'],   'mitra' => (object)['name' => 'Toko Roti Sejahtera'],   'total_amount' => 15000,  'status' => 'cancelled', 'created_at' => now()->subHours(5)],
-            (object)['id' => 5416, 'customer' => (object)['name' => 'Dwi Cahyo'],     'mitra' => (object)['name' => 'Toko Roti Sejahtera'],   'total_amount' => 60000,  'status' => 'completed', 'created_at' => now()->subHours(6)],
-            (object)['id' => 5415, 'customer' => (object)['name' => 'Yuni Pertiwi'],  'mitra' => (object)['name' => 'Healthy Cafe'],           'total_amount' => 35000,  'status' => 'completed', 'created_at' => now()->subHours(7)],
-        ]);
+        $allTransactions = Order::with(['customer', 'mitra'])->latest()->get();
 
         $filename = 'transaksi_sharemeal_' . now()->format('Ymd_His') . '.csv';
 
@@ -1660,8 +1705,8 @@ class ShareMealController extends Controller
                     $trx->mitra->name ?? '-',
                     $trx->total_amount,
                     $statusLabel,
-                    $trx->created_at->format('d/m/Y'),
-                    $trx->created_at->format('H:i'),
+                    $trx->created_at ? $trx->created_at->format('d/m/Y') : '-',
+                    $trx->created_at ? $trx->created_at->format('H:i') : '-',
                 ]);
             }
 

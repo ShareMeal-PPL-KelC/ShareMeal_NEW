@@ -23,7 +23,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-luxury-gold transition-transform group-focus-within:scale-110"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input 
                     type="text" 
-                    placeholder="Cari artikel atau topik..." 
+                    placeholder="Cari edukasi atau topik..." 
                     x-model="searchQuery"
                     class="w-full pl-12 pr-4 py-4 bg-white/95 text-luxury-forest rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/30 transition shadow-lg font-medium"
                 >
@@ -43,8 +43,8 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
             </div>
             <div>
-                <p class="text-xs text-emerald-800 font-black uppercase tracking-widest">Artikel Dibaca</p>
-                <h3 class="text-2xl font-black text-luxury-forest font-serif mt-1">{{ $stats->readCount }} Artikel</h3>
+                <p class="text-xs text-emerald-800 font-black uppercase tracking-widest">Edukasi Dibaca</p>
+                <h3 class="text-2xl font-black text-luxury-forest font-serif mt-1">{{ $stats->readCount }} Edukasi</h3>
             </div>
         </div>
         <div class="glass-card glass-card-hover p-6 rounded-2xl flex items-center gap-5 bg-blue-50/20 reveal delay-200">
@@ -122,7 +122,7 @@
         <div class="bg-white/80 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-luxury-alabas/70 luxury-shadow">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-gray-300"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
         </div>
-        <h3 class="text-xl font-serif font-bold text-luxury-forest mb-2">Tidak ada artikel ditemukan</h3>
+        <h3 class="text-xl font-serif font-bold text-luxury-forest mb-2">Tidak ada edukasi ditemukan</h3>
         <p class="text-luxury-slate font-medium">Coba gunakan kata kunci lain atau reset filter Anda.</p>
         <button 
             @click="searchQuery = ''; activeCategory = 'Semua'"

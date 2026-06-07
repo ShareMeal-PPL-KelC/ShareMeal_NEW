@@ -93,13 +93,13 @@
         <div class="px-8 py-6 border-b border-luxury-alabas/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h2 class="text-2xl font-serif font-black text-luxury-forest">Riwayat Transaksi</h2>
-                <p class="text-xs text-luxury-slate font-medium mt-1">Halaman <span class="font-black text-luxury-forest">{{ $page }}</span> dari 2</p>
+                <p class="text-xs text-luxury-slate font-medium mt-1">Halaman <span class="font-black text-luxury-forest">{{ $page }}</span> dari <span class="font-black text-luxury-forest">{{ $totalPages }}</span></p>
             </div>
-            <div class="relative w-full sm:w-72">
+            <form action="{{ route('admin.transactions') }}" method="GET" class="relative w-full sm:w-72">
                 <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-luxury-slate/50"></i>
-                <input type="text" placeholder="Cari ID, konsumen, mitra..."
+                <input type="text" name="search" value="{{ $search }}" placeholder="Cari ID, konsumen, mitra..."
                        class="w-full pl-11 pr-4 py-3 border border-luxury-alabas/85 rounded-2xl focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 outline-none bg-white/40 font-medium text-luxury-forest placeholder:text-luxury-slate/40 text-sm transition duration-300">
-            </div>
+            </form>
         </div>
 
         <!-- Table -->
@@ -224,7 +224,7 @@
         @if($transactions->count() > 0)
         <div class="px-8 py-5 border-t border-luxury-alabas/50 flex items-center justify-between gap-4">
             <p class="text-xs text-luxury-slate font-medium">
-                Menampilkan halaman <span class="font-black text-luxury-forest">{{ $page }}</span> dari <span class="font-black text-luxury-forest">2</span> halaman
+                Menampilkan halaman <span class="font-black text-luxury-forest">{{ $page }}</span> dari <span class="font-black text-luxury-forest">{{ $totalPages }}</span> halaman
             </p>
             <div class="flex items-center gap-2">
                 @if($page == 1)
@@ -232,25 +232,24 @@
                         <i data-lucide="chevron-left" class="w-3.5 h-3.5 inline"></i> Prev
                     </span>
                 @else
-                    <a href="?page={{ $page - 1 }}"
+                    <a href="?page={{ $page - 1 }}{{ $search ? '&search=' . urlencode($search) : '' }}"
                        class="px-4 py-2 border border-luxury-alabas/85 rounded-xl text-xs font-black text-luxury-forest hover:bg-emerald-50 hover:border-emerald-200 transition cursor-pointer">
                         <i data-lucide="chevron-left" class="w-3.5 h-3.5 inline"></i> Prev
                     </a>
                 @endif
 
-                <a href="?page=1"
+                @for($i = 1; $i <= $totalPages; $i++)
+                <a href="?page={{ $i }}{{ $search ? '&search=' . urlencode($search) : '' }}"
                    class="w-9 h-9 flex items-center justify-center rounded-xl text-xs font-black transition cursor-pointer
-                          {{ $page == 1 ? 'bg-gradient-to-br from-[#174413] to-emerald-600 text-white shadow-md shadow-emerald-950/10' : 'border border-luxury-alabas/85 text-luxury-forest hover:bg-emerald-50' }}">1</a>
-                <a href="?page=2"
-                   class="w-9 h-9 flex items-center justify-center rounded-xl text-xs font-black transition cursor-pointer
-                          {{ $page == 2 ? 'bg-gradient-to-br from-[#174413] to-emerald-600 text-white shadow-md shadow-emerald-950/10' : 'border border-luxury-alabas/85 text-luxury-forest hover:bg-emerald-50' }}">2</a>
+                          {{ $page == $i ? 'bg-gradient-to-br from-[#174413] to-emerald-600 text-white shadow-md shadow-emerald-950/10' : 'border border-luxury-alabas/85 text-luxury-forest hover:bg-emerald-50' }}">{{ $i }}</a>
+                @endfor
 
-                @if($page == 2)
+                @if($page == $totalPages)
                     <span class="px-4 py-2 border border-luxury-alabas/60 rounded-xl text-xs font-black text-luxury-slate/40 cursor-not-allowed bg-white/20">
                         Next <i data-lucide="chevron-right" class="w-3.5 h-3.5 inline"></i>
                     </span>
                 @else
-                    <a href="?page={{ $page + 1 }}"
+                    <a href="?page={{ $page + 1 }}{{ $search ? '&search=' . urlencode($search) : '' }}"
                        class="px-4 py-2 border border-luxury-alabas/85 rounded-xl text-xs font-black text-luxury-forest hover:bg-emerald-50 hover:border-emerald-200 transition cursor-pointer">
                         Next <i data-lucide="chevron-right" class="w-3.5 h-3.5 inline"></i>
                     </a>
