@@ -272,7 +272,7 @@
                                  x-cloak>
                                 <div class="px-6 py-4 border-b border-luxury-alabas flex justify-between items-center bg-white/80">
                                     <h3 class="font-serif text-xl font-bold text-luxury-forest">Notifikasi</h3>
-                                    @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                                    @if(Auth::check() && Auth::user()->notifications()->count() > 0)
                                         <form method="POST" action="{{ route('notifications.markRead') }}">
                                             @csrf
                                             <button type="submit" class="text-xs text-luxury-gold font-bold uppercase tracking-widest hover:text-luxury-forest transition-colors">Tandai Dibaca</button>

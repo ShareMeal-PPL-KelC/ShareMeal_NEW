@@ -19,7 +19,7 @@
             <h1 class="text-4xl font-serif font-black text-luxury-forest leading-tight">Semua Notifikasi</h1>
             <p class="text-sm font-medium text-luxury-slate mt-1.5">Riwayat aktivitas dan pemberitahuan sistem Anda</p>
         </div>
-        @if(Auth::user()->unreadNotifications->count() > 0)
+        @if(Auth::user()->notifications()->count() > 0)
             <form method="POST" action="{{ route('notifications.markRead') }}">
                 @csrf
                 <button type="submit" class="px-5 py-3.5 rounded-xl bg-[#174413] text-white border border-[#174413] text-[10px] font-black uppercase tracking-widest hover:bg-transparent hover:text-[#174413] transition-all duration-300 shadow-md shadow-[#174413]/10 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
