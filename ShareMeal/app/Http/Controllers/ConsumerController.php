@@ -55,7 +55,7 @@ class ConsumerController extends Controller
             $criticalAlerts[] = [
                 'type' => 'info',
                 'message' => "Hore! Ada $shippingOrdersCount pesanan yang sedang dalam perjalanan ke tempat Anda.",
-                'link' => route('consumer.history'),
+                'link' => route('consumer.orders.active'),
                 'link_text' => 'Pantau Lokasi'
             ];
         }
@@ -97,10 +97,52 @@ class ConsumerController extends Controller
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
         $transactions = Order::with(['items.product', 'mitra.profile', 'reviewRelation'])
             ->where('customer_id', $userId)
-            ->latest()
+            ->where(function($query) {
+                $query->where('status', 'cancelled')
+                      ->orWhere(function($q) {
+                          $q->where('status', 'completed')
+                            ->where('confirmed_by_consumer', true);
+                      });
+            })
+            ->latest('updated_at')
             ->get();
 
         return view('consumer.history', compact('transactions'));
+    }
+
+    public function activeOrders()
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        $activeOrders = Order::with(['items.product', 'mitra.profile'])
+            ->where('customer_id', $userId)
+            ->where(function($query) {
+                $query->whereIn('status', ['pending', 'processing', 'ready', 'shipping'])
+                      ->orWhere(function($q) {
+                          $q->where('status', 'completed')
+                            ->where('confirmed_by_consumer', false);
+                      });
+            })
+            ->latest()
+            ->get();
+
+        return view('consumer.active_orders', compact('activeOrders'));
+    }
+
+    public function confirmComplete(int $orderId)
+    {
+        $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
+        $order = Order::where('customer_id', $userId)->findOrFail($orderId);
+
+        $order->update(['confirmed_by_consumer' => true]);
+
+        if (request()->wantsJson() || request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesanan telah dikonfirmasi selesai.'
+            ]);
+        }
+
+        return back()->with('success', 'Pesanan telah dikonfirmasi selesai.');
     }
 
     public function favorites()
@@ -231,6 +273,7 @@ class ConsumerController extends Controller
             'id' => "BK-" . strtoupper(Str::random(6)),
             'product_id' => $product->id,
             'storeName' => $product->user->displayName,
+            'storeLogo' => $product->user->image,
             'dealItem' => implode(', ', $itemsString),
             'quantity' => 1,
             'price' => $subtotal,
@@ -392,11 +435,11 @@ class ConsumerController extends Controller
                 'order_id' => $order->id,
                 'order_number' => $order->orderId,
                 'pickup_code' => $order->pickup_code,
-                'redirect_url' => route('consumer.history'),
+                'redirect_url' => route('consumer.orders.active'),
             ]);
         }
 
-        return redirect()->route('consumer.history')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
+        return redirect()->route('consumer.orders.active')->with('success', 'Reservasi berhasil! Kode pengambilan Anda: ' . $order->pickup_code);
     }
 
     public function viewCart()
@@ -578,6 +621,10 @@ class ConsumerController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengubah ulasan ini.');
         }
 
+        if ($review->created_at->addMinutes(2)->isPast()) {
+            abort(403, 'Ulasan tidak dapat diubah setelah 2 menit.');
+        }
+
         $data = $request->validate([
             'rating' => ['required', 'numeric', 'min:1', 'max:5'],
             'comment' => ['nullable', 'string', 'max:1000'],
@@ -598,6 +645,10 @@ class ConsumerController extends Controller
 
         if ($review->customer_id !== $userId) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus ulasan ini.');
+        }
+
+        if ($review->created_at->addMinutes(2)->isPast()) {
+            abort(403, 'Ulasan tidak dapat dihapus setelah 2 menit.');
         }
 
         $review->delete();

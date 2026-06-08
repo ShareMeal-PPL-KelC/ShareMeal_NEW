@@ -22,6 +22,8 @@ Route::prefix('consumer')->name('consumer.')->middleware('role:consumer')->group
     Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
     Route::get('/search', [ConsumerController::class, 'search'])->name('search');
     Route::get('/history', [ConsumerController::class, 'history'])->name('history');
+    Route::get('/orders/active', [ConsumerController::class, 'activeOrders'])->name('orders.active');
+    Route::post('/orders/{orderId}/confirm-complete', [ConsumerController::class, 'confirmComplete'])->name('orders.confirm-complete');
     
     // PBI #32: Edit & Delete Review - Dikerjakan oleh: Muh Irfan Ubaidillah
     Route::post('/review', [ConsumerController::class, 'submitReview'])->name('review.submit');

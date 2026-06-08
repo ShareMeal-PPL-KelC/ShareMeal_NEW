@@ -6,6 +6,10 @@
     subtotal: {{ $subtotal }},
     successMessage: '',
     errorMessage: '',
+    confirmShow: false,
+    confirmTitle: '',
+    confirmMsg: '',
+    confirmItemId: null,
     items: {
         @foreach($cartItems as $item)
         '{{ $item->id }}': {
@@ -121,8 +125,16 @@
             item.isLoading = false;
         }
     },
-    async deleteItem(itemId) {
-        if (!confirm('Apakah Anda yakin ingin menghapus makanan ini dari keranjang?')) return;
+    confirmDelete(itemId) {
+        this.confirmItemId = itemId;
+        this.confirmTitle = 'Hapus Makanan?';
+        this.confirmMsg = 'Apakah Anda yakin ingin menghapus makanan ini dari keranjang belanja Anda?';
+        this.confirmShow = true;
+    },
+    async executeDelete() {
+        this.confirmShow = false;
+        let itemId = this.confirmItemId;
+        if (!itemId) return;
         let item = this.items[itemId];
         item.isLoading = true;
         
@@ -295,7 +307,7 @@
                             
                             <!-- Delete Button (AJAX-ified) -->
                             <button type="button" 
-                                    @click="deleteItem('{{ $item->id }}')"
+                                    @click="confirmDelete('{{ $item->id }}')"
                                     :disabled="items['{{ $item->id }}'].isLoading"
                                     class="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 cursor-pointer active:scale-95"
                                     :class="{'opacity-50 cursor-not-allowed': items['{{ $item->id }}'].isLoading}">
@@ -338,5 +350,52 @@
             </div>
         </div>
     @endif
+
+    <!-- Premium Confirmation Dialog -->
+    <div x-show="confirmShow" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" 
+         x-cloak>
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-[#0e290b]/60 backdrop-blur-md" @click="confirmShow = false"
+             x-show="confirmShow"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"></div>
+
+        <!-- Modal Content -->
+        <div x-show="confirmShow"
+             x-transition:enter="ease-out duration-500"
+             x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="ease-in duration-300"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-12 scale-95"
+             class="relative bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 p-8 sm:p-10 w-full max-w-md z-50 text-left animate-in fade-in zoom-in duration-300">
+            
+            <!-- Alert Icon -->
+            <div class="w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-50 text-red-500 border border-red-100">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8">
+                    <circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/>
+                </svg>
+            </div>
+
+            <h3 class="text-2xl font-black text-gray-900 mb-2" x-text="confirmTitle"></h3>
+            <p class="text-gray-550 text-sm font-medium leading-relaxed mb-8" x-text="confirmMsg"></p>
+
+            <div class="flex gap-4">
+                <button @click="confirmShow = false" 
+                        class="flex-1 py-4 border border-gray-200 hover:bg-gray-50 text-gray-500 rounded-2xl font-black uppercase tracking-wider text-[10px] transition duration-300">
+                    Batal
+                </button>
+                <button @click="executeDelete()" 
+                        class="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase tracking-wider text-[10px] shadow-lg shadow-red-500/20 transition duration-300">
+                    Hapus
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard - ShareMeal</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -127,6 +128,7 @@
         $routes = [
             ['route' => 'consumer.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'consumer.search', 'label' => 'Cari Makanan', 'icon' => 'search'],
+            ['route' => 'consumer.orders.active', 'label' => 'Pesanan Aktif', 'icon' => 'shopping-bag'],
             ['route' => 'consumer.history', 'label' => 'Riwayat', 'icon' => 'history'],
             ['route' => 'consumer.education', 'label' => 'Edukasi', 'icon' => 'book-open'],
         ];

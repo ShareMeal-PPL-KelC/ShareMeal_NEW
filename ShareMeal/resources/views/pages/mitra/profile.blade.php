@@ -225,8 +225,9 @@
                 <div>
                     <label for="store_image" class="block text-sm font-semibold text-gray-700 mb-2">Gambar Toko</label>
                     <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-5">
-                        <input id="store_image" name="store_image" type="file" accept="image/jpeg,image/png" class="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#174413] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-green-900">
+                        <input id="store_image" name="store_image" type="file" accept="image/jpeg,image/png" class="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#174413] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-green-900" @change="checkImageSize($event)">
                         <p class="mt-3 text-xs text-gray-500">Format JPG, JPEG, atau PNG. Maksimal 2 MB.</p>
+                        <p x-show="imageError" class="text-xs text-red-650 font-bold mt-2" x-text="imageError" x-cloak></p>
                     </div>
                     @error('store_image')
                         <p class="mt-2 text-sm text-red-600 validation-error-msg">{{ $message }}</p>
@@ -375,6 +376,19 @@
             loading: false,
             success: false,
             errorMsg: '',
+            imageError: '',
+
+            checkImageSize(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        this.imageError = 'Ukuran gambar toko maksimal 2 MB. File yang Anda pilih berukuran ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB.';
+                        e.target.value = ''; // Reset file input
+                    } else {
+                        this.imageError = '';
+                    }
+                }
+            },
 
             async sendOtp() {
                 this.loadingOtp = true;

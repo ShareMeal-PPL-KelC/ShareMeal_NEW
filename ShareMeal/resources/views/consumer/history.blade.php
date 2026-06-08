@@ -275,6 +275,18 @@
                                 Menunggu Konfirmasi
                             </span>
                             @endif
+
+                            @if($t->receiving_method === 'delivery')
+                            <span class="bg-indigo-50/70 text-indigo-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-200/50 flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><rect width="16" height="12" x="2" y="4" rx="2"/><path d="M22 8h-4v8h4V8Z"/><path d="M6 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>
+                                Delivery
+                            </span>
+                            @else
+                            <span class="bg-emerald-50/70 text-emerald-800 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-200/50 flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="m2 22 1-1h18l1 1"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 22V4a2 2 0 0 1 2-2h10l4 4v16"/></svg>
+                                Pickup
+                            </span>
+                            @endif
                         </div>
                         
                         <div class="space-y-3 mb-8">
@@ -296,11 +308,15 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                                 </svg>
-                                Jadwal Pengambilan: {{ $t->pickupTime }}
+                                @if($t->receiving_method === 'delivery')
+                                    Perkiraan Tiba: {{ $t->delivery_time_slot }}
+                                @else
+                                    Jadwal Pengambilan: {{ $t->pickupTime }}
+                                @endif
                             </div>
                         </div>
 
-                        @if($t->status === 'pending' || $t->status === 'ready' || $t->status === 'shipping')
+                        @if(($t->status === 'pending' || $t->status === 'ready' || $t->status === 'shipping') && $t->receiving_method === 'pickup')
                         <div x-data="{
                             endTime: new Date('{{ $t->expires_at->toIso8601String() }}').getTime(),
                             timeRemaining: '',
@@ -349,6 +365,21 @@
                     </div>
                 </div>
 
+                <!-- Cancellation Reason Banner -->
+                @if($t->status === 'cancelled')
+                <div class="bg-red-50/60 border border-red-150 rounded-[2rem] p-8 flex items-start gap-4 mt-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-red-500 shrink-0 mt-0.5">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+                    </svg>
+                    <div>
+                        <div class="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] mb-1">Alasan Pembatalan</div>
+                        <div class="text-sm font-bold text-luxury-forest">
+                            {{ $t->cancel_reason ?: 'Dibatalkan oleh mitra toko.' }}
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Pickup Code -->
                 @if(($t->status === 'pending' || $t->status === 'ready') && $t->receiving_method === 'pickup')
                 <div class="bg-white/40 border border-luxury-alabas/80 rounded-[2rem] p-8 flex flex-col sm:flex-row items-center justify-between gap-8 mt-10">
@@ -370,7 +401,10 @@
                 @endif
 
                 <!-- Review Section -->
-                @if($t->rating > 0)
+                @if($t->reviewRelation)
+                @php
+                    $canModifyReview = $t->reviewRelation->created_at && !$t->reviewRelation->created_at->addMinutes(2)->isPast();
+                @endphp
                 <div class="mt-10 pt-10 border-t border-luxury-alabas/50 relative">
                     <div class="flex flex-col md:flex-row items-start gap-8">
                         <div class="flex gap-1.5 bg-luxury-gold/5 p-3 rounded-2xl border border-luxury-gold/10 flex-shrink-0">
@@ -383,24 +417,33 @@
                         <div class="flex-1">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold">Penilaian & Ulasan Anda</div>
-                                <div class="flex items-center gap-6">
-                                    <button @click="openEditReviewModal(@js($t->reviewRelation->id), @js($t->rating), @js($t->review))" class="text-luxury-forest hover:text-luxury-gold text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-                                            <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-                                        </svg>
-                                        Ubah
-                                    </button>
-                                    <form action="{{ route('consumer.review.delete', $t->reviewRelation->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ulasan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-450 hover:text-red-650 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-colors">
+                                @if($canModifyReview)
+                                    <div class="flex items-center gap-6">
+                                        <button @click="openEditReviewModal(@js($t->reviewRelation->id), @js($t->rating), @js($t->review))" class="text-luxury-forest hover:text-luxury-gold text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-                                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                                <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
                                             </svg>
-                                            Hapus
+                                            Ubah
                                         </button>
-                                    </form>
-                                </div>
+                                        <form action="{{ route('consumer.review.delete', $t->reviewRelation->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ulasan ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-450 hover:text-red-650 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                                </svg>
+                                                Hapus
+                                            </button>
+                                        </form>
+                                    </div>
+                                @else
+                                    <div class="text-[9px] font-black uppercase tracking-widest text-luxury-slate/60 bg-luxury-alabas/30 px-3 py-1 rounded-lg border border-luxury-alabas/50 flex items-center gap-1.5 select-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                        </svg>
+                                        Terkunci
+                                    </div>
+                                @endif
                             </div>
                             @if($t->review)
                             <p class="text-lg font-serif text-luxury-forest italic leading-relaxed">&ldquo;{{ $t->review }}&rdquo;</p>
@@ -424,7 +467,7 @@
                         id: '{{ addslashes($t->orderId) }}',
                         store: '{{ addslashes($t->store) }}',
                         date: '{{ addslashes($t->orderTime) }}',
-                        pickupTime: '{{ addslashes($t->pickupTime) }}',
+                        pickupTime: '{{ addslashes($t->receiving_method === 'delivery' ? $t->delivery_time_slot : $t->pickupTime) }}',
                         status: '{{ addslashes($t->status) }}',
                         subtotal: {{ $t->subtotal }},
                         savedAmount: {{ $t->savedAmount }},
@@ -615,7 +658,7 @@
              x-transition:enter="ease-out duration-700"
              x-transition:enter-start="opacity-0 translate-y-24 scale-95"
              x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-             class="relative glass-panel w-full max-w-4xl rounded-[2.5rem] shadow-2xl border border-white/40 max-h-[85vh] overflow-y-auto scrollbar-thin"
+             class="relative glass-panel w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-white/40 max-h-[85vh] overflow-y-auto scrollbar-thin"
              :class="{ 'overflow-y-hidden': isPrinting || showPrintSuccess }">
             
             <!-- Top Elegant Accent -->

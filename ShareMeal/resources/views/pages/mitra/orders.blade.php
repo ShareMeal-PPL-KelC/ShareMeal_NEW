@@ -60,7 +60,7 @@
                     <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
                         <div>
                             <div class="flex items-center gap-3">
-                                <h3 class="text-2xl font-black text-gray-900" x-text="'Pesanan #' + order.id"></h3>
+                                <h3 class="text-2xl font-black text-gray-900" x-text="'Pesanan ' + order.orderId + ' (#' + order.id + ')'"></h3>
                                 <span :class="{
                                     'bg-orange-100 text-orange-700 border-orange-200': order.status === 'pending',
                                     'bg-amber-100 text-amber-700 border-amber-200': order.status === 'processing',
@@ -185,7 +185,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                         <path d="M21 16V8a2 2 0 0 0-2-2h-5l-4-4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"/>
                                     </svg>
-                                    <span x-text="order.receiving_method === 'delivery' ? 'Pesanan Siap Diantar' : 'Pesanan Siap Diambil'"></span>
+                                    <span x-text="order.receiving_method === 'delivery' ? 'Pesanan Siap' : 'Pesanan Siap Diambil'"></span>
                                 </button>
                                 <button @click="updateStatus(order.id, 'cancelled')" class="px-6 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition">
                                     Batalkan
@@ -272,7 +272,6 @@
             <p class="text-gray-500 font-medium">Data pesanan akan muncul secara otomatis di sini.</p>
         </div>
     </div>
-
     <!-- Beautiful Confirmation Dialog -->
     <div x-show="confirmShow" 
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" 
@@ -305,7 +304,7 @@
             </div>
 
             <h3 class="text-2xl font-black text-gray-900 mb-3" x-text="confirmTitle"></h3>
-            <p class="text-gray-500 text-sm font-medium leading-relaxed mb-8" x-text="confirmMsg"></p>
+            <p class="text-gray-550 text-sm font-medium leading-relaxed mb-8" x-text="confirmMsg"></p>
 
             <div class="flex gap-4">
                 <button @click="confirmShow = false" 
@@ -315,6 +314,63 @@
                 <button @click="executeConfirm()" 
                         class="flex-1 py-4 bg-[#174413] hover:bg-[#256020] text-white rounded-2xl font-black uppercase tracking-wider text-[10px] shadow-lg shadow-green-100 transition duration-300">
                     Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancellation Dialog with Reason Form -->
+    <div x-show="cancelShow" 
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" 
+         x-cloak>
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-[#0e290b]/60 backdrop-blur-md" @click="cancelShow = false"
+             x-show="cancelShow"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"></div>
+
+        <!-- Modal Content -->
+        <div x-show="cancelShow"
+             x-transition:enter="ease-out duration-500"
+             x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="ease-in duration-300"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-12 scale-95"
+             class="relative bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 p-8 sm:p-10 w-full max-w-md z-50 text-left animate-in fade-in zoom-in duration-300">
+            
+            <!-- Alert Icon -->
+            <div class="w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-50 text-red-500 border border-red-100">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8">
+                    <circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/>
+                </svg>
+            </div>
+
+            <h3 class="text-2xl font-black text-gray-900 mb-2">Batalkan Pesanan?</h3>
+            <p class="text-gray-500 text-xs font-semibold leading-relaxed mb-6">Mohon berikan alasan pembatalan untuk pesanan ini. Informasi ini akan langsung dikirimkan ke pelanggan.</p>
+
+            <div class="space-y-4 mb-8">
+                <div>
+                    <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-2">Alasan Pembatalan</label>
+                    <textarea x-model="cancelReason" 
+                              rows="3" 
+                              placeholder="Contoh: Stok makanan habis, toko tutup lebih awal, dll."
+                              class="w-full bg-gray-50/55 border border-gray-200 rounded-2xl p-4 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-550/20 focus:border-red-500 transition-all placeholder:text-gray-300 resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button @click="cancelShow = false" 
+                        class="flex-1 py-4 border border-gray-200 hover:bg-gray-50 text-gray-500 rounded-2xl font-black uppercase tracking-wider text-[10px] transition duration-300">
+                    Kembali
+                </button>
+                <button @click="executeCancel()" 
+                        class="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase tracking-wider text-[10px] shadow-lg shadow-red-500/20 transition duration-300">
+                    Batalkan Pesanan
                 </button>
             </div>
         </div>
@@ -374,6 +430,10 @@
             confirmMsg: '',
             confirmCallback: null,
             
+            cancelShow: false,
+            cancelOrderId: null,
+            cancelReason: '',
+            
             showToast(message, type = 'success') {
                 this.toastMsg = message;
                 this.toastType = type;
@@ -415,46 +475,72 @@
                 const order = this.orders.find(o => o.id === id);
                 if (!order) return;
 
-                const title = newStatus === 'cancelled' ? 'Batalkan Pesanan?' : 'Konfirmasi Status';
+                if (newStatus === 'cancelled') {
+                    this.cancelOrderId = id;
+                    this.cancelReason = '';
+                    this.cancelShow = true;
+                    return;
+                }
+
+                const title = 'Konfirmasi Status';
                 const mockOrder = { status: newStatus, receiving_method: order.receiving_method };
                 const label = this.getStatusLabel(mockOrder);
+                const message = `Apakah Anda yakin ingin mengubah status pesanan ini menjadi "${label}"?`;
 
-                const message = newStatus === 'cancelled' 
-                    ? 'Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat dibatalkan.' 
-                    : `Apakah Anda yakin ingin mengubah status pesanan ini menjadi "${label}"?`;
-
-                this.triggerConfirm(title, message, async () => {
-                    try {
-                        const response = await fetch(`/mitra/orders/${id}/update-status`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ status: newStatus })
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            const order = this.orders.find(o => o.id === id);
-                            if (order) {
-                                order.status = newStatus;
-                                if (data.completed_time) {
-                                    order.completedTime = data.completed_time;
-                                }
-                                this.showToast('Status pesanan berhasil diperbarui!', 'success');
-                                this.activeTab = newStatus;
-                                setTimeout(() => lucide.createIcons(), 50);
-                            }
-                        } else {
-                            this.showToast('Gagal memperbarui status. Silakan coba lagi.', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        this.showToast('Terjadi kesalahan koneksi.', 'error');
-                    }
+                this.triggerConfirm(title, message, () => {
+                    this.ordersUpdateAction(id, newStatus, null);
                 });
+            },
+
+            executeCancel() {
+                const id = this.cancelOrderId;
+                const reason = this.cancelReason.trim();
+                if (reason === "") {
+                    alert("Alasan pembatalan tidak boleh kosong!");
+                    return;
+                }
+
+                this.cancelShow = false;
+                this.ordersUpdateAction(id, 'cancelled', reason);
+            },
+
+            async ordersUpdateAction(id, newStatus, reason) {
+                try {
+                    const response = await fetch(`/mitra/orders/${id}/update-status`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            status: newStatus,
+                            cancel_reason: reason
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const order = this.orders.find(o => o.id === id);
+                        if (order) {
+                            order.status = newStatus;
+                            if (reason) {
+                                order.cancel_reason = reason;
+                            }
+                            if (data.completed_time) {
+                                order.completedTime = data.completed_time;
+                            }
+                            this.showToast('Status pesanan berhasil diperbarui!', 'success');
+                            this.activeTab = newStatus;
+                            setTimeout(() => lucide.createIcons(), 50);
+                        }
+                    } else {
+                        this.showToast('Gagal memperbarui status. Silakan coba lagi.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showToast('Terjadi kesalahan koneksi.', 'error');
+                }
             },
             
             init() {

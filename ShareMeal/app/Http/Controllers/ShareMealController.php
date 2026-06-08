@@ -1192,7 +1192,7 @@ class ShareMealController extends Controller
         $orders = \App\Models\Order::with(['customer.profile', 'items.product', 'reviewRelation'])
             ->where('mitra_id', $userId)
             ->whereIn('status', ['completed', 'cancelled'])
-            ->latest()
+            ->latest('updated_at')
             ->get();
 
         $stats = (object) [
@@ -1241,9 +1241,19 @@ class ShareMealController extends Controller
 
         $request->validate([
             'status' => ['required', 'in:pending,processing,ready,shipping,completed,cancelled'],
+            'cancel_reason' => ['nullable', 'required_if:status,cancelled', 'string', 'max:500'],
         ]);
 
-        $order->update(['status' => $request->status]);
+        $updateData = ['status' => $request->status];
+        if ($request->status === 'cancelled') {
+            $updateData['cancel_reason'] = $request->cancel_reason ?: 'Dibatalkan oleh mitra toko.';
+        } elseif (in_array($request->status, ['processing', 'ready']) && $order->status === 'pending' && $order->receiving_method === 'pickup') {
+            // Batas waktu pengambilan mulai berjalan (1 jam) saat pesanan diproses oleh mitra
+            $updateData['pickup_start_time'] = now()->format('H:i:s');
+            $updateData['pickup_end_time'] = now()->addHour()->format('H:i:s');
+        }
+
+        $order->update($updateData);
 
         // Send notification to consumer (handled automatically via Order model booted observer)
 
@@ -1508,6 +1518,32 @@ class ShareMealController extends Controller
                 'type' => $type,
                 'icon' => $icon,
                 'timestamp' => $report->created_at
+            ]);
+        }
+
+        // 4. User profile updates
+        $profileUpdates = \App\Models\UserProfile::with('user')
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->get();
+
+        foreach ($profileUpdates as $profile) {
+            if (!$profile->user) {
+                continue;
+            }
+            $roleLabel = match($profile->user->role) {
+                'mitra' => 'Mitra Toko',
+                'lembaga' => 'Lembaga Sosial',
+                'consumer' => 'Konsumen',
+                default => $profile->user->role
+            };
+            $activities->push([
+                'title' => $profile->user->name,
+                'description' => 'Memperbarui informasi profil ' . $roleLabel,
+                'time' => $profile->updated_at ? $profile->updated_at->diffForHumans() : '-',
+                'type' => 'success',
+                'icon' => 'user-cog',
+                'timestamp' => $profile->updated_at
             ]);
         }
 

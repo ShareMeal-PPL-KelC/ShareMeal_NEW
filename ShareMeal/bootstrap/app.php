@@ -16,5 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ukuran data/file yang diunggah terlalu besar. Maksimal total ukuran adalah 2 MB.'
+                ], 413);
+            }
+            return back()->with('error', 'Ukuran data/file yang Anda unggah terlalu besar. Maksimal total ukuran adalah 2 MB.')->withInput();
+        });
     })->create();

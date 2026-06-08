@@ -36,11 +36,14 @@ class Order extends Model
         'delivery_fee',
         'delivery_time_slot',
         'payment_method',
+        'confirmed_by_consumer',
+        'cancel_reason',
     ];
 
     protected $casts = [
         'pickup_time' => 'datetime',
         'delivery_fee' => 'integer',
+        'confirmed_by_consumer' => 'boolean',
     ];
 
     protected $appends = [

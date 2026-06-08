@@ -81,7 +81,8 @@
 
                         <div class="space-y-2">
                             <label for="avatar" class="text-sm font-semibold text-gray-700">Foto Profil</label>
-                            <input type="file" name="avatar" id="avatar" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-[#174413] hover:file:bg-green-100">
+                            <input type="file" name="avatar" id="avatar" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-[#174413] hover:file:bg-green-100" @change="checkAvatarSize($event)">
+                            <p x-show="avatarError" class="text-xs text-red-600 font-bold" x-text="avatarError" x-cloak></p>
                             @error('avatar') <p class="text-xs text-red-600 validation-error-msg">{{ $message }}</p> @enderror
                         </div>
                     </div>
@@ -273,6 +274,19 @@
             loading: false,
             success: false,
             errorMsg: '',
+            avatarError: '',
+
+            checkAvatarSize(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        this.avatarError = 'Ukuran foto profil maksimal 2 MB. File yang Anda pilih berukuran ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB.';
+                        e.target.value = ''; // Reset file input
+                    } else {
+                        this.avatarError = '';
+                    }
+                }
+            },
 
             async sendOtp() {
                 this.loadingOtp = true;

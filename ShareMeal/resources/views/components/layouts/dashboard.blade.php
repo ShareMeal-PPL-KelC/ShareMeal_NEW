@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - ShareMeal</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Lucide Icons -->
@@ -114,11 +115,15 @@
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
                                 <span>Dashboard</span>
                             </a>
-                            <a href="{{ route('consumer.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('consumer.search') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="search" class="w-5 h-5"></i>
-                                <span>Cari Makanan</span>
-                            </a>
-                            <a href="{{ route('consumer.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('consumer.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                             <a href="{{ route('consumer.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('consumer.search') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                 <i data-lucide="search" class="w-5 h-5"></i>
+                                 <span>Cari Makanan</span>
+                             </a>
+                             <a href="{{ route('consumer.orders.active') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('consumer.orders.active') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                 <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                                 <span>Pesanan Aktif</span>
+                             </a>
+                             <a href="{{ route('consumer.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {{ request()->routeIs('consumer.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="history" class="w-5 h-5"></i>
                                 <span>Riwayat</span>
                             </a>
@@ -187,10 +192,13 @@
                             <a href="{{ route('consumer.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.dashboard') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
                             </a>
-                            <a href="{{ route('consumer.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.search') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                <i data-lucide="search" class="w-5 h-5"></i><span>Cari Makanan</span>
-                            </a>
-                            <a href="{{ route('consumer.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                             <a href="{{ route('consumer.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.search') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                 <i data-lucide="search" class="w-5 h-5"></i><span>Cari Makanan</span>
+                             </a>
+                             <a href="{{ route('consumer.orders.active') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.orders.active') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                 <i data-lucide="shopping-bag" class="w-5 h-5"></i><span>Pesanan Aktif</span>
+                             </a>
+                             <a href="{{ route('consumer.history') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.history') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 <i data-lucide="history" class="w-5 h-5"></i><span>Riwayat</span>
                             </a>
                             <a href="{{ route('consumer.education') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('consumer.education') ? 'bg-green-50 text-green-600 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">

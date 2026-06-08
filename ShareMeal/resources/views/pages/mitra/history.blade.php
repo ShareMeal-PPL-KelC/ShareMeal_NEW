@@ -79,7 +79,7 @@
                     <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
                         <div>
                             <div class="flex items-center gap-3">
-                                <h3 class="text-2xl font-black text-gray-900" x-text="'Pesanan #' + order.id"></h3>
+                                <h3 class="text-2xl font-black text-gray-900" x-text="'Pesanan ' + order.orderId + ' (#' + order.id + ')'"></h3>
                                 <span :class="{
                                     'bg-green-100 text-green-700 border-green-200': order.status === 'completed',
                                     'bg-red-100 text-red-700 border-red-200': order.status === 'cancelled'
@@ -242,6 +242,7 @@
                 
                 return {
                     id: order.id,
+                    orderId: order.orderId,
                     status: order.status,
                     receiving_method: order.receiving_method,
                     pickupCode: order.pickup_code || '-',

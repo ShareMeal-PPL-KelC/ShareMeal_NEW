@@ -41,7 +41,7 @@ class Pbi37DeliveryTimeTest extends TestCase
             'payment_method' => 'qris',
         ]);
 
-        $response->assertRedirect(route('consumer.history'));
+        $response->assertRedirect(route('consumer.orders.active'));
         $this->assertDatabaseHas('orders', [
             'customer_id' => $consumer->id,
             'receiving_method' => 'delivery',

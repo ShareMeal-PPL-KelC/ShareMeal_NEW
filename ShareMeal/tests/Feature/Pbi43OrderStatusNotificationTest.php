@@ -35,7 +35,7 @@ class Pbi43OrderStatusNotificationTest extends TestCase
             $data = $notification->toArray($order->customer);
             return $data['status'] === 'ready' &&
                    $data['title'] === 'Update Status Pesanan' &&
-                   $data['message'] === 'Pesanan Anda siap diambil!';
+                   $data['message'] === 'Pesanan Anda sudah siap diambil! Mohon tunjukkan kode klaim kepada pelayan kami jika sudah sampai.';
         });
     }
 

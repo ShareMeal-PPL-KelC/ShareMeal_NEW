@@ -62,10 +62,12 @@ class Pbi36DeliveryStatusTest extends TestCase
         ]);
 
         $response = $this->actingAs($mitra)->post(route('mitra.orders.update-status', $order->id), [
-            'status' => 'cancelled'
+            'status' => 'cancelled',
+            'cancel_reason' => 'Stok habis'
         ]);
 
         $this->assertEquals('cancelled', $order->fresh()->status);
+        $this->assertEquals('Stok habis', $order->fresh()->cancel_reason);
     }
 
     public function test_mitra_cannot_update_others_order(): void
@@ -109,5 +111,24 @@ class Pbi36DeliveryStatusTest extends TestCase
             $consumer,
             \App\Notifications\OrderStatusUpdated::class
         );
+    }
+
+    public function test_consumer_can_confirm_delivery_order_completion(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'completed',
+            'receiving_method' => 'delivery',
+            'confirmed_by_consumer' => false
+        ]);
+
+        $response = $this->actingAs($consumer)->post(route('consumer.orders.confirm-complete', $order->id));
+
+        $response->assertRedirect();
+        $this->assertTrue((bool)$order->fresh()->confirmed_by_consumer);
     }
 }

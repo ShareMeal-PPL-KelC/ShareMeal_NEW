@@ -4,23 +4,100 @@
 <div class="space-y-6" x-data="checkoutPage">
     <!-- Loading Overlay -->
     <div x-show="isProcessing" 
-         class="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md"
+         class="fixed inset-0 z-[100] flex items-center justify-center bg-luxury-forest/30 backdrop-blur-md px-4"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
          x-cloak>
-        <div class="text-center space-y-6 max-w-xs px-4">
-            <div class="relative w-24 h-24 mx-auto">
-                <div class="absolute inset-0 border-4 border-gray-100/50 rounded-full"></div>
-                <div class="absolute inset-0 border-4 border-[#174413] rounded-full border-t-transparent animate-spin"></div>
+        <div class="bg-white/90 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl text-center space-y-8 relative overflow-hidden"
+             :class="'bg-gradient-to-br ' + methodConfig.gradient">
+            
+            <!-- Animated Background Glow -->
+            <div class="absolute -top-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-35 animate-pulse" :class="methodConfig.bgClass"></div>
+            <div class="absolute -bottom-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-35 animate-pulse" :class="methodConfig.bgClass"></div>
+
+            <!-- Payment Method Badge -->
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm mx-auto"
+                 :class="methodConfig.badgeBg">
+                <span class="w-2 h-2 rounded-full animate-ping" :class="methodConfig.badgeDot"></span>
+                Proses Pembayaran <span x-text="methodConfig.name"></span>
+            </div>
+
+            <!-- Custom Spinner & Center Icon -->
+            <div class="relative w-28 h-28 mx-auto">
+                <!-- Base Circle -->
+                <div class="absolute inset-0 border-4 border-gray-200/50 rounded-full"></div>
+                <!-- Spin border -->
+                <div class="absolute inset-0 border-4 rounded-full border-t-transparent animate-spin"
+                     :class="methodConfig.spinnerClass"></div>
+                <!-- Center Icon -->
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <i data-lucide="shield-check" class="w-8 h-8 text-[#174413] animate-pulse"></i>
+                    <template x-if="paymentMethod === 'qris'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-emerald-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <rect width="6" height="6" x="3" y="3" rx="1" />
+                            <rect width="6" height="6" x="15" y="3" rx="1" />
+                            <rect width="6" height="6" x="3" y="15" rx="1" />
+                            <path d="M16 16h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2z" />
+                            <path stroke-linecap="round" d="M15 15h1m1 0h2m-4 5v-1m2 1h1" />
+                        </svg>
+                    </template>
+                    <template x-if="paymentMethod === 'gopay'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-cyan-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2" />
+                            <circle cx="8" cy="12" r="2" />
+                            <path stroke-linecap="round" d="M16 12h3M16 8h2" />
+                        </svg>
+                    </template>
+                    <template x-if="paymentMethod === 'ovo'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-purple-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
+                    </template>
+                    <template x-if="paymentMethod === 'dana'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-blue-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4" />
+                        </svg>
+                    </template>
                 </div>
             </div>
-            <div class="space-y-2">
-                <h3 class="text-xl font-black text-gray-900" x-text="processingMessage"></h3>
-                <p class="text-sm text-gray-550 font-medium leading-relaxed">Mohon tunggu sebentar, jangan tutup halaman ini.</p>
+
+            <!-- Messages -->
+            <div class="space-y-3">
+                <h3 class="text-xl font-black text-gray-900 tracking-tight transition-all duration-300" x-text="processingMessage"></h3>
+                <p class="text-xs text-luxury-slate font-medium leading-relaxed">Sistem sedang memproses transaksi secara aman. Mohon tidak menutup tab atau menekan tombol kembali.</p>
             </div>
+
+            <!-- Progress Tracker -->
+            <div class="pt-6 border-t border-gray-150 space-y-4">
+                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold text-left">Langkah Transaksi</div>
+                <div class="space-y-3">
+                    <template x-for="(step, index) in paymentSteps" :key="index">
+                        <div class="flex items-center gap-4 text-left">
+                            <!-- Icon / Status indicator -->
+                            <div class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-500"
+                                 :class="step.status === 'done' ? 'bg-emerald-500/20 text-emerald-600' : (step.status === 'active' ? 'bg-luxury-gold/20 text-luxury-gold' : 'bg-gray-100 text-gray-400')">
+                                <template x-if="step.status === 'done'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                </template>
+                                <template x-if="step.status === 'active'">
+                                    <span class="w-2 h-2 rounded-full bg-luxury-gold animate-ping"></span>
+                                </template>
+                                <template x-if="step.status === 'pending'">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                                </template>
+                            </div>
+                            <!-- Label -->
+                            <div class="text-sm font-bold transition-all duration-500"
+                                 :class="step.status === 'done' ? 'text-gray-500 line-through decoration-gray-300' : (step.status === 'active' ? 'text-gray-900 font-extrabold' : 'text-gray-400 font-medium')"
+                                 x-text="step.label"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -61,7 +138,10 @@
                         <div class="p-8 border-2 border-luxury-alabas/80 bg-white/40 rounded-[2rem] transition-all duration-500 peer-checked:border-luxury-forest peer-checked:bg-luxury-forest/5 group-hover:border-luxury-gold/30">
                             <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-luxury-gold mb-6 group-hover:scale-110 transition-transform shadow-sm mx-auto">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-                                    <path d="m2 22 1-1h18l1 1"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 22V4a2 2 0 0 1 2-2h10l4 4v16"/>
+                                    <path d="M20 20a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1" />
+                                    <path d="M3 7l2-4h14l2 4" />
+                                    <path d="M9 12v6" />
+                                    <path d="M15 12v6" />
                                 </svg>
                             </div>
                             <div class="font-serif text-xl font-bold text-luxury-forest">Ambil Sendiri</div>
@@ -75,7 +155,12 @@
                         <div class="p-8 border-2 border-luxury-alabas/80 bg-white/40 rounded-[2rem] transition-all duration-500 peer-checked:border-luxury-forest peer-checked:bg-luxury-forest/5 group-hover:border-luxury-gold/30">
                             <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-luxury-emerald mb-6 group-hover:scale-110 transition-transform shadow-sm mx-auto">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-                                    <rect width="16" height="12" x="2" y="4" rx="2"/><path d="M22 8h-4v8h4V8Z"/><path d="M6 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                                    <circle cx="6" cy="18" r="2.5"/>
+                                    <circle cx="18" cy="18" r="2.5"/>
+                                    <path d="M6 18h4.5l2-4.5h5l1.5 4.5"/>
+                                    <path d="M15 6.5h2L18.5 11"/>
+                                    <path d="M10 13.5h4"/>
+                                    <rect x="4" y="8" width="5" height="5" rx="1"/>
                                 </svg>
                             </div>
                             <div class="font-serif text-xl font-bold text-luxury-forest">Kirim ke Lokasi</div>
@@ -163,13 +248,21 @@
                 <h3 class="text-2xl font-serif font-bold text-luxury-forest mb-8">Detail Pesanan</h3>
                 
                 <div class="space-y-6">
-                    <div class="flex items-start gap-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-luxury-gold mt-1 shrink-0">
-                            <path d="m2 22 1-1h18l1 1"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 22V4a2 2 0 0 1 2-2h10l4 4v16"/>
-                        </svg>
+                    <div class="flex items-center gap-4">
+                        @if(!empty($booking->storeLogo))
+                            <img src="{{ $booking->storeLogo }}" alt="{{ $booking->storeName }}" class="w-10 h-10 rounded-xl object-cover border border-luxury-alabas/85 shadow-sm shrink-0">
+                        @else
+                            <div class="w-10 h-10 rounded-xl bg-luxury-gold/10 border border-luxury-gold/20 flex items-center justify-center text-luxury-gold shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                                    <path d="M7 2v20"/>
+                                    <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+                                </svg>
+                            </div>
+                        @endif
                         <div>
-                            <div class="text-sm font-bold text-luxury-forest">{{ $booking->storeName }}</div>
-                            <div class="text-xs text-luxury-slate mt-1 italic">{{ $booking->address }}</div>
+                            <div class="text-sm font-bold text-luxury-forest leading-tight">{{ $booking->storeName }}</div>
+                            <div class="text-[11px] text-luxury-slate mt-1 italic leading-tight">{{ $booking->address }}</div>
                         </div>
                     </div>
 
@@ -194,9 +287,9 @@
                             <span>Biaya Pengiriman</span>
                             <span x-text="'Rp ' + deliveryFee.toLocaleString('id-ID')"></span>
                         </div>
-                        <div class="pt-4 mt-4 border-t border-luxury-alabas/60 flex justify-between items-end">
-                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold mb-1">Total Pembayaran</span>
-                            <span class="text-3xl font-serif font-black text-luxury-forest leading-none" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
+                        <div class="pt-4 mt-4 border-t border-luxury-alabas/60 flex justify-between items-center flex-row flex-nowrap gap-4">
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-gold shrink-0">Total Pembayaran</span>
+                            <span class="text-2xl sm:text-3xl font-serif font-black text-luxury-forest leading-none whitespace-nowrap text-right" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                         </div>
                     </div>
 
@@ -213,104 +306,112 @@
     </div>
 
     <!-- Fase Sukses (Struk Digital) -->
-    <div x-show="paymentComplete" class="max-w-2xl mx-auto py-12" style="display: none;" 
+    <div x-show="paymentComplete" class="max-w-lg mx-auto py-0" style="display: none;" 
          x-transition:enter="transition ease-out duration-1000"
-         x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+         x-transition:enter-start="opacity-0 translate-y-8 scale-95"
          x-transition:enter-end="opacity-100 translate-y-0 scale-100">
         
-        <div class="glass-panel rounded-[3.5rem] shadow-2xl border border-white/40 overflow-hidden relative">
+        <div class="glass-panel rounded-[2.5rem] shadow-2xl border border-white/40 overflow-hidden relative">
             <!-- Top Elegant Accent -->
-            <div class="h-2 w-full bg-gradient-to-r from-luxury-forest via-luxury-gold to-luxury-emerald"></div>
+            <div class="h-1.5 w-full bg-gradient-to-r from-luxury-forest via-luxury-gold to-luxury-emerald"></div>
             
-            <div class="p-12 lg:p-16 text-center">
-                <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-10 luxury-shadow border border-luxury-alabas">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-luxury-forest animate-in zoom-in duration-700 mx-auto">
+            <div class="p-6 sm:p-8 text-center">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 luxury-shadow border border-luxury-alabas">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-luxury-forest animate-in zoom-in duration-700 mx-auto">
                         <polyline points="20 6 9 17 4 12"/>
                     </svg>
                 </div>
                 
-                <h2 class="text-4xl font-serif font-bold text-luxury-forest mb-4">Pemesanan Berhasil</h2>
-                <p class="text-luxury-slate font-medium mb-12 tracking-wide" x-text="receivingMethod === 'delivery' ? 'Makanan pesanan Anda sedang dipersiapkan dan akan segera diantarkan.' : 'Makanan Anda sudah aman dan siap diambil langsung di lokasi toko.'"></p>
+                <h2 class="text-2xl font-serif font-bold text-luxury-forest mb-2">Pemesanan Berhasil</h2>
+                <p class="text-luxury-slate text-xs font-medium mb-6 tracking-wide" x-text="receivingMethod === 'delivery' ? 'Makanan pesanan Anda sedang dipersiapkan dan akan segera diantarkan.' : 'Makanan Anda sudah aman dan siap diambil langsung di lokasi toko.'"></p>
 
-                <div class="bg-white/40 rounded-[2.5rem] border border-luxury-alabas p-10 mb-12 text-left relative overflow-hidden">
+                <div class="bg-white/40 rounded-2xl border border-luxury-alabas p-5 mb-6 text-left relative overflow-hidden">
                     <!-- Invoice Decoration -->
-                    <div class="absolute top-0 right-0 p-8 opacity-5">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-32 h-32 text-luxury-forest -rotate-12">
+                    <div class="absolute top-0 right-0 p-4 opacity-[0.02] pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-20 h-20 text-luxury-forest -rotate-12">
                             <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 2 5.5a7 7 0 0 1-10 12.5ZM19 2v4"/>
                         </svg>
                     </div>
 
-                    <div class="flex justify-between items-center mb-10 pb-6 border-b border-luxury-alabas/50">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-luxury-alabas/50">
                         <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">ID Transaksi</span>
+                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">ID Transaksi</span>
                             <span class="font-mono text-xs font-bold text-luxury-forest tracking-tighter" x-text="realOrderId || '{{ $booking->id }}'"></span>
                         </div>
                         <div class="text-right">
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">Status</span>
-                            <span class="text-[10px] font-black text-luxury-emerald uppercase tracking-widest bg-luxury-emerald/10 px-3 py-1 rounded-lg">Lunas</span>
+                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">Status</span>
+                            <span class="text-[9px] font-black text-luxury-emerald uppercase tracking-widest bg-luxury-emerald/10 px-2 py-0.5 rounded">Lunas</span>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-10 mb-10">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3">Metode Pengambilan</span>
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-luxury-forest" :class="receivingMethod === 'delivery' ? 'hidden' : ''">
-                                    <path d="m2 22 1-1h18l1 1"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4 22V4a2 2 0 0 1 2-2h10l4 4v16"/>
+                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1">Metode Pengambilan</span>
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-luxury-forest" :class="receivingMethod === 'delivery' ? 'hidden' : ''">
+                                    <path d="M20 20a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1" />
+                                    <path d="M3 7l2-4h14l2 4" />
+                                    <path d="M9 12v6" />
+                                    <path d="M15 12v6" />
                                 </svg>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-luxury-forest" :class="receivingMethod === 'delivery' ? '' : 'hidden'">
-                                    <rect width="16" height="12" x="2" y="4" rx="2"/><path d="M22 8h-4v8h4V8Z"/><path d="M6 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-luxury-forest" :class="receivingMethod === 'delivery' ? '' : 'hidden'">
+                                    <circle cx="6" cy="18" r="2.5"/>
+                                    <circle cx="18" cy="18" r="2.5"/>
+                                    <path d="M6 18h4.5l2-4.5h5l1.5 4.5"/>
+                                    <path d="M15 6.5h2L18.5 11"/>
+                                    <path d="M10 13.5h4"/>
+                                    <rect x="4" y="8" width="5" height="5" rx="1"/>
                                 </svg>
-                                <span class="text-sm font-bold text-luxury-forest uppercase tracking-widest" x-text="receivingMethod === 'delivery' ? 'Kirim ke Lokasi' : 'Ambil Sendiri'"></span>
+                                <span class="text-xs font-bold text-luxury-forest uppercase tracking-widest" x-text="receivingMethod === 'delivery' ? 'Kirim ke Lokasi' : 'Ambil Sendiri'"></span>
                             </div>
                         </div>
                         <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3">Pembayaran</span>
-                            <div class="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-luxury-forest">
+                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1">Pembayaran</span>
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-luxury-forest">
                                     <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>
                                 </svg>
-                                <span class="text-sm font-bold text-luxury-forest uppercase" x-text="paymentMethod"></span>
+                                <span class="text-xs font-bold text-luxury-forest uppercase" x-text="paymentMethod"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-10 p-6 bg-white rounded-2xl border border-luxury-alabas/50 shadow-sm">
-                        <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-3" x-text="receivingMethod === 'delivery' ? 'Alamat Pengiriman' : 'Lokasi Toko'"></span>
-                        <div class="text-sm font-bold text-luxury-forest mb-1" x-text="receivingMethod === 'delivery' ? '{{ Auth::user()->name }}' : '{{ $booking->storeName }}'"></div>
-                        <div class="text-xs text-luxury-slate leading-relaxed font-medium italic opacity-85" x-text="receivingMethod === 'delivery' ? '{{ Auth::user()->profile?->address ?? Auth::user()->address ?? 'Jl. Telekomunikasi No. 1, Bandung' }}' : '{{ $booking->address }}'"></div>
+                    <div class="mb-4 p-3.5 bg-white rounded-xl border border-luxury-alabas/50 shadow-sm">
+                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1" x-text="receivingMethod === 'delivery' ? 'Alamat Pengiriman' : 'Lokasi Toko'"></span>
+                        <div class="text-xs font-bold text-luxury-forest mb-0.5" x-text="receivingMethod === 'delivery' ? '{{ Auth::user()->name }}' : '{{ $booking->storeName }}'"></div>
+                        <div class="text-[11px] text-luxury-slate leading-relaxed font-medium italic opacity-85" x-text="receivingMethod === 'delivery' ? '{{ Auth::user()->profile?->address ?? Auth::user()->address ?? 'Jl. Telekomunikasi No. 1, Bandung' }}' : '{{ $booking->address }}'"></div>
                     </div>
 
                     <div class="flex justify-between items-end">
                         <div>
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2" x-text="receivingMethod === 'delivery' ? 'Perkiraan Tiba' : 'Jadwal Pengambilan'"></span>
-                            <div class="text-sm font-black text-luxury-forest uppercase tracking-widest" x-text="receivingMethod === 'delivery' ? deliveryTimeSlot : '{{ $booking->pickupTime }}'"></div>
+                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5" x-text="receivingMethod === 'delivery' ? 'Perkiraan Tiba' : 'Jadwal Pengambilan'"></span>
+                            <div class="text-xs font-black text-luxury-forest uppercase tracking-wider" x-text="receivingMethod === 'delivery' ? deliveryTimeSlot : '{{ $booking->pickupTime }}'"></div>
                         </div>
                         <div class="text-right" x-show="receivingMethod === 'pickup'">
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-2">Kode Klaim</span>
-                            <div class="font-mono text-3xl font-black text-luxury-forest tracking-tighter" x-text="realPickupCode || pickupCode"></div>
+                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">Kode Klaim</span>
+                            <div class="font-mono text-xl font-black text-luxury-forest tracking-tighter bg-luxury-gold/10 px-2.5 py-0.5 rounded border border-luxury-gold/25 inline-block" x-text="realPickupCode || pickupCode"></div>
                         </div>
                     </div>
 
                     <!-- Total Row -->
-                    <div class="mt-10 pt-8 border-t-2 border-dashed border-luxury-alabas/50">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.3em]">Total Pembayaran</span>
-                            <div class="text-3xl font-serif font-black text-luxury-forest" x-text="'Rp ' + total.toLocaleString('id-ID')"></div>
+                    <div class="mt-4 pt-4 border-t-2 border-dashed border-luxury-alabas/50">
+                        <div class="flex justify-between items-center flex-row flex-nowrap gap-4">
+                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] shrink-0">Total Pembayaran</span>
+                            <div class="text-xl font-serif font-black text-luxury-forest whitespace-nowrap text-right" x-text="'Rp ' + total.toLocaleString('id-ID')"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-6 justify-center">
-                    <a href="{{ route('consumer.history') }}"
-                       class="flex-[2] flex items-center justify-center gap-4 bg-luxury-forest text-white py-5 px-10 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-luxury-gold transition-all duration-500 active:scale-95 group">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-luxury-gold transition-transform group-hover:rotate-12">
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <a href="{{ route('consumer.orders.active') }}"
+                       class="flex-[2] flex items-center justify-center gap-2 bg-luxury-forest text-white py-3.5 px-6 rounded-xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg hover:bg-luxury-gold transition-all duration-500 active:scale-95 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-luxury-gold transition-transform group-hover:rotate-12">
                             <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
                         </svg>
-                        Lihat Riwayat
+                        Pantau Pesanan
                     </a>
-                    <button @click="window.print()" class="flex-1 flex items-center justify-center gap-3 bg-white text-luxury-slate py-5 px-8 rounded-[1.5rem] border border-luxury-alabas font-black uppercase tracking-[0.2em] text-[10px] hover:bg-luxury-ivory transition-all duration-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                    <button @click="window.print()" class="flex-1 flex items-center justify-center gap-2 bg-white text-luxury-slate py-3.5 px-6 rounded-xl border border-luxury-alabas font-black uppercase tracking-[0.2em] text-[10px] hover:bg-luxury-ivory transition-all duration-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
                             <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14" rx="1" ry="1"/>
                         </svg>
                         Cetak Struk
@@ -318,7 +419,7 @@
                 </div>
             </div>
         </div>
-        <p class="text-center text-luxury-slate/40 text-[10px] font-black uppercase tracking-[0.4em] mt-12">Membantu mengurangi sampah makanan demi masa depan yang lebih baik.</p>
+        <p class="text-center text-luxury-slate/40 text-[9px] font-black uppercase tracking-[0.4em] mt-6">Membantu mengurangi sampah makanan demi masa depan yang lebih baik.</p>
     </div>
 
     <form id="checkout-form" action="{{ route('consumer.checkout.store') }}" method="POST" class="hidden">
@@ -349,6 +450,48 @@
             realOrderId: '',
             realPickupCode: '',
             pickupCode: 'PICK-A1B2',
+            paymentSteps: [],
+            get methodConfig() {
+                const configs = {
+                    qris: {
+                        name: 'QRIS',
+                        colorClass: 'text-emerald-600',
+                        bgClass: 'bg-emerald-500/10',
+                        spinnerClass: 'border-emerald-600',
+                        badgeBg: 'bg-emerald-500/20 text-emerald-700',
+                        badgeDot: 'bg-emerald-500',
+                        gradient: 'from-emerald-500/5 to-teal-500/10'
+                    },
+                    gopay: {
+                        name: 'GoPay',
+                        colorClass: 'text-cyan-600',
+                        bgClass: 'bg-cyan-500/10',
+                        spinnerClass: 'border-cyan-600',
+                        badgeBg: 'bg-cyan-500/20 text-cyan-700',
+                        badgeDot: 'bg-cyan-500',
+                        gradient: 'from-cyan-500/5 to-sky-500/10'
+                    },
+                    ovo: {
+                        name: 'OVO',
+                        colorClass: 'text-purple-600',
+                        bgClass: 'bg-purple-500/10',
+                        spinnerClass: 'border-purple-600',
+                        badgeBg: 'bg-purple-500/20 text-purple-700',
+                        badgeDot: 'bg-purple-500',
+                        gradient: 'from-purple-500/5 to-indigo-500/10'
+                    },
+                    dana: {
+                        name: 'DANA',
+                        colorClass: 'text-blue-600',
+                        bgClass: 'bg-blue-500/10',
+                        spinnerClass: 'border-blue-600',
+                        badgeBg: 'bg-blue-500/20 text-blue-700',
+                        badgeDot: 'bg-blue-500',
+                        gradient: 'from-blue-500/5 to-indigo-500/10'
+                    }
+                };
+                return configs[this.paymentMethod] || configs.qris;
+            },
 
             get total() {
                 return this.receivingMethod === 'delivery' ? this.subtotal + this.deliveryFee : this.subtotal;
@@ -383,14 +526,91 @@
                     return;
                 }
 
-                this.isProcessing = true;
-                this.processingMessage = 'Memverifikasi pembayaran...';
-                
-                await new Promise(r => setTimeout(r, 1500));
-                this.processingMessage = 'Sinkronisasi dengan mitra...';
-                
-                await new Promise(r => setTimeout(r, 1500));
-                this.processingMessage = 'Menyelesaikan pesanan...';
+                // Initialize step statuses dynamically based on the payment method
+                if (this.paymentMethod === 'qris') {
+                    this.paymentSteps = [
+                        { label: 'Inisialisasi QRIS Gateway', status: 'active' },
+                        { label: 'Menghasilkan Kode QR & Pengecekan Scan', status: 'pending' },
+                        { label: 'Sinkronisasi Pesanan Mitra', status: 'pending' }
+                    ];
+                    this.processingMessage = 'Menghubungkan ke Gateway QRIS...';
+                    this.isProcessing = true;
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                    this.paymentSteps[0].status = 'done';
+                    this.paymentSteps[1].status = 'active';
+                    this.processingMessage = 'Menghasilkan kode QRIS unik...';
+                    
+                    await new Promise(r => setTimeout(r, 1500));
+                    this.paymentSteps[1].status = 'done';
+                    this.paymentSteps[2].status = 'active';
+                    this.processingMessage = 'Menunggu konfirmasi scan & pembayaran...';
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                } else if (this.paymentMethod === 'gopay') {
+                    this.paymentSteps = [
+                        { label: 'Koneksi Wallet GoPay', status: 'active' },
+                        { label: 'Konfirmasi Aplikasi HP', status: 'pending' },
+                        { label: 'Sinkronisasi Pesanan Mitra', status: 'pending' }
+                    ];
+                    this.processingMessage = 'Menyambungkan dengan e-wallet GoPay...';
+                    this.isProcessing = true;
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                    this.paymentSteps[0].status = 'done';
+                    this.paymentSteps[1].status = 'active';
+                    this.processingMessage = 'Mengirim permintaan pembayaran ke HP Anda...';
+                    
+                    await new Promise(r => setTimeout(r, 1800));
+                    this.paymentSteps[1].status = 'done';
+                    this.paymentSteps[2].status = 'active';
+                    this.processingMessage = 'Menunggu konfirmasi transaksi pada HP...';
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                } else if (this.paymentMethod === 'ovo') {
+                    this.paymentSteps = [
+                        { label: 'Mengirim Push Notifikasi OVO', status: 'active' },
+                        { label: 'Verifikasi PIN Keamanan', status: 'pending' },
+                        { label: 'Sinkronisasi Pesanan Mitra', status: 'pending' }
+                    ];
+                    this.processingMessage = 'Menghubungkan ke layanan OVO...';
+                    this.isProcessing = true;
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                    this.paymentSteps[0].status = 'done';
+                    this.paymentSteps[1].status = 'active';
+                    this.processingMessage = 'Mengirimkan notifikasi pembayaran ke OVO Anda...';
+                    
+                    await new Promise(r => setTimeout(r, 1850));
+                    this.paymentSteps[1].status = 'done';
+                    this.paymentSteps[2].status = 'active';
+                    this.processingMessage = 'Menunggu verifikasi PIN keamanan diselesaikan...';
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                } else { // dana
+                    this.paymentSteps = [
+                        { label: 'Mengakses DANA Secure Port', status: 'active' },
+                        { label: 'Validasi Akun & Pembayaran', status: 'pending' },
+                        { label: 'Sinkronisasi Pesanan Mitra', status: 'pending' }
+                    ];
+                    this.processingMessage = 'Mengamankan koneksi dengan API DANA...';
+                    this.isProcessing = true;
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                    this.paymentSteps[0].status = 'done';
+                    this.paymentSteps[1].status = 'active';
+                    this.processingMessage = 'Validasi token akun dan otorisasi dana...';
+                    
+                    await new Promise(r => setTimeout(r, 1500));
+                    this.paymentSteps[1].status = 'done';
+                    this.paymentSteps[2].status = 'active';
+                    this.processingMessage = 'Memproses pembayaran aman DANA...';
+                    
+                    await new Promise(r => setTimeout(r, 1200));
+                }
+
+                // Final step 3: Sinkronisasi Pesanan Mitra
+                this.processingMessage = 'Menyelesaikan pesanan Anda...';
 
                 try {
                     const formData = new FormData(document.getElementById('checkout-form'));
@@ -406,6 +626,9 @@
                     const data = await response.json();
 
                     if (data.success) {
+                        this.paymentSteps[2].status = 'done';
+                        this.processingMessage = 'Transaksi Berhasil!';
+                        await new Promise(r => setTimeout(r, 800));
                         this.realOrderId = data.order_number;
                         this.realPickupCode = data.pickup_code;
                         this.isProcessing = false;

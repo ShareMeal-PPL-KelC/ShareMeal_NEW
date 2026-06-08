@@ -107,4 +107,66 @@ class Pbi32EditDeleteReviewTest extends TestCase
             'rating' => 4,
         ]);
     }
+
+    public function test_consumer_cannot_edit_review_after_two_minutes(): void
+    {
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'completed',
+        ]);
+
+        $review = Review::create([
+            'order_id' => $order->id,
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'rating' => 4,
+            'comment' => 'Bagus',
+        ]);
+
+        // Manually adjust the timestamp to 3 minutes ago
+        $review->created_at = now()->subMinutes(3);
+        $review->save();
+
+        $response = $this->actingAs($consumer)->put(route('consumer.review.update', $review->id), [
+            'rating' => 5,
+            'comment' => 'Ubah ulasan kedaluwarsa',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_consumer_cannot_delete_review_after_two_minutes(): void
+    {
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'completed',
+        ]);
+
+        $review = Review::create([
+            'order_id' => $order->id,
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'rating' => 4,
+            'comment' => 'Bagus',
+        ]);
+
+        // Manually adjust the timestamp to 3 minutes ago
+        $review->created_at = now()->subMinutes(3);
+        $review->save();
+
+        $response = $this->actingAs($consumer)->delete(route('consumer.review.delete', $review->id));
+
+        $response->assertStatus(403);
+        $this->assertDatabaseHas('reviews', ['id' => $review->id]);
+    }
 }
