@@ -20,6 +20,9 @@ class Order extends Model
             if ($order->wasChanged('status')) {
                 $order->customerRelation->notify(new OrderStatusUpdated($order));
             }
+            if ($order->wasChanged('is_delayed') && $order->is_delayed) {
+                $order->customerRelation->notify(new \App\Notifications\OrderDelayedNotification($order));
+            }
         });
     }
 
@@ -38,12 +41,16 @@ class Order extends Model
         'payment_method',
         'confirmed_by_consumer',
         'cancel_reason',
+        'is_delayed',
+        'delayed_at',
     ];
 
     protected $casts = [
         'pickup_time' => 'datetime',
         'delivery_fee' => 'integer',
         'confirmed_by_consumer' => 'boolean',
+        'is_delayed' => 'boolean',
+        'delayed_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -201,5 +208,21 @@ class Order extends Model
     public function reviewRelation(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    public static function checkAndApplyDelays()
+    {
+        $cutoff = now()->subMinutes(5);
+        $orders = self::where('status', 'processing')
+            ->where('is_delayed', false)
+            ->where('updated_at', '<=', $cutoff)
+            ->get();
+
+        foreach ($orders as $order) {
+            $order->update([
+                'is_delayed' => true,
+                'delayed_at' => now(),
+            ]);
+        }
     }
 }

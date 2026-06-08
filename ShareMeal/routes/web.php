@@ -57,6 +57,7 @@ Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function
     Route::post('/inventory/{productId}/delete', [ShareMealController::class, 'mitraInventoryDelete'])->name('inventory.delete');
     Route::get('/orders', [ShareMealController::class, 'mitraOrders'])->name('orders');
     Route::post('/orders/{orderId}/update-status', [ShareMealController::class, 'updateOrderStatus'])->name('orders.update-status');
+    Route::post('/orders/{orderId}/delay', [ShareMealController::class, 'delayOrder'])->name('orders.delay');
     Route::post('/orders/{orderId}/confirm', [ShareMealController::class, 'mitraOrdersConfirm'])->name('orders.confirm');
     Route::get('/reviews', [ShareMealController::class, 'mitraReviews'])->name('reviews');
     Route::get('/history', [ShareMealController::class, 'mitraHistory'])->name('history');

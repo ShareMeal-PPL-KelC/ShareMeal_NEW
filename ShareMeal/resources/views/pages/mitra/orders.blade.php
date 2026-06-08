@@ -72,7 +72,15 @@
                                       class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
                                       x-text="getStatusLabel(order)">
                                 </span>
-                                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1">
+                                <template x-if="order.is_delayed">
+                                    <span class="bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-600 flex items-center gap-1 select-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3 h-3 text-white shrink-0">
+                                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        Delayed
+                                    </span>
+                                </template>
+                                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-200 flex items-center gap-1">
                                     <!-- Delivery (truck) Icon -->
                                     <svg x-show="order.receiving_method === 'delivery'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-gray-500">
                                         <rect x="1" y="3" width="15" height="13" rx="2" ry="2" />
@@ -180,14 +188,29 @@
                         </template>
 
                         <template x-if="order.status === 'processing'">
-                            <div class="flex flex-1 gap-3">
+                            <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full">
                                 <button @click="updateStatus(order.id, 'ready')" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition flex items-center justify-center gap-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                         <path d="M21 16V8a2 2 0 0 0-2-2h-5l-4-4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"/>
                                     </svg>
                                     <span x-text="order.receiving_method === 'delivery' ? 'Pesanan Siap' : 'Pesanan Siap Diambil'"></span>
                                 </button>
-                                <button @click="updateStatus(order.id, 'cancelled')" class="px-6 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition">
+                                
+                                <template x-if="!order.is_delayed">
+                                    <button @click="delayOrderAction(order.id)" class="px-5 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold shadow-lg shadow-amber-100 transition flex items-center justify-center gap-1 text-sm shrink-0">
+                                        Delay
+                                    </button>
+                                </template>
+                                <template x-if="order.is_delayed">
+                                    <div class="px-5 py-4 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl font-bold text-sm text-center shrink-0 flex items-center gap-1 select-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5 text-amber-600">
+                                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                        </svg>
+                                        Delayed
+                                    </div>
+                                </template>
+
+                                <button @click="updateStatus(order.id, 'cancelled')" class="px-6 py-4 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition shrink-0">
                                     Batalkan
                                 </button>
                             </div>
@@ -469,6 +492,40 @@
                     'cancelled': 'Dibatalkan'
                 };
                 return labels[order.status] || order.status;
+            },
+
+            delayOrderAction(id) {
+                const order = this.orders.find(o => o.id === id);
+                if (!order) return;
+
+                const title = 'Konfirmasi Delay';
+                const message = 'Apakah Anda yakin ingin menandai pesanan ini mengalami keterlambatan (delay)? Consumer akan mendapatkan notifikasi.';
+
+                this.triggerConfirm(title, message, async () => {
+                    try {
+                        const response = await fetch(`/mitra/orders/${id}/delay`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            order.is_delayed = true;
+                            this.showToast('Pesanan berhasil ditandai delay!', 'success');
+                            setTimeout(() => lucide.createIcons(), 50);
+                        } else {
+                            const data = await response.json();
+                            this.showToast(data.message || 'Gagal menandai delay.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.showToast('Terjadi kesalahan koneksi.', 'error');
+                    }
+                });
             },
 
             updateStatus(id, newStatus) {

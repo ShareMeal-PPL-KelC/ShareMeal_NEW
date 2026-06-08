@@ -1176,6 +1176,7 @@ class ShareMealController extends Controller
 
     public function mitraOrders(): View
     {
+        \App\Models\Order::checkAndApplyDelays();
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         $orders = \App\Models\Order::with(['customer.profile', 'items.product', 'reviewRelation'])
             ->where('mitra_id', $userId)
@@ -1266,6 +1267,37 @@ class ShareMealController extends Controller
         }
 
         return back()->with('success', 'Status pesanan berhasil diperbarui.');
+    }
+
+    public function delayOrder(Request $request, int $orderId): JsonResponse|RedirectResponse
+    {
+        $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
+        $order = \App\Models\Order::where('mitra_id', $userId)->findOrFail($orderId);
+
+        if ($order->status !== 'processing') {
+            if ($request->wantsJson() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pesanan hanya dapat ditandai delay jika statusnya sedang diproses.',
+                ], 422);
+            }
+            return back()->with('error', 'Pesanan hanya dapat ditandai delay jika statusnya sedang diproses.');
+        }
+
+        $order->update([
+            'is_delayed' => true,
+            'delayed_at' => now(),
+        ]);
+
+        if ($request->wantsJson() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_delayed' => true,
+                'message' => 'Pesanan berhasil ditandai delay.',
+            ]);
+        }
+
+        return back()->with('success', 'Pesanan berhasil ditandai delay.');
     }
 
     public function mitraOrdersConfirm(int $orderId): JsonResponse|RedirectResponse

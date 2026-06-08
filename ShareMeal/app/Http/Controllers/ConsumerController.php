@@ -112,6 +112,7 @@ class ConsumerController extends Controller
 
     public function activeOrders()
     {
+        Order::checkAndApplyDelays();
         $userId = Auth::id() ?? User::where('role', 'consumer')->value('id') ?? 1;
         $activeOrders = Order::with(['items.product', 'mitra.profile'])
             ->where('customer_id', $userId)

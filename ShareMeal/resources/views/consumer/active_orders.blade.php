@@ -134,6 +134,12 @@
                                 </span>
                                 {{ $statusText }}
                             </span>
+                            @if($t->is_delayed)
+                                <span class="bg-amber-500 text-white px-3.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-600 flex items-center gap-1.5 shadow-[0_2px_10px_rgba(245,158,11,0.2)] select-none">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 text-white"></i>
+                                    Delayed
+                                </span>
+                            @endif
 
                             <!-- Delivery/Pickup Badge -->
                             @if($t->receiving_method === 'delivery')
@@ -197,6 +203,24 @@
                             <div class="space-y-2">
                                 <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block">Status Terkini</span>
                                 <p class="text-sm font-bold text-luxury-forest leading-snug">{{ $statusDesc }}</p>
+                                
+                                @if($t->is_delayed)
+                                <div class="bg-amber-50 border border-amber-200/70 rounded-2xl p-4 flex items-start gap-3 mt-3 shadow-sm select-none">
+                                    <div class="bg-amber-100 p-1.5 rounded-lg text-amber-700 shrink-0">
+                                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-0.5">Pemberitahuan Delay</div>
+                                        <div class="text-xs font-bold text-amber-700 leading-normal">
+                                            @if($t->receiving_method === 'delivery')
+                                                Makanan ini kemungkinan akan terlambat datang.
+                                            @else
+                                                Pesanan akan delay jadinya mohon ditunggu sebentar.
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
 
                             @if($t->status === 'completed')

@@ -13,3 +13,6 @@ Schedule::command('sharemeal:auto-donate')->everyMinute()->withoutOverlapping();
 
 // Kirim peringatan batas waktu pengambilan pesanan konsumen 30 menit sebelum berakhir
 Schedule::command('sharemeal:send-pickup-reminders')->everyMinute()->withoutOverlapping();
+
+// Cek pesanan yang mengalami keterlambatan secara otomatis setiap menit
+Schedule::command('sharemeal:check-order-delays')->everyMinute()->withoutOverlapping();
