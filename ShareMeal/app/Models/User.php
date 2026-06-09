@@ -13,7 +13,17 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /**
+     * User-editable fields (via validated forms) and system-internal fields.
+     *
+     * SECURITY NOTE: System-only columns (is_verified, warnings_count, blocked_at, etc.)
+     * MUST NEVER be populated via $request->all() or unfiltered input.
+     * Controllers must always use $request->validate() + only specific keys.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
+        // User-facing fields
         'name',
         'email',
         'password',
@@ -22,10 +32,7 @@ class User extends Authenticatable
         'status',
         'organization_name',
         'joined_at',
-        'transactions_count',
-        'warnings_count',
-        'is_verified',
-        'verification_rejection_reason',
+        // Document fields (set only during registration/upload flow)
         'document_ktp',
         'document_siup',
         'document_nib',
@@ -33,6 +40,11 @@ class User extends Authenticatable
         'document_legalitas',
         'document_izin',
         'document_identitas',
+        // System/admin-only fields (set ONLY via internal controller logic, NEVER from raw request)
+        'transactions_count',
+        'warnings_count',
+        'is_verified',
+        'verification_rejection_reason',
         'last_warning_at',
         'warning_reason',
         'blocked_at',

@@ -17,10 +17,23 @@
 </head>
 <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
     <!-- Top Navigation -->
+@php
+    $userRole = Auth::user()?->role ?? 'consumer';
+    $dashboardUrl = route('home');
+    if ($userRole === 'admin') {
+        $dashboardUrl = route('admin.dashboard');
+    } elseif ($userRole === 'lembaga') {
+        $dashboardUrl = route('lembaga.dashboard');
+    } elseif ($userRole === 'mitra') {
+        $dashboardUrl = route('mitra.dashboard');
+    } elseif ($userRole === 'consumer') {
+        $dashboardUrl = route('consumer.dashboard');
+    }
+@endphp
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <a href="{{ url('/') }}" class="flex items-center gap-2">
+                <a href="{{ $dashboardUrl }}" class="flex items-center gap-2">
                     <img src="{{ asset('images/logo.png') }}" class="h-8 w-8 object-cover rounded-full" alt="ShareMeal Logo">
                     <span class="text-xl font-bold" style="color: #174413;">ShareMeal</span>
                 </a>

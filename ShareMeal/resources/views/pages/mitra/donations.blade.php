@@ -20,17 +20,31 @@
 @endphp
 
 @section('content')
-<div class="space-y-6" x-data="{ isDialogOpen: false, expiresDate: '', expiresTime: '', selectedUnit: 'bungkus' }" x-effect="document.body.style.overflow = isDialogOpen ? 'hidden' : ''">
+<div class="space-y-6" x-data="{ isDialogOpen: false, expiresDate: '', expiresTime: '', selectedUnit: 'box' }" x-effect="document.body.style.overflow = isDialogOpen ? 'hidden' : ''">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Riwayat Donasi</h1>
             <p class="text-gray-600 mt-1">Daftar donasi Anda dan informasi lembaga penerima</p>
         </div>
+        @if(auth()->user()->is_verified)
         <button @click="isDialogOpen = true" class="bg-[#174413] hover:bg-[#0f2d0c] text-white px-6 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-lg shadow-green-900/20">
             <i data-lucide="plus" class="w-5 h-5"></i>
             Tambah Donasi
         </button>
+        @else
+        <button disabled title="Akun Anda belum terverifikasi oleh admin." class="bg-gray-300 text-gray-500 cursor-not-allowed px-6 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-none opacity-60">
+            <i data-lucide="lock" class="w-5 h-5"></i>
+            Tambah Donasi
+        </button>
+        @endif
     </div>
+
+    @if(!auth()->user()->is_verified)
+    <div class="bg-amber-50 border border-amber-200 text-amber-800 px-6 py-4 rounded-xl flex items-center gap-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i>
+        <span>Akun Anda belum terverifikasi oleh admin. Anda tidak dapat menambahkan donasi baru saat ini.</span>
+    </div>
+    @endif
 
     @if(session('success'))
     <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl flex items-center gap-3">
@@ -167,32 +181,32 @@
     </div>
 
     <!-- Add Donation Modal -->
-    <div x-show="isDialogOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" x-cloak>
-        <div class="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 sm:space-y-6" @click.away="isDialogOpen = false">
+    <div x-show="isDialogOpen" class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-4 bg-black/50 backdrop-blur-sm" x-cloak>
+        <div class="relative my-auto bg-white w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl space-y-3 sm:space-y-4" @click.away="isDialogOpen = false">
             <div class="flex items-center justify-between">
-                <h3 class="text-2xl font-black text-gray-900">Tambah Donasi Makanan</h3>
+                <h3 class="text-xl font-black text-gray-900">Tambah Donasi Makanan</h3>
                 <button type="button" @click="isDialogOpen = false" class="text-gray-400 hover:text-gray-600">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
 
-            <form action="{{ route('mitra.donations.store') }}" method="POST" class="space-y-4">
+            <form action="{{ route('mitra.donations.store') }}" method="POST" class="space-y-3">
                 @csrf
                 
-                <div class="space-y-1.5">
-                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Judul/Nama Makanan</label>
-                    <input type="text" name="title" required placeholder="Contoh: Roti Sisa Produksi Hari Ini" class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Judul/Nama Makanan</label>
+                    <input type="text" name="title" required placeholder="Contoh: Roti Sisa Produksi Hari Ini" class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jumlah</label>
-                        <input type="number" name="quantity" required min="1" placeholder="10" class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Jumlah</label>
+                        <input type="number" name="quantity" required min="1" placeholder="10" class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs">
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Satuan</label>
-                        <select name="unit" x-model="selectedUnit" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm cursor-pointer">
-                            <option value="bungkus">Bungkus</option>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Satuan</label>
+                        <select name="unit" x-model="selectedUnit" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs cursor-pointer">
+                            <option value="box">Box</option>
                             <option value="porsi">Porsi</option>
                             <option value="pcs">Pcs</option>
                             <option value="kg">Kg</option>
@@ -201,50 +215,49 @@
                 </div>
 
                 <!-- Info Satuan Dinamis -->
-                <div class="bg-gray-50 border border-gray-100 rounded-xl p-3.5 text-[11px] text-gray-500 leading-relaxed">
-                    <div class="font-black text-[#174413] uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <i data-lucide="info" class="w-3.5 h-3.5"></i> Info Satuan:
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-2.5 text-[10px] text-gray-505 leading-relaxed">
+                    <div class="font-black text-[#174413] uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3 h-3"></i> Info Satuan:
                     </div>
-                    <span x-show="selectedUnit === 'bungkus'">Makanan siap saji yang sudah dikemas secara individual (contoh: nasi kotak, nasi bungkus, roti terbungkus). Praktis untuk langsung dibagikan.</span>
+                    <span x-show="selectedUnit === 'box'">Makanan siap saji yang sudah dikemas dalam box/kotak secara individual (contoh: nasi box, bento box, roti per box). Praktis untuk langsung dibagikan.</span>
                     <span x-show="selectedUnit === 'porsi'">Porsi saji curah/prasmanan (contoh: lauk katering, sayur di tray saji). Perlu piring/wadah tambahan saat didistribusikan.</span>
                     <span x-show="selectedUnit === 'pcs'">Makanan satuan/butir utuh yang dihitung per buah (contoh: donat, roti satuan, buah apel/jeruk).</span>
                     <span x-show="selectedUnit === 'kg'">Bahan makanan mentah atau curah yang diukur dengan timbangan berat (contoh: beras, sayur segar curah, daging mentah).</span>
                 </div>
 
-                <div class="space-y-1.5">
-                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Batas Waktu Layak Konsumsi</label>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tanggal</span>
-                            <input type="date" x-model="expiresDate" @change="$el.blur()" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm text-gray-900">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Batas Waktu Layak Konsumsi</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-0.5">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Tanggal</span>
+                            <input type="date" x-model="expiresDate" @change="$el.blur()" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs text-gray-900">
                         </div>
-                        <div class="space-y-1">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Jam & Menit</span>
-                            <input type="time" x-model="expiresTime" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm text-gray-900">
+                        <div class="space-y-0.5">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Jam & Menit</span>
+                            <input type="time" x-model="expiresTime" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs text-gray-900">
                         </div>
                     </div>
                     <input type="hidden" name="expires_at" :value="expiresDate && expiresTime ? expiresDate + ' ' + expiresTime : ''">
-                    <p class="text-[10px] text-gray-400 mt-1 italic">Tentukan batas akhir waktu makanan ini aman dan layak untuk dikonsumsi.</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Mulai Ambil</label>
-                        <input type="time" name="pickup_start_time" value="{{ $defaultStart }}" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Jam Mulai Ambil</label>
+                        <input type="time" name="pickup_start_time" value="{{ $defaultStart }}" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs">
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Jam Akhir Ambil</label>
-                        <input type="time" name="pickup_end_time" value="{{ $defaultEnd }}" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Jam Akhir Ambil</label>
+                        <input type="time" name="pickup_end_time" value="{{ $defaultEnd }}" @focus="$el.dataset.inputCount = 0" @input="$el.dataset.inputCount = parseInt($el.dataset.inputCount || 0) + 1; if ($el.value && parseInt($el.dataset.inputCount) >= 2) { $el.blur(); }" required class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs">
                     </div>
                 </div>
 
-                <div class="space-y-1.5">
-                    <label class="text-xs font-black text-gray-400 uppercase tracking-widest">Deskripsi/Catatan (Opsional)</label>
-                    <textarea name="description" rows="2" placeholder="Tambahkan catatan khusus untuk lembaga pengambil..." class="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#174413] transition text-sm"></textarea>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Deskripsi/Catatan (Opsional)</label>
+                    <textarea name="description" rows="2" placeholder="Tambahkan catatan khusus untuk lembaga..." class="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 px-3 outline-none focus:ring-2 focus:ring-[#174413] transition text-xs resize-none"></textarea>
                 </div>
 
-                <button type="submit" class="w-full bg-[#174413] hover:bg-[#0f2d0c] text-white px-6 py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-green-900/20">
-                    <i data-lucide="check" class="w-5 h-5"></i>
+                <button type="submit" class="w-full bg-[#174413] hover:bg-[#0f2d0c] text-white px-6 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 text-sm">
+                    <i data-lucide="check" class="w-4 h-4"></i>
                     Daftarkan Donasi
                 </button>
             </form>

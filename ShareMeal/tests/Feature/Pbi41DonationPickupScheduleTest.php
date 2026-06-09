@@ -20,7 +20,7 @@ class Pbi41DonationPickupScheduleTest extends TestCase
             'mitra_id' => $mitra->id,
             'title' => 'Nasi Bungkus Sisa Catering',
             'quantity' => 10,
-            'unit' => 'bungkus',
+            'unit' => 'box',
             'status' => 'pending',
             'expires_at' => now()->addHours(5),
             'pickup_start_time' => '18:00:00',

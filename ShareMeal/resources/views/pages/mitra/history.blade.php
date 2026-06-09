@@ -174,7 +174,7 @@
                                     <div class="flex items-center gap-4">
                                         <div class="w-12 h-12 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-500 font-bold overflow-hidden shadow-sm">
                                             <template x-if="item.product && item.product.image">
-                                                <img :src="'/storage/' + item.product.image" class="w-full h-full object-cover">
+                                                <img :src="item.product.image.startsWith('http') ? item.product.image : '/storage/' + item.product.image" class="w-full h-full object-cover">
                                             </template>
                                             <template x-if="!item.product || !item.product.image">
                                                 <i data-lucide="package" class="w-5 h-5 text-gray-400"></i>

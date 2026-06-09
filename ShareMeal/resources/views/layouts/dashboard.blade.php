@@ -98,16 +98,28 @@
     // Determine active menu routes dynamically based on user role or URL prefix
     $routes = [];
     $userRole = $navUser?->role ?? 'consumer';
+
+    $dashboardUrl = route('home');
+    if ($userRole === 'admin') {
+        $dashboardUrl = route('admin.dashboard');
+    } elseif ($userRole === 'lembaga') {
+        $dashboardUrl = route('lembaga.dashboard');
+    } elseif ($userRole === 'mitra') {
+        $dashboardUrl = route('mitra.dashboard');
+    } elseif ($userRole === 'consumer') {
+        $dashboardUrl = route('consumer.dashboard');
+    }
     
     if ($userRole === 'admin' || request()->is('admin*')) {
         $routes = [
             ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'admin.verification', 'label' => 'Verifikasi', 'icon' => 'shield-check'],
             ['route' => 'admin.users', 'label' => 'Kelola User', 'icon' => 'users'],
+            ['route' => 'admin.problem-reports.index', 'label' => 'Laporan Masalah', 'icon' => 'alert-triangle'],
             ['route' => 'admin.transactions', 'label' => 'Transaksi', 'icon' => 'receipt'],
             ['route' => 'admin.education', 'label' => 'Edukasi', 'icon' => 'book-open'],
-            ['route' => 'admin.problem-reports.index', 'label' => 'Laporan Masalah', 'icon' => 'alert-triangle'],
             ['route' => 'admin.reports', 'label' => 'Dampak & Distribusi', 'icon' => 'bar-chart-3'],
+            ['route' => 'admin.logs', 'label' => 'Log Admin', 'icon' => 'activity'],
         ];
     } elseif ($userRole === 'lembaga' || request()->is('lembaga*')) {
         $routes = [
@@ -192,7 +204,7 @@
     <aside class="fixed top-0 left-0 h-screen w-72 bg-white/45 backdrop-blur-2xl border-r border-luxury-alabas/85 z-40 hidden lg:flex flex-col py-8 px-6 shadow-[10px_0_30px_-15px_rgba(15,45,24,0.03)] justify-between">
         <div>
             <!-- Brand Logo -->
-            <a href="{{ url('/') }}" class="flex items-center gap-3 group mb-10 px-4">
+            <a href="{{ $dashboardUrl }}" class="flex items-center gap-3 group mb-10 px-4">
                 <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 object-cover rounded-full transition-transform group-hover:scale-105" alt="ShareMeal Logo">
                 <span class="text-2xl font-bold tracking-tight text-[#174413]">ShareMeal</span>
             </a>
@@ -237,7 +249,7 @@
                 <div class="flex justify-between items-center h-20">
                     
                     <!-- Mobile Logo (visible only on mobile) -->
-                    <a href="{{ url('/') }}" class="flex lg:hidden items-center gap-3 group">
+                    <a href="{{ $dashboardUrl }}" class="flex lg:hidden items-center gap-3 group">
                         <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 object-cover rounded-full" alt="ShareMeal Logo">
                         <span class="text-xl font-bold tracking-tight text-[#174413]">ShareMeal</span>
                     </a>

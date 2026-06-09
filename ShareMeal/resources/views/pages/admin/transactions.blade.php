@@ -120,7 +120,7 @@
                     @php
                         $trxId = 'TRX-' . str_pad($trx->id, 5, '0', STR_PAD_LEFT);
                         $customerName = $trx->customer->name ?? 'User Tidak Diketahui';
-                        $mitraName = $trx->mitra->name ?? 'Mitra Tidak Diketahui';
+                        $mitraName = $trx->mitra->displayName ?? 'Mitra Tidak Diketahui';
                         $total = 'Rp ' . number_format($trx->total_amount, 0, ',', '.');
                         $statusLabel = match($trx->status) {
                             'completed' => 'Selesai',

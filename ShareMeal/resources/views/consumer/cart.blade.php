@@ -10,6 +10,7 @@
     confirmTitle: '',
     confirmMsg: '',
     confirmItemId: null,
+    cartExpiredShow: {{ session('cart_expired') ? 'true' : 'false' }},
     items: {
         @foreach($cartItems as $item)
         '{{ $item->id }}': {
@@ -27,7 +28,7 @@
             setInterval(() => {
                 this.countdown--;
                 if (this.countdown <= 0) {
-                    window.location.reload();
+                    this.cartExpiredShow = true;
                 }
             }, 1000);
         }
@@ -393,6 +394,83 @@
                 <button @click="executeDelete()" 
                         class="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase tracking-wider text-[10px] shadow-lg shadow-red-500/20 transition duration-300">
                     Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Session Expired Modal -->
+    <div x-show="cartExpiredShow"
+         class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6"
+         x-cloak>
+
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-[#1a0a00]/70 backdrop-blur-md"
+             x-show="cartExpiredShow"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"></div>
+
+        <!-- Modal Content -->
+        <div x-show="cartExpiredShow"
+             x-transition:enter="ease-out duration-500"
+             x-transition:enter-start="opacity-0 translate-y-16 scale-90"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="ease-in duration-300"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-16 scale-90"
+             class="relative bg-white rounded-[2.5rem] shadow-2xl border border-amber-100 p-8 sm:p-10 w-full max-w-md z-50 text-center overflow-hidden">
+
+            <!-- Decorative top bar -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-orange-500 to-red-400 rounded-t-[2.5rem]"></div>
+
+            <!-- Icon -->
+            <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
+                 style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fed7aa;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-2xl font-black text-gray-900 mb-2 leading-tight">
+                Sesi Kunci Stok Berakhir
+            </h3>
+
+            <!-- Subtitle badge -->
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 mb-4">
+                <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-amber-700">Reservasi Dibatalkan</span>
+            </div>
+
+            <!-- Message -->
+            <p class="text-gray-500 text-sm font-medium leading-relaxed mb-2">
+                Batas waktu reservasi stok Anda telah habis.
+            </p>
+            <p class="text-gray-400 text-xs font-medium leading-relaxed mb-8">
+                Makanan yang Anda pilih telah dikembalikan ke stok dan keranjang Anda telah dikosongkan secara otomatis. Silakan pesan kembali sebelum kehabisan!
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{{ route('consumer.search') }}"
+                   class="flex-1 py-4 bg-gradient-to-br from-[#174413] to-[#2d6a1f] hover:from-[#1f5a18] hover:to-[#3a8228] text-white rounded-2xl font-black uppercase tracking-wider text-[10px] shadow-lg shadow-emerald-900/20 transition-all duration-300 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                    Cari Makanan Lagi
+                </a>
+                <button @click="cartExpiredShow = false; window.location.reload()"
+                        class="flex-1 py-4 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-500 rounded-2xl font-black uppercase tracking-wider text-[10px] transition-all duration-300 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                    Perbarui Keranjang
                 </button>
             </div>
         </div>

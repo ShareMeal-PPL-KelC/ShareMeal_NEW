@@ -8,11 +8,27 @@
             <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Manajemen Inventaris Surplus</h1>
             <p class="text-gray-500 mt-2 text-sm font-medium">Kelola dan optimalkan stok makanan near-expired Anda dengan sistem klasifikasi otomatis.</p>
         </div>
+        @if(auth()->user()->is_verified)
         <button @click="openAddDialog()" dusk="tambah-produk-btn" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#174413] to-[#256020] hover:from-[#1b4e16] hover:to-[#2b6d25] text-white px-6 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-green-950/10 active:scale-95 transition-all duration-300">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Tambah Produk
         </button>
+        @else
+        <button disabled title="Akun Anda belum terverifikasi oleh admin." class="inline-flex items-center justify-center gap-2 bg-gray-300 text-gray-500 cursor-not-allowed px-6 py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-none opacity-60">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Tambah Produk
+        </button>
+        @endif
     </div>
+
+    @if(!auth()->user()->is_verified)
+    <div class="bg-amber-50/80 border border-amber-200/50 backdrop-blur-sm text-amber-800 px-6 py-4 rounded-2xl flex items-center gap-3.5 shadow-sm animate-fade-in">
+        <div class="p-1.5 bg-amber-100/60 rounded-lg text-amber-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </div>
+        <span class="text-sm font-semibold text-left">Akun Anda belum terverifikasi oleh admin. Anda tidak dapat menambahkan produk baru ke inventaris saat ini.</span>
+    </div>
+    @endif
 
     <!-- Alert Banners -->
     @if(session('success'))
@@ -189,12 +205,12 @@
 
 
     <!-- Add/Edit Product Modal -->
-    <div x-show="isDialogOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
-        <div class="bg-white/95 backdrop-blur-lg w-full max-w-xl rounded-[2.5rem] p-8 shadow-2xl space-y-6 border border-white/50" @click.away="isDialogOpen = false">
+    <div x-show="isDialogOpen" class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
+        <div class="relative my-auto bg-white/95 backdrop-blur-lg w-full max-w-lg rounded-[2rem] p-6 shadow-2xl space-y-4 border border-white/50" @click.away="isDialogOpen = false">
             <div class="flex items-center justify-between">
-                <h3 class="text-2xl font-black text-gray-900" x-text="isEditing ? 'Edit Produk' : 'Tambah Produk Baru'"></h3>
+                <h3 class="text-xl font-black text-gray-900" x-text="isEditing ? 'Edit Produk' : 'Tambah Produk Baru'"></h3>
                 <button type="button" @click="isDialogOpen = false" class="p-2 hover:bg-gray-100 rounded-full transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-400"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-gray-400"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 

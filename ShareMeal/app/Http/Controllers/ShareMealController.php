@@ -52,9 +52,11 @@ class ShareMealController extends Controller
                 ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
                 ['label' => 'Verifikasi', 'route' => 'admin.verification', 'icon' => 'shield'],
                 ['label' => 'Kelola User', 'route' => 'admin.users', 'icon' => 'users'],
+                ['route' => 'admin.problem-reports.index', 'label' => 'Laporan Masalah', 'icon' => 'alert-triangle'],
                 ['label' => 'Transaksi', 'route' => 'admin.transactions', 'icon' => 'shopping-cart'],
                 ['label' => 'Laporan', 'route' => 'admin.reports', 'icon' => 'bar-chart'],
                 ['label' => 'Edukasi', 'route' => 'admin.education', 'icon' => 'book-open'],
+                ['label' => 'Log Admin', 'route' => 'admin.logs', 'icon' => 'activity'],
             ],
             default => [],
         };
@@ -103,8 +105,8 @@ class ShareMealController extends Controller
     public function doLogin(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
+            'email'     => ['required', 'email'],
+            'password'  => ['required'],
             'user_type' => ['required', 'in:consumer,mitra,lembaga,admin'],
         ]);
 
@@ -117,18 +119,17 @@ class ShareMealController extends Controller
             return back()->with('error', 'Email, password, atau tipe pengguna tidak sesuai.');
         }
 
-        // Verification Guard for Mitra Only
-        if ($user->role === 'mitra' && !$user->is_verified) {
-            if ($user->verification_rejection_reason) {
-                return back()->with('error', 'Akun Anda ditolak dengan alasan: ' . $user->verification_rejection_reason . '. Tolong lakukan registrasi ulang dan perbarui dokumennya.');
-            }
-            return back()->with('error', 'Akun Anda sedang dalam proses verifikasi oleh tim ShareMeal. Mohon tunggu email konfirmasi atau hubungi admin.');
-        }
-
         Auth::login($user);
         ShareMealState::login($user->id);
 
-        return redirect()->route($data['user_type'] . '.dashboard')->with('success', 'Login berhasil.');
+        // Reset rate limiter on successful login
+        $request->session()->regenerate();
+
+        if ($data['user_type'] === 'mitra') {
+            return redirect()->route('mitra.dashboard');
+        }
+
+        return redirect()->route($data['user_type'] . '.dashboard');
     }
 
     public function register(): View
@@ -864,6 +865,10 @@ class ShareMealController extends Controller
 
     public function mitraInventoryStore(Request $request): RedirectResponse
     {
+        if (!Auth::user()?->is_verified) {
+            return back()->with('error', 'Akun Anda belum terverifikasi. Anda tidak dapat menambahkan produk ke inventaris.');
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'category' => ['required', 'string'],
@@ -1061,6 +1066,10 @@ class ShareMealController extends Controller
 
     public function mitraDonationStore(Request $request): RedirectResponse
     {
+        if (!Auth::user()?->is_verified) {
+            return back()->with('error', 'Akun Anda belum terverifikasi. Anda tidak dapat menambahkan donasi baru.');
+        }
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
@@ -1385,6 +1394,11 @@ class ShareMealController extends Controller
     public function lembagaClaimDonation(Request $request, string $donationId): RedirectResponse
     {
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $user = \App\Models\User::find($userId);
+
+        if (!$user || !$user->is_verified) {
+            return back()->with('error', 'Klaim donasi gagal. Akun Lembaga Anda belum terverifikasi atau telah ditolak oleh admin.');
+        }
 
         $request->validate([
             'pickup_time' => ['required', 'string'],
@@ -1481,14 +1495,13 @@ class ShareMealController extends Controller
     {
         $activities = collect();
 
-        // 1. New user registrations
-        $newUsers = User::latest()->take(5)->get();
+        // 1. New user registrations (excluding admin)
+        $newUsers = User::where('role', '!=', 'admin')->latest()->take(5)->get();
         foreach ($newUsers as $user) {
             $roleLabel = match($user->role) {
                 'mitra' => 'Mitra Toko',
                 'lembaga' => 'Lembaga Sosial',
                 'consumer' => 'Konsumen',
-                'admin' => 'Admin',
                 default => $user->role
             };
             $activities->push([
@@ -1635,14 +1648,36 @@ class ShareMealController extends Controller
 
     public function adminApproveApplication(int $applicationId): RedirectResponse
     {
+        $app = \App\Models\VerificationApplication::find($applicationId);
+        $orgName = $app ? ($app->user?->organization_name ?? $app->user?->name) : 'Aplikasi #' . $applicationId;
         ShareMealState::approveApplication($applicationId);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'verify_approve',
+            'target_id' => $applicationId,
+            'details' => 'Menyetujui verifikasi berkas akun: ' . $orgName,
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Aplikasi disetujui.');
     }
 
     public function adminRejectApplication(Request $request, int $applicationId): RedirectResponse
     {
         $data = $request->validate(['reason' => ['required']]);
+        $app = \App\Models\VerificationApplication::find($applicationId);
+        $orgName = $app ? ($app->user?->organization_name ?? $app->user?->name) : 'Aplikasi #' . $applicationId;
         ShareMealState::rejectApplication($applicationId, $data['reason']);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'verify_reject',
+            'target_id' => $applicationId,
+            'details' => 'Menolak verifikasi berkas akun: ' . $orgName . ' dengan alasan: ' . $data['reason'],
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Aplikasi ditolak.');
     }
 
@@ -1944,20 +1979,53 @@ class ShareMealController extends Controller
     public function adminWarnUser(Request $request, int $userId): RedirectResponse
     {
         $data = $request->validate(['reason' => ['required']]);
+        $user = \App\Models\User::find($userId);
+        $name = $user ? $user->displayName : 'User #' . $userId;
         ShareMealState::warnUser($userId, $data['reason']);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'warn_user',
+            'target_id' => $userId,
+            'details' => 'Mengirim peringatan resmi kepada ' . $name . '. Alasan: ' . $data['reason'],
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Peringatan diberikan kepada user.');
     }
 
     public function adminBlockUser(Request $request, int $userId): RedirectResponse
     {
         $data = $request->validate(['reason' => ['required']]);
+        $user = \App\Models\User::find($userId);
+        $name = $user ? $user->displayName : 'User #' . $userId;
         ShareMealState::blockUser($userId, $data['reason']);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'block_user',
+            'target_id' => $userId,
+            'details' => 'Memblokir akun ' . $name . '. Alasan: ' . $data['reason'],
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'User diblokir.');
     }
 
     public function adminUnblockUser(int $userId): RedirectResponse
     {
+        $user = \App\Models\User::find($userId);
+        $name = $user ? $user->displayName : 'User #' . $userId;
         ShareMealState::unblockUser($userId);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'unblock_user',
+            'target_id' => $userId,
+            'details' => 'Membuka blokir akun ' . $name,
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Blokir user dibuka.');
     }
 
@@ -1994,6 +2062,14 @@ class ShareMealController extends Controller
         }
 
         ShareMealState::saveArticle($data);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'education_create',
+            'details' => 'Membuat artikel edukasi baru: "' . $data['title'] . '"',
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Artikel berhasil ditambahkan.');
     }
 
@@ -2017,12 +2093,32 @@ class ShareMealController extends Controller
         }
 
         ShareMealState::saveArticle($data, $articleId);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'education_update',
+            'target_id' => $articleId,
+            'details' => 'Memperbarui artikel edukasi: "' . $data['title'] . '"',
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Artikel berhasil diperbarui.');
     }
 
     public function adminEducationDelete(int $articleId): RedirectResponse
     {
+        $article = \App\Models\Article::find($articleId);
+        $title = $article ? $article->title : 'Artikel #' . $articleId;
         ShareMealState::deleteArticle($articleId);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'education_delete',
+            'target_id' => $articleId,
+            'details' => 'Menghapus artikel edukasi: "' . $title . '"',
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Artikel berhasil dihapus.');
     }
 
@@ -2041,6 +2137,14 @@ class ShareMealController extends Controller
     {
         $report = \App\Models\ProblemReport::findOrFail($reportId);
         $report->update(['status' => 'dismissed']);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'report_dismiss',
+            'target_id' => $reportId,
+            'details' => 'Mengabaikan laporan masalah #' . $reportId . ' (' . $report->issue_label . ')',
+            'ip_address' => request()->ip(),
+        ]);
 
         return back()->with('success', 'Laporan telah diabaikan.');
     }
@@ -2068,6 +2172,14 @@ class ShareMealController extends Controller
 
         $report->update(['status' => 'resolved', 'admin_note' => 'Diberikan peringatan kepada mitra. Alasan: ' . $reason]);
 
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'report_warn',
+            'target_id' => $reportId,
+            'details' => 'Menindaklanjuti laporan #' . $reportId . ' dengan memberi peringatan ke Mitra ' . ($mitra ? $mitra->displayName : 'Tidak Diketahui') . '. Alasan: ' . $reason,
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Peringatan telah dikirimkan kepada mitra.');
     }
 
@@ -2093,6 +2205,62 @@ class ShareMealController extends Controller
 
         $report->update(['status' => 'resolved', 'admin_note' => 'Mitra telah diblokir secara permanen. Alasan: ' . $reason]);
 
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'report_block',
+            'target_id' => $reportId,
+            'details' => 'Menindaklanjuti laporan #' . $reportId . ' dengan memblokir Mitra ' . ($mitra ? $mitra->displayName : 'Tidak Diketahui') . '. Alasan: ' . $reason,
+            'ip_address' => request()->ip(),
+        ]);
+
         return back()->with('success', 'Mitra telah diblokir.');
+    }
+
+    public function adminLogs(Request $request): View
+    {
+        $page = (int) $request->query('page', 1);
+        $search = $request->query('search');
+        $actionType = $request->query('action_type', 'all');
+        $perPage = 15;
+
+        $query = \App\Models\AdminLog::with('admin')->latest();
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('action', 'like', "%{$search}%")
+                  ->orWhere('details', 'like', "%{$search}%")
+                  ->orWhereHas('admin', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($actionType && $actionType !== 'all') {
+            if ($actionType === 'verify') {
+                $query->whereIn('action', ['verify_approve', 'verify_reject']);
+            } elseif ($actionType === 'user') {
+                $query->whereIn('action', ['warn_user', 'block_user', 'unblock_user']);
+            } elseif ($actionType === 'education') {
+                $query->whereIn('action', ['education_create', 'education_update', 'education_delete']);
+            } elseif ($actionType === 'report') {
+                $query->whereIn('action', ['report_dismiss', 'report_warn', 'report_block']);
+            } else {
+                $query->where('action', $actionType);
+            }
+        }
+
+        $totalLogs = $query->count();
+        $totalPages = max(1, (int) ceil($totalLogs / $perPage));
+        if ($page < 1) { $page = 1; } elseif ($page > $totalPages) { $page = $totalPages; }
+
+        $logs = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+
+        return view('pages.admin.logs', $this->dashboardData('admin', 'Log Aktivitas Admin', 'Jejak audit seluruh tindakan moderasi dan administrasi sistem') + [
+            'logs' => $logs,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'search' => $search,
+            'actionType' => $actionType,
+        ]);
     }
 }

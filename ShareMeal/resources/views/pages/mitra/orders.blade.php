@@ -225,14 +225,14 @@
                                         <circle cx="5.5" cy="18.5" r="2.5" />
                                         <circle cx="18.5" cy="18.5" r="2.5" />
                                     </svg>
-                                    Kirim Sekarang (Dalam Perjalanan)
+                                    Kirim Sekarang
                                 </button>
                                 <button x-show="order.receiving_method !== 'delivery'" @click="updateStatus(order.id, 'completed')" class="flex-1 bg-[#174413] text-white py-4 rounded-2xl font-black shadow-xl shadow-green-100 hover:bg-[#256020] transition flex items-center justify-center gap-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                         <polyline points="22 4 12 14.01 9 11.01" />
                                     </svg>
-                                    Konfirmasi Diambil (Selesai)
+                                    Konfirmasi Diambil
                                 </button>
                             </div>
                         </template>

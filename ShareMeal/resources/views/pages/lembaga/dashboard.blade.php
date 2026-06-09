@@ -64,7 +64,7 @@
 
     @if($userObj && !$userObj->is_verified && $userObj->verification_rejection_reason)
         <!-- Rejection Notice -->
-        <div class="bg-red-50 border-2 border-red-200 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10 animate-in fade-in duration-500" x-data="{ showUpload: false }">
+        <div class="bg-red-50 border-2 border-red-200 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10 animate-in fade-in duration-500" x-data="{ showUpload: false, errors: { document_ktp: '', document_siup: '', document_nib: '' } }">
             <div class="flex items-start gap-4">
                 <div class="h-14 w-14 bg-red-100 text-red-650 rounded-2xl flex items-center justify-center flex-shrink-0">
                     <i data-lucide="shield-alert" class="w-7 h-7"></i>
@@ -110,27 +110,56 @@
                             'document_nib' => ['label' => 'Dokumen Identitas & Bukti Fisik', 'desc' => 'KTP Pengurus Aktif, Domisili Lembaga, dan Foto Tampak Depan Kantor']
                         ] as $name => $info)
                             <div class="space-y-2">
-                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ $info['label'] }}</label>
-                                <p class="text-[11px] text-gray-500 leading-normal">{{ $info['desc'] }}</p>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ $info['label'] }} <span class="text-red-500">*</span></label>
+                                <p class="text-[11px] text-gray-500 leading-normal">{{ $info['desc'] }} (Maks. 2 MB | JPG, PNG, PDF)</p>
                                 
                                 <div class="relative border-2 border-dashed border-gray-200 rounded-[1.2rem] p-4 text-center hover:border-red-500 transition-colors bg-gray-50/50 group overflow-hidden">
-                                    <input type="file" name="{{ $name }}" required
+                                    <input type="file" name="{{ $name }}" required accept=".jpg,.jpeg,.png,.pdf"
                                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                            @change="
                                                const file = $event.target.files[0];
-                                               $el.closest('.group').querySelector('.file-name-text').textContent = file ? file.name : '';
+                                               errors['{{ $name }}'] = '';
+                                               if (file) {
+                                                   const maxSize = 2 * 1024 * 1024;
+                                                   const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+                                                   const ext = file.name.split('.').pop().toLowerCase();
+                                                   
+                                                   if (file.size > maxSize) {
+                                                       errors['{{ $name }}'] = 'Ukuran berkas melebihi batas 2 MB. Silakan pilih berkas yang lebih kecil.';
+                                                       $event.target.value = '';
+                                                       $el.closest('.group').querySelector('.file-name-text').textContent = 'Pilih Berkas Dokumen (PDF, JPG, atau PNG)';
+                                                       return;
+                                                   }
+                                                   if (!allowedExtensions.includes(ext)) {
+                                                       errors['{{ $name }}'] = 'Format tidak valid. Hanya JPG, PNG, atau PDF yang diperbolehkan.';
+                                                       $event.target.value = '';
+                                                       $el.closest('.group').querySelector('.file-name-text').textContent = 'Pilih Berkas Dokumen (PDF, JPG, atau PNG)';
+                                                       return;
+                                                   }
+                                                   $el.closest('.group').querySelector('.file-name-text').textContent = file.name;
+                                               } else {
+                                                   $el.closest('.group').querySelector('.file-name-text').textContent = 'Pilih Berkas Dokumen (PDF, JPG, atau PNG)';
+                                               }
                                            ">
                                     <div class="flex items-center justify-center gap-3">
                                         <i data-lucide="upload-cloud" class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors"></i>
                                         <span class="text-xs font-bold text-gray-700 file-name-text">Pilih Berkas Dokumen (PDF, JPG, atau PNG)</span>
                                     </div>
                                 </div>
+                                <template x-if="errors['{{ $name }}']">
+                                    <p class="text-[11px] font-bold text-red-600 mt-2 flex items-center gap-1.5 animate-in fade-in duration-300">
+                                        <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <span x-text="errors['{{ $name }}']"></span>
+                                    </p>
+                                </template>
                             </div>
                         @endforeach
                         
                         <div class="pt-6 border-t border-gray-100 flex justify-end gap-4 mt-8">
                             <button type="button" @click="showUpload = false" class="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-gray-900 transition-colors">Batal</button>
-                            <button type="submit" class="bg-red-650 text-white py-4 px-8 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-red-700 transition active:scale-95">Kirim Dokumen Baru</button>
+                            <button type="submit" class="bg-red-600 text-white py-4 px-8 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-red-700 transition active:scale-95 cursor-pointer">Kirim Dokumen Baru</button>
                         </div>
                     </form>
                 </div>

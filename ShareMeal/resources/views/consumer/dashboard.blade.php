@@ -1,8 +1,34 @@
 @extends('layouts.dashboard')
 
 @section('content')
+@php
+    $profile = auth()->user()->profile;
+    $profileComplete = $profile && !empty($profile->phone) && !empty($profile->address);
+@endphp
+
+@if(!$profileComplete)
+<div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 backdrop-blur-md border border-amber-200/50 p-6 rounded-[2rem] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-12 h-12 bg-amber-100/60 rounded-xl flex items-center justify-center text-amber-700 flex-shrink-0 border border-amber-200/30">
+            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+        </div>
+        <div class="text-left">
+            <h3 class="text-base font-bold text-amber-950 text-left">Profil Anda Belum Lengkap</h3>
+            <p class="text-amber-900/80 font-semibold leading-relaxed text-xs mt-1 text-left">
+                Silakan lengkapi nomor telepon dan alamat Anda terlebih dahulu untuk dapat memesan makanan penyelamatan surplus.
+            </p>
+        </div>
+    </div>
+    <a href="{{ route('profile.edit') }}" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all duration-300 shrink-0">
+        Lengkapi Profil
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+    </a>
+</div>
+@endif
+
 <div class="space-y-6" x-data="{
     openManage: false, 
+    showProfileAlert: false,
     allStores: {{ $favoriteStores->toJson() }},
     favorites: JSON.parse(localStorage.getItem('favoriteStores') || '[]'),
     init() {
@@ -157,6 +183,7 @@
                                 <div class="text-2xl font-serif font-black text-luxury-forest">Rp {{ number_format($sale->discountPrice, 0, ',', '.') }}</div>
                                 <div class="text-[10px] text-luxury-slate font-bold line-through mt-1">Rp {{ number_format($sale->originalPrice, 0, ',', '.') }}</div>
                             </div>
+                            @if($profileComplete)
                             <form action="{{ route('consumer.cart.add') }}" method="POST" class="inline">
                                 @csrf
                                 <input type="hidden" name="product_id" value="{{ $sale->id }}">
@@ -166,6 +193,12 @@
                                     <i data-lucide="plus" class="w-6 h-6 text-white"></i>
                                 </button>
                             </form>
+                            @else
+                            <button type="button" @click="showProfileAlert = true"
+                                    class="bg-luxury-forest text-white w-14 h-14 rounded-[1.2rem] flex items-center justify-center hover:bg-luxury-gold transition-all duration-500 luxury-shadow hover:scale-105 active:scale-95 shadow-lg">
+                                <i data-lucide="plus" class="w-6 h-6 text-white"></i>
+                            </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -300,6 +333,56 @@
                 <button @click="openManage = false" class="bg-luxury-forest text-white px-12 py-4 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-luxury-gold transition-all duration-500 luxury-shadow">
                     Selesai
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Premium Profile Completion Modal -->
+    <div x-show="showProfileAlert" 
+         class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6"
+         x-cloak
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-250"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-luxury-charcoal/60 backdrop-blur-md" @click="showProfileAlert = false"></div>
+
+        <!-- Modal Card -->
+        <div class="relative bg-white/95 rounded-[3rem] w-full max-w-md p-10 shadow-2xl border border-amber-100 text-center transform transition-all"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="scale-95 translate-y-4"
+             x-transition:enter-end="scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-250"
+             x-transition:leave-start="scale-100 translate-y-0"
+             x-transition:leave-end="scale-95 translate-y-4">
+            
+            <!-- Close Button -->
+            <button @click="showProfileAlert = false" class="absolute right-6 top-6 w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Warning Icon -->
+            <div class="w-20 h-20 bg-amber-50 border border-amber-100 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-amber-600 shadow-md">
+                <i data-lucide="user-cog" class="w-10 h-10 stroke-[2]"></i>
+            </div>
+
+            <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-3">Lengkapi Profil Anda</h3>
+            <p class="text-sm font-medium text-luxury-slate leading-relaxed mb-8">
+                Silakan lengkapi nomor telepon dan alamat Anda terlebih dahulu sebelum dapat memesan makanan penyelamatan surplus.
+            </p>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button @click="showProfileAlert = false" class="flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest text-luxury-slate hover:bg-gray-50 hover:text-luxury-charcoal transition-colors border border-gray-100">
+                    Nanti Saja
+                </button>
+                <a href="{{ route('profile.edit') }}" class="flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-900/10 active:scale-95 transition-all text-center">
+                    Lengkapi Sekarang
+                </a>
             </div>
         </div>
     </div>

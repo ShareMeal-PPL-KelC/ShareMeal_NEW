@@ -1,7 +1,144 @@
 @extends('layouts.dashboard')
 
 @section('content')
+@php
+    $mitraUser = Auth::user() ?? \App\Models\User::find(session('sharemeal.current_user_id'));
+@endphp
+
 <div class="space-y-6">
+    @if(session('success'))
+    <div class="bg-green-50 border border-green-200 text-green-750 px-6 py-4 rounded-2xl flex items-center gap-3 shadow-sm animate-in fade-in duration-355 mb-6">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span class="font-bold text-sm">{{ session('success') }}</span>
+    </div>
+    @endif
+    
+    @if(session('error'))
+    <div class="bg-red-50 border border-red-200 text-red-750 px-6 py-4 rounded-2xl flex items-center gap-3 shadow-sm animate-in fade-in duration-355 mb-6">
+        <i data-lucide="alert-circle" class="w-5 h-5"></i>
+        <span class="font-bold text-sm">{{ session('error') }}</span>
+    </div>
+    @endif
+
+    @if($mitraUser && !$mitraUser->is_verified && $mitraUser->verification_rejection_reason)
+        <!-- Rejection Notice -->
+        <div class="bg-red-50 border-2 border-red-200 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10 animate-in fade-in duration-500 text-left" x-data="{ showUpload: false, errors: { document_ktp: '', document_siup: '', document_nib: '', document_halal: '' } }">
+            <div class="flex items-start gap-4">
+                <div class="h-14 w-14 bg-red-100 text-red-650 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="shield-alert" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-red-950 leading-tight">Pengajuan Verifikasi Toko Ditolak</h3>
+                    <p class="text-red-800 text-sm mt-2 leading-relaxed text-left">
+                        <strong>Alasan Penolakan:</strong> <span class="font-semibold text-left">{{ $mitraUser->verification_rejection_reason }}</span>
+                    </p>
+                    <p class="text-red-600 text-xs mt-2 italic font-medium text-left">Mohon lengkapi kembali berkas pendaftaran toko Anda agar dapat segera mulai mengaktifkan fitur penjualan makanan.</p>
+                </div>
+            </div>
+            <button @click="showUpload = true" class="bg-red-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-wider hover:bg-red-700 transition active:scale-95 shadow-xl shadow-red-100 flex-shrink-0 cursor-pointer">
+                Lengkapi Dokumen Sekarang
+            </button>
+
+            <!-- Re-upload Form Modal -->
+            <div x-show="showUpload" 
+                 class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+                 x-cloak
+                 @keydown.escape.window="showUpload = false">
+                
+                <!-- Backdrop -->
+                <div class="fixed inset-0 bg-[#2c1313]/60 backdrop-blur-md" @click="showUpload = false"></div>
+
+                <!-- Modal Content -->
+                <div class="relative bg-white rounded-[3rem] w-full max-w-xl p-10 shadow-2xl border border-red-100 overflow-y-auto max-h-[90vh]">
+                    <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-6 text-left">
+                        <div>
+                            <h3 class="text-2xl font-serif font-bold text-gray-900">Re-upload Dokumen Usaha</h3>
+                            <p class="text-[10px] text-red-600 font-black uppercase tracking-widest mt-1">Lengkapi berkas verifikasi resmi</p>
+                        </div>
+                        <button @click="showUpload = false" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 transition-colors cursor-pointer">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <form action="{{ route('mitra.upload.document') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                        @csrf
+                        @foreach([
+                            'document_ktp' => ['label' => 'KTP Pemilik Usaha', 'desc' => 'Foto/Scan Kartu Tanda Penduduk pemilik usaha aktif', 'required' => true],
+                            'document_siup' => ['label' => 'SIUP / Izin Operasional', 'desc' => 'Dokumen Surat Izin Usaha Perdagangan atau Izin Operasional Usaha Kuliner', 'required' => true],
+                            'document_nib' => ['label' => 'NIB (Nomor Induk Berusaha)', 'desc' => 'Foto/Scan NIB dari platform OSS', 'required' => true],
+                            'document_halal' => ['label' => 'Sertifikat Halal', 'desc' => 'Foto/Scan Sertifikat Halal MUI (Opsional)', 'required' => false]
+                        ] as $name => $info)
+                            <div class="space-y-2 text-left">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest text-left">{{ $info['label'] }} {!! $info['required'] ? '<span class="text-red-500">*</span>' : '' !!}</label>
+                                <p class="text-[11px] text-gray-500 leading-normal text-left">{{ $info['desc'] }} (Maks. 2 MB | JPG, PNG, PDF)</p>
+                                
+                                <div class="relative border-2 border-dashed border-gray-200 rounded-[1.2rem] p-4 text-center hover:border-red-500 transition-colors bg-gray-50/50 group overflow-hidden">
+                                    <input type="file" name="{{ $name }}" {{ $info['required'] ? 'required' : '' }} accept=".jpg,.jpeg,.png,.pdf"
+                                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                           @change="
+                                               const file = $event.target.files[0];
+                                               errors['{{ $name }}'] = '';
+                                               if (file) {
+                                                   const maxSize = 2 * 1024 * 1024;
+                                                   const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+                                                   const ext = file.name.split('.').pop().toLowerCase();
+                                                   
+                                                   if (file.size > maxSize) {
+                                                       errors['{{ $name }}'] = 'Ukuran berkas melebihi batas 2 MB. Silakan pilih berkas yang lebih kecil.';
+                                                       $event.target.value = '';
+                                                       $el.closest('.group').querySelector('.file-name-text').textContent = 'Pilih Berkas Dokumen (PDF, JPG, atau PNG)';
+                                                       return;
+                                                   }
+                                                   if (!allowedExtensions.includes(ext)) {
+                                                       errors['{{ $name }}'] = 'Format tidak valid. Hanya JPG, PNG, atau PDF yang diperbolehkan.';
+                                                       $event.target.value = '';
+                                                       $el.closest('.group').querySelector('.file-name-text').textContent = 'Pilih Berkas Dokumen (PDF, JPG, atau PNG)';
+                                                       return;
+                                                   }
+                                                   $el.closest('.group').querySelector('.file-name-text').textContent = file.name;
+                                               } else {
+                                                   $el.closest('.group').querySelector('.file-name-text').textContent = 'Pilih Berkas Dokumen (PDF, JPG, atau PNG)';
+                                               }
+                                           ">
+                                    <div class="flex items-center justify-center gap-3">
+                                        <i data-lucide="upload-cloud" class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors"></i>
+                                        <span class="text-xs font-bold text-gray-700 file-name-text">Pilih Berkas Dokumen (PDF, JPG, atau PNG)</span>
+                                    </div>
+                                </div>
+                                <template x-if="errors['{{ $name }}']">
+                                    <p class="text-[11px] font-bold text-red-600 mt-2 flex items-center gap-1.5 animate-in fade-in duration-300 text-left">
+                                        <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <span x-text="errors['{{ $name }}']"></span>
+                                    </p>
+                                </template>
+                            </div>
+                        @endforeach
+                        
+                        <div class="pt-6 border-t border-gray-100 flex justify-end gap-4 mt-8">
+                            <button type="button" @click="showUpload = false" class="py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-gray-900 transition-colors cursor-pointer">Batal</button>
+                            <button type="submit" class="bg-red-600 text-white py-4 px-8 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-red-700 transition active:scale-95 cursor-pointer">Kirim Dokumen Baru</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @elseif($mitraUser && !$mitraUser->is_verified)
+        <!-- Pending Info -->
+        <div class="bg-blue-50 border border-blue-100 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6 mb-10 animate-in fade-in duration-500 text-left">
+            <div class="flex items-center gap-4 text-center md:text-left">
+                <div class="h-14 w-14 bg-blue-100 text-blue-650 rounded-2xl flex items-center justify-center flex-shrink-0 animate-pulse">
+                    <i data-lucide="clock" class="w-7 h-7 text-blue-600"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-blue-950 leading-tight">Akun Sedang Diverifikasi Admin</h3>
+                    <p class="text-blue-800 text-sm mt-1 text-left">Tim kami sedang memeriksa dokumen usaha Anda secara cermat. Mohon pantau halaman ini untuk mengetahui pembaruan status resmi.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="mb-12">
         <h1 class="text-5xl font-serif font-bold text-luxury-forest leading-tight">Ringkasan Bisnis</h1>
         <p class="text-luxury-slate font-medium mt-2 tracking-wide text-center md:text-left">Optimalkan inventaris surplus Anda dan tingkatkan dampak sosial Anda terhadap komunitas.</p>

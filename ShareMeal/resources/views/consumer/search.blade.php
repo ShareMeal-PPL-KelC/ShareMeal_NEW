@@ -1,6 +1,10 @@
 @extends('layouts.dashboard')
 
 @section('content')
+@php
+    $profile = auth()->user()->profile;
+    $profileComplete = $profile && !empty($profile->phone) && !empty($profile->address);
+@endphp
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -10,6 +14,8 @@
     stores: {!! json_encode($stores) !!},
     filters: {!! json_encode($filters) !!},
     favorites: JSON.parse(localStorage.getItem("favoriteStores") || "[]"),
+    profileComplete: {{ $profileComplete ? "true" : "false" }},
+    showProfileAlert: false,
     
     // Map Picker Data
     openMap: false,
@@ -75,6 +81,10 @@
         }
     },
     addToCart(productId) {
+        if (!this.profileComplete) {
+            this.showProfileAlert = true;
+            return;
+        }
         const form = document.createElement("form");
         form.method = "POST";
         form.action = "{{ route('consumer.cart.add') }}";
@@ -403,5 +413,55 @@
         </div>
     </div>
 </div>
+
+    <!-- Custom Premium Profile Completion Modal -->
+    <div x-show="showProfileAlert" 
+         class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6"
+         x-cloak
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-250"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-luxury-charcoal/60 backdrop-blur-md" @click="showProfileAlert = false"></div>
+
+        <!-- Modal Card -->
+        <div class="relative bg-white/95 rounded-[3rem] w-full max-w-md p-10 shadow-2xl border border-amber-100 text-center transform transition-all"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="scale-95 translate-y-4"
+             x-transition:enter-end="scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-250"
+             x-transition:leave-start="scale-100 translate-y-0"
+             x-transition:leave-end="scale-95 translate-y-4">
+            
+            <!-- Close Button -->
+            <button @click="showProfileAlert = false" class="absolute right-6 top-6 w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Warning Icon -->
+            <div class="w-20 h-20 bg-amber-50 border border-amber-100 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-amber-600 shadow-md">
+                <i data-lucide="user-cog" class="w-10 h-10 stroke-[2]"></i>
+            </div>
+
+            <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-3">Lengkapi Profil Anda</h3>
+            <p class="text-sm font-medium text-luxury-slate leading-relaxed mb-8">
+                Silakan lengkapi nomor telepon dan alamat Anda terlebih dahulu sebelum dapat memesan makanan penyelamatan surplus.
+            </p>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button @click="showProfileAlert = false" class="flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest text-luxury-slate hover:bg-gray-50 hover:text-luxury-charcoal transition-colors border border-gray-100">
+                    Nanti Saja
+                </button>
+                <a href="{{ route('profile.edit') }}" class="flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-900/10 active:scale-95 transition-all text-center">
+                    Lengkapi Sekarang
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

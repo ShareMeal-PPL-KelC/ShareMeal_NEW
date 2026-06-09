@@ -13,7 +13,7 @@ class LembagaSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
+        $lembaga = User::updateOrCreate(
             ['email' => 'lembaga@example.com'],
             [
                 'name' => 'Hendra Setiawan',
@@ -23,6 +23,17 @@ class LembagaSeeder extends Seeder
                 'is_verified' => true,
                 'organization_name' => 'Yayasan Peduli Anak',
                 'joined_at' => now(),
+            ]
+        );
+
+        $lembaga->profile()->updateOrCreate(
+            [],
+            [
+                'phone' => '081234567891',
+                'address' => 'Jl. Buah Batu No. 100, Bandung',
+                'latitude' => -6.950000,
+                'longitude' => 107.630000,
+                'is_verified' => true,
             ]
         );
     }

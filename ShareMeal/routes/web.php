@@ -6,17 +6,19 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ShareMealController::class, 'landing'])->name('home');
 Route::get('/login', [ShareMealController::class, 'login'])->name('login');
-Route::post('/login', [ShareMealController::class, 'doLogin'])->name('login.submit');
+Route::post('/login', [ShareMealController::class, 'doLogin'])->middleware('throttle:5,1')->name('login.submit');
 Route::get('/register', [ShareMealController::class, 'register'])->name('register');
 Route::post('/register', [ShareMealController::class, 'doRegister'])->name('register.submit');
-Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
 
-Route::post('/notifications/mark-as-read', [ShareMealController::class, 'markNotificationsRead'])->name('notifications.markRead');
-Route::post('/notifications/{id}/mark-as-read', [ShareMealController::class, 'markSingleNotificationRead'])->name('notifications.markSingleRead');
-Route::get('/notifications', [ShareMealController::class, 'allNotifications'])->name('notifications.index');
-Route::get('/profile', [ShareMealController::class, 'editProfile'])->name('profile.edit');
-Route::post('/profile', [ShareMealController::class, 'updateProfile'])->name('profile.update');
-Route::post('/profile/phone/verify', [ShareMealController::class, 'verifyProfilePhone'])->name('profile.phone.verify');
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
+    Route::post('/notifications/mark-as-read', [ShareMealController::class, 'markNotificationsRead'])->name('notifications.markRead');
+    Route::post('/notifications/{id}/mark-as-read', [ShareMealController::class, 'markSingleNotificationRead'])->name('notifications.markSingleRead');
+    Route::get('/notifications', [ShareMealController::class, 'allNotifications'])->name('notifications.index');
+    Route::get('/profile', [ShareMealController::class, 'editProfile'])->name('profile.edit');
+    Route::post('/profile', [ShareMealController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/phone/verify', [ShareMealController::class, 'verifyProfilePhone'])->name('profile.phone.verify');
+});
 
 Route::prefix('consumer')->name('consumer.')->middleware('role:consumer')->group(function () {
     Route::get('/', [ConsumerController::class, 'index'])->name('dashboard');
@@ -43,7 +45,7 @@ Route::prefix('consumer')->name('consumer.')->middleware('role:consumer')->group
     // Route::get('/favorites', [ConsumerController::class, 'favorites'])->name('favorites');
 });
 
-Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function () {
+Route::prefix('mitra')->name('mitra.')->middleware(['role:mitra', 'profile.complete'])->group(function () {
     Route::get('/', [ShareMealController::class, 'mitraDashboard'])->name('dashboard');
     Route::get('/profile-usaha', [ShareMealController::class, 'editMitraBusinessProfile'])->name('profile');
     Route::post('/profile-usaha', [ShareMealController::class, 'updateMitraBusinessProfile'])->name('profile.update');
@@ -67,7 +69,7 @@ Route::prefix('mitra')->name('mitra.')->middleware('role:mitra')->group(function
     Route::post('/donations/{donationId}/cancel', [ShareMealController::class, 'mitraDonationCancel'])->name('donations.cancel');
 });
 
-Route::prefix('lembaga')->name('lembaga.')->middleware('role:lembaga')->group(function () {
+Route::prefix('lembaga')->name('lembaga.')->middleware(['role:lembaga', 'profile.complete'])->group(function () {
     Route::get('/', [ShareMealController::class, 'lembagaDashboard'])->name('dashboard');
     Route::post('/upload-document', [ShareMealController::class, 'uploadBusinessDocument'])->name('upload.document');
     Route::get('/donations', [ShareMealController::class, 'lembagaDonations'])->name('donations');
@@ -102,4 +104,5 @@ Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function
     Route::post('/problem-reports/{report}/dismiss', [ShareMealController::class, 'adminDismissReport'])->name('problem-reports.dismiss');
     Route::post('/problem-reports/{report}/warn', [ShareMealController::class, 'adminWarnMitraReport'])->name('problem-reports.warn');
     Route::post('/problem-reports/{report}/block', [ShareMealController::class, 'adminBlockMitraReport'])->name('problem-reports.block');
+    Route::get('/logs', [ShareMealController::class, 'adminLogs'])->name('logs');
 });

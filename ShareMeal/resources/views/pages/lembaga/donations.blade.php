@@ -1,6 +1,11 @@
 @extends('layouts.dashboard')
 
 @section('content')
+@php
+    $lembagaUser = Auth::user() ?? \App\Models\User::find(session('sharemeal.current_user_id'));
+    $isVerified = $lembagaUser?->is_verified ?? false;
+@endphp
+
 <div class="space-y-6" x-data="donationsPage()">
     <div class="mb-12 reveal">
         <h1 class="text-5xl font-serif font-bold text-luxury-forest leading-tight">Kelola Penerimaan Donasi</h1>
@@ -18,6 +23,20 @@
     <div class="bg-red-50 border border-red-200 text-red-750 px-6 py-4 rounded-2xl flex items-center gap-3 shadow-sm animate-in fade-in duration-350">
         <i data-lucide="alert-circle" class="w-5 h-5"></i>
         <span class="font-bold text-sm">{{ session('error') }}</span>
+    </div>
+    @endif
+
+    @if(!$isVerified)
+    <div class="bg-red-50 border border-red-200 text-red-750 px-6 py-5 rounded-[2rem] flex items-start gap-4 shadow-sm mb-6 animate-in fade-in duration-300">
+        <div class="h-10 w-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <div>
+            <h4 class="font-bold text-sm text-red-950">Akun Lembaga Belum Terverifikasi</h4>
+            <p class="text-xs text-red-850 mt-1 leading-relaxed">
+                Anda diharuskan melengkapi berkas dokumen verifikasi sosial pada <strong>Dashboard</strong> Anda sebelum dapat mengklaim donasi makanan. Setelah mengunggah dokumen baru, tunggu proses persetujuan oleh Tim ShareMeal.
+            </p>
+        </div>
     </div>
     @endif
 
@@ -98,10 +117,17 @@
                                     <span>Tersedia sampai: <span x-text="donation.available_until"></span></span>
                                 </div>
                                 
-                                <button @click="openClaimModal(donation)" class="w-full mt-6 bg-purple-600 text-white py-4 px-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-purple-750 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+                                @if($isVerified)
+                                <button @click="openClaimModal(donation)" class="w-full mt-6 bg-purple-600 text-white py-4 px-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl hover:bg-purple-750 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
                                     <i data-lucide="heart" class="w-4 h-4 text-white animate-pulse"></i>
                                     Klaim Donasi
                                 </button>
+                                @else
+                                <button class="w-full mt-6 bg-gray-200 text-gray-400 py-4 px-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 cursor-not-allowed border border-gray-300" disabled>
+                                    <i data-lucide="shield-alert" class="w-4 h-4 text-gray-400"></i>
+                                    Donasi Terkunci (Akun Belum Verifikasi)
+                                </button>
+                                @endif
                             </div>
                         </div>
                     </template>
