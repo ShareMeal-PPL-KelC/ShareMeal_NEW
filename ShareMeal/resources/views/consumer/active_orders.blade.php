@@ -187,7 +187,7 @@
                                 </div>
                                 <div>
                                     <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1">Metode Bayar</span>
-                                    <span class="text-xs font-bold text-luxury-forest uppercase tracking-wider">{{ $t->payment_method ?: 'Saldo ShareMeal' }}</span>
+                                    <span class="text-xs font-bold text-luxury-forest uppercase tracking-wider">{{ $t->payment_method ?: 'QRIS' }}</span>
                                 </div>
                             </div>
 

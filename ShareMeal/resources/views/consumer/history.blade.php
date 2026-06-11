@@ -769,7 +769,7 @@
                                     </div>
                                     <div class="text-right">
                                         <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-0.5">Pembayaran via</span>
-                                        <span class="text-xs font-bold text-luxury-forest uppercase" x-text="receiptData && receiptData.paymentMethod ? receiptData.paymentMethod.toUpperCase() : 'SALDO SHAREMEAL'"></span>
+                                        <span class="text-xs font-bold text-luxury-forest uppercase" x-text="receiptData && receiptData.paymentMethod ? receiptData.paymentMethod.toUpperCase() : 'QRIS'"></span>
                                     </div>
                                 </div>
 

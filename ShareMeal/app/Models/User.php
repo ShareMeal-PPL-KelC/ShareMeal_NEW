@@ -90,7 +90,15 @@ class User extends Authenticatable
                 return $this->profile->avatar;
             }
 
+            if ($this->profile->avatar === 'images/profile' || $this->profile->avatar === 'images/profile.png') {
+                return asset('images/profile.png');
+            }
+
             return Storage::url($this->profile->avatar);
+        }
+
+        if ($this->role === 'consumer') {
+            return asset('images/profile.png');
         }
 
         $name = strtolower($this->name);

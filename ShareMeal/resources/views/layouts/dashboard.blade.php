@@ -120,12 +120,14 @@
             ['route' => 'admin.education', 'label' => 'Edukasi', 'icon' => 'book-open'],
             ['route' => 'admin.reports', 'label' => 'Dampak & Distribusi', 'icon' => 'bar-chart-3'],
             ['route' => 'admin.logs', 'label' => 'Log Admin', 'icon' => 'activity'],
+            ['route' => 'admin.feedbacks.index', 'label' => 'Feedback Pengguna', 'icon' => 'message-square'],
         ];
     } elseif ($userRole === 'lembaga' || request()->is('lembaga*')) {
         $routes = [
             ['route' => 'lembaga.dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
             ['route' => 'lembaga.donations', 'label' => 'Donasi', 'icon' => 'heart'],
             ['route' => 'lembaga.history', 'label' => 'Riwayat Donasi', 'icon' => 'history'],
+            ['route' => 'lembaga.feedback', 'label' => 'Kirim Feedback', 'icon' => 'message-square'],
         ];
     } elseif ($userRole === 'mitra' || request()->is('mitra*')) {
         $routes = [
@@ -135,6 +137,7 @@
             ['route' => 'mitra.history', 'label' => 'Riwayat', 'icon' => 'history'],
             ['route' => 'mitra.reviews', 'label' => 'Ulasan', 'icon' => 'star'],
             ['route' => 'mitra.donations', 'label' => 'Donasi', 'icon' => 'heart'],
+            ['route' => 'mitra.feedback', 'label' => 'Kirim Feedback', 'icon' => 'message-square'],
         ];
     } else {
         $routes = [
@@ -143,6 +146,7 @@
             ['route' => 'consumer.orders.active', 'label' => 'Pesanan Aktif', 'icon' => 'shopping-bag'],
             ['route' => 'consumer.history', 'label' => 'Riwayat', 'icon' => 'history'],
             ['route' => 'consumer.education', 'label' => 'Edukasi', 'icon' => 'book-open'],
+            ['route' => 'consumer.feedback', 'label' => 'Kirim Feedback', 'icon' => 'message-square'],
         ];
     }
 @endphp
@@ -306,7 +310,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="flex-1">
-                                                            <div class="text-sm font-bold text-luxury-charcoal">Status Klaim Donasi</div>
+                                                            <div class="text-sm font-bold text-luxury-charcoal">{{ $infoAlert['title'] ?? 'Status Klaim Donasi' }}</div>
                                                             <div class="text-xs text-luxury-slate mt-1 leading-relaxed">{{ $infoAlert['message'] }}</div>
                                                             @if(isset($infoAlert['link']))
                                                                 <a href="{{ $infoAlert['link'] }}" class="inline-block text-xs text-luxury-gold hover:text-luxury-forest font-semibold mt-2 underline">

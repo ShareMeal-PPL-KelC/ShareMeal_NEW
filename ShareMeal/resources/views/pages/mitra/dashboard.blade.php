@@ -139,9 +139,64 @@
         </div>
     @endif
 
-    <div class="mb-12">
-        <h1 class="text-5xl font-serif font-bold text-luxury-forest leading-tight">Ringkasan Bisnis</h1>
-        <p class="text-luxury-slate font-medium mt-2 tracking-wide text-center md:text-left">Optimalkan inventaris surplus Anda dan tingkatkan dampak sosial Anda terhadap komunitas.</p>
+    <!-- Welcome Greeting Hero Banner -->
+    <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0c2f1e] to-[#1e523c] p-8 md:p-12 text-white border border-white/10 shadow-2xl reveal mb-10">
+        <!-- Internal Glowing Blobs -->
+        <div class="absolute top-[-30%] left-[-15%] w-[30rem] h-[30rem] bg-emerald-400/20 rounded-full blur-[90px] pointer-events-none"></div>
+        <div class="absolute bottom-[-30%] right-[-15%] w-[32rem] h-[32rem] bg-teal-400/15 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div class="md:w-2/3 text-left">
+                <span class="bg-white/10 text-emerald-300 border border-white/10 backdrop-blur px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6 inline-block">
+                    🏪 Kemitraan ShareMeal
+                </span>
+                <h1 class="text-4xl md:text-5xl font-black mb-4 leading-tight font-serif text-white">
+                    Dashboard Mitra Kuliner
+                </h1>
+                <p class="text-emerald-100 text-base md:text-lg max-w-xl font-medium opacity-90 leading-relaxed text-left">
+                    Kelola penjualan produk surplus Anda secara efisien, pantau inventaris aktif, dan salurkan donasi untuk mengurangi food waste demi kelestarian lingkungan.
+                </p>
+            </div>
+            
+            <div class="flex-shrink-0">
+                @if($mitraUser && $mitraUser->is_verified)
+                    <div class="glass-panel px-6 py-4 rounded-3xl border border-white/20 backdrop-blur-md flex items-center gap-3 bg-white/5">
+                        <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-black uppercase tracking-widest text-green-300">Status Akun</div>
+                            <div class="font-bold text-white text-sm">Mitra Terverifikasi</div>
+                        </div>
+                    </div>
+                @elseif($mitraUser && !$mitraUser->is_verified && $mitraUser->verification_rejection_reason)
+                    <div class="glass-panel px-6 py-4 rounded-3xl border border-red-500/30 bg-red-950/20 backdrop-blur-md flex items-center gap-3">
+                        <div class="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center animate-pulse">
+                            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-black uppercase tracking-widest text-red-300">Status Akun</div>
+                            <div class="font-bold text-white text-sm">Verifikasi Ditolak</div>
+                        </div>
+                    </div>
+                @else
+                    <div class="glass-panel px-6 py-4 rounded-3xl border border-blue-500/30 bg-blue-950/20 backdrop-blur-md flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center animate-pulse">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-black uppercase tracking-widest text-blue-300">Status Akun</div>
+                            <div class="font-bold text-white text-sm">Menunggu Verifikasi</div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Background Icon Deco -->
+        <div class="absolute -right-16 -bottom-16 opacity-10 pointer-events-none">
+            <i data-lucide="store" class="w-80 h-80 text-white"></i>
+        </div>
     </div>
 
     <!-- Stats Grid -->
@@ -295,28 +350,47 @@
             </div>
         </div>
         
-        <div class="p-10 bg-white/50 relative" @mouseleave="showOverlay = false">
+              <div class="p-10 bg-white/50 relative" @mouseleave="clearChartHighlight()">
             <div class="h-[350px] w-full relative">
                 <canvas id="mitraPerformanceChart"></canvas>
                 
                 <!-- Interactive HTML Overlay floating over the chart point -->
                 <div x-show="showOverlay" 
-                     x-transition 
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-2 scale-95"
                      class="absolute text-white p-4 rounded-2xl shadow-2xl border border-white/20 pointer-events-auto z-20 w-64 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300"
                      :class="metric === 'revenue' ? 'bg-[#174413]' : 'bg-[#c5a880] text-luxury-forest'"
                      :style="`left: ${overlayLeft}px; top: ${overlayTop}px; transform: translate(-50%, -115%);`"
                      @click="showModal = true"
                      x-cloak>
                      <div class="flex justify-between items-center mb-1.5 pb-1.5 border-b border-white/10">
-                         <span class="text-[9px] font-black uppercase tracking-widest opacity-80" x-text="overlayTitle"></span>
-                         <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
-                     </div>
-                     <div class="text-xl font-serif font-black" x-text="overlayValue"></div>
-                     <div class="text-[10px] opacity-90 font-medium leading-relaxed mt-2 line-clamp-2" x-text="overlayDetail"></div>
-                     <div class="text-[9px] font-black uppercase tracking-wider text-center mt-3 bg-white/20 py-1.5 rounded-lg">
-                         Klik Untuk Detail
-                     </div>
+                          <span class="text-[9px] font-black uppercase tracking-widest opacity-80" x-text="overlayTitle"></span>
+                          <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
+                      </div>
+                      <div class="text-xl font-serif font-black" x-text="overlayValue"></div>
+                      <div class="text-[10px] opacity-90 font-medium leading-relaxed mt-2 line-clamp-2" x-text="overlayDetail"></div>
+                      <div class="text-[9px] font-black uppercase tracking-wider text-center mt-3 bg-white/20 py-1.5 rounded-lg">
+                          Klik Untuk Detail
+                      </div>
                 </div>
+            </div>
+
+            <!-- Interactive Cards Grid -->
+            <div class="grid grid-cols-4 sm:grid-cols-7 gap-4 mt-8 pt-6 border-t border-luxury-alabas/40">
+                <template x-for="(hl, idx) in chartData[metric][timeframe].highlights" :key="idx">
+                    <div @click="openHighlightModal(idx)" 
+                         @mouseenter="highlightChartPoint(idx)"
+                         @mouseleave="clearChartHighlight()"
+                         class="cursor-pointer p-4 bg-luxury-ivory/30 hover:bg-luxury-forest hover:text-white border border-luxury-alabas/50 rounded-2xl transition-all duration-300 text-center group active:scale-95 flex flex-col justify-between hover:shadow-md h-full transform hover:-translate-y-1">
+                        <div class="text-[9px] font-black uppercase tracking-wider text-luxury-gold group-hover:text-luxury-ivory" x-text="hl.label"></div>
+                        <div class="text-sm font-serif font-black mt-2" x-text="hl.value"></div>
+                        <div class="text-[8px] font-black uppercase tracking-widest text-luxury-slate group-hover:text-white/80 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">Detail</div>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -327,10 +401,25 @@
          x-cloak
          @keydown.escape.window="showModal = false">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-[#174413]/60 backdrop-blur-md" @click="showModal = false"></div>
+        <div class="fixed inset-0 bg-[#174413]/60 backdrop-blur-md" 
+             @click="showModal = false"
+             x-show="showModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"></div>
 
         <!-- Modal Content -->
-        <div class="relative bg-white rounded-[3rem] w-full max-w-lg p-10 shadow-2xl border border-luxury-alabas overflow-hidden transform transition-all">
+        <div x-show="showModal"
+             x-transition:enter="ease-out duration-500"
+             x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="ease-in duration-300"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-12 scale-95"
+             class="relative bg-white rounded-[3rem] w-full max-w-lg p-10 shadow-2xl border border-luxury-alabas overflow-hidden transform transition-all">
             <div class="flex justify-between items-center mb-6 border-b border-luxury-alabas/40 pb-4">
                 <div>
                     <h3 class="text-2xl font-serif font-bold text-luxury-forest">Analisis Capaian</h3>
@@ -548,15 +637,46 @@
                 }
             },
 
+            highlightChartPoint(index) {
+                if (!this.chartInstance) return;
+                const meta = this.chartInstance.getDatasetMeta(0);
+                const point = meta.data[index];
+                if (point) {
+                    this.chartInstance.setActiveElements([{
+                        datasetIndex: 0,
+                        index: index
+                    }]);
+                    this.setActiveHighlight(index, point.x, point.y);
+                    this.chartInstance.update();
+                }
+            },
+
+            clearChartHighlight() {
+                if (!this.chartInstance) return;
+                this.chartInstance.setActiveElements([]);
+                this.showOverlay = false;
+                this.chartInstance.update();
+            },
+
+            openHighlightModal(index) {
+                const current = this.chartData[this.metric][this.timeframe];
+                if (current.highlights && current.highlights[index]) {
+                    this.overlayTitle = current.highlights[index].label;
+                    this.overlayValue = current.highlights[index].value;
+                    this.overlayDetail = current.highlights[index].detail;
+                    this.showModal = true;
+                }
+            },
+
             getChartConfig() {
                 const current = this.chartData[this.metric][this.timeframe];
                 return {
                     type: 'line',
                     data: {
-                        labels: current.labels,
+                        labels: [...current.labels],
                         datasets: [{
                             label: current.label,
-                            data: current.data,
+                            data: [...current.data],
                             borderColor: current.color,
                             backgroundColor: current.color + '18', // transparent fill
                             fill: true,
@@ -573,6 +693,16 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animations: {
+                            y: {
+                                duration: 1200,
+                                easing: 'easeOutBack'
+                            },
+                            x: {
+                                duration: 1200,
+                                easing: 'easeOutBack'
+                            }
+                        },
                         onHover: (event, activeElements) => {
                             if (activeElements && activeElements.length > 0) {
                                 const index = activeElements[0].index;
@@ -625,9 +755,9 @@
                 const current = this.chartData[this.metric][this.timeframe];
                 
                 // Update datasets
-                this.chartInstance.data.labels = current.labels;
+                this.chartInstance.data.labels = [...current.labels];
                 this.chartInstance.data.datasets[0].label = current.label;
-                this.chartInstance.data.datasets[0].data = current.data;
+                this.chartInstance.data.datasets[0].data = [...current.data];
                 this.chartInstance.data.datasets[0].borderColor = current.color;
                 this.chartInstance.data.datasets[0].backgroundColor = current.color + '18';
                 this.chartInstance.data.datasets[0].pointBackgroundColor = current.color;

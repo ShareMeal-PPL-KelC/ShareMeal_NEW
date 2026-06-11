@@ -134,7 +134,7 @@
                                                     <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i> JADWAL JEMPUT
                                                 </div>
                                                 <div class="text-sm font-black text-[#174413]">
-                                                    {{ $donation->pickup_time ? \Carbon\Carbon::parse($donation->pickup_time)->format('H:i') : 'Segera' }}
+                                                    {{ $donation->pickup_time ? \Carbon\Carbon::parse($donation->pickup_time)->format('H:i') : 'Belum ditentukan' }}
                                                 </div>
                                             </div>
                                             <div class="h-px bg-gray-50"></div>

@@ -14,13 +14,19 @@ class DuskUserSeeder extends Seeder
     public function run(): void
     {
         // User for LoginTest
-        User::updateOrCreate(
+        $kya = User::updateOrCreate(
             ['email' => 'kya@gmail.com'],
             [
                 'name' => 'Kya Test User',
                 'password' => Hash::make('password'),
                 'role' => 'consumer',
                 'is_verified' => true,
+            ]
+        );
+        \App\Models\UserProfile::updateOrCreate(
+            ['user_id' => $kya->id],
+            [
+                'avatar' => 'images/profile',
             ]
         );
 
@@ -32,6 +38,12 @@ class DuskUserSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'consumer',
                 'is_verified' => true,
+            ]
+        );
+        \App\Models\UserProfile::updateOrCreate(
+            ['user_id' => $kina->id],
+            [
+                'avatar' => 'images/profile',
             ]
         );
 

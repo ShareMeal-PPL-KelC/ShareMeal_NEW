@@ -72,22 +72,30 @@ class ShareMealState
             'inventory_products' => [],
             'transactions' => [],
             'donations' => \App\Models\Donation::query()->get()->map(function ($donation) {
+                $openingHours = $donation->mitra?->profile?->business_opening_hours ?? $donation->mitra?->profile?->opening_hours ?? '08:00 - 20:00';
+                $parts = explode('-', $openingHours);
+                $fallbackStart = trim($parts[0] ?? '');
+                $fallbackStart = (empty($fallbackStart) || strlen($fallbackStart) < 5) ? '08:00' : $fallbackStart;
+                $fallbackEnd = trim($parts[1] ?? '');
+                $fallbackEnd = (empty($fallbackEnd) || strlen($fallbackEnd) < 5) ? '20:00' : $fallbackEnd;
+
                 return [
                     'id' => $donation->id,
                     'mitra_id' => $donation->mitra_id,
                     'lembaga_id' => $donation->lembaga_id,
                     'store' => [
-                        'name' => $donation->mitra->name ?? 'Mitra Default',
-                        'address' => 'Jl. Pahlawan No. 10, Jakarta',
-                        'phone' => '081234567890',
+                        'name' => $donation->mitra?->displayName ?? 'Mitra Default',
+                        'address' => $donation->mitra?->profile?->business_address ?? $donation->mitra?->profile?->address ?? 'Jl. Pahlawan No. 10, Jakarta',
+                        'phone' => $donation->mitra?->profile?->business_contact ?? $donation->mitra?->profile?->phone ?? $donation->mitra?->phone ?? '081234567890',
                     ],
                     'distance' => '1.5 km',
                     'items' => [
                         ['name' => $donation->title, 'quantity' => $donation->quantity, 'unit' => $donation->unit]
                     ],
                     'available_until' => $donation->expires_at ? \Carbon\Carbon::parse($donation->expires_at)->format('d M, H:i') : '18:00',
-                    'pickup_start' => $donation->pickup_start_time,
-                    'pickup_end' => $donation->pickup_end_time,
+                    'expires_at' => $donation->expires_at ? $donation->expires_at->toIso8601String() : null,
+                    'pickup_start' => $donation->pickup_start_time ?: $fallbackStart,
+                    'pickup_end' => $donation->pickup_end_time ?: $fallbackEnd,
                     'pickup_time' => $donation->pickup_time ? $donation->pickup_time->format('H:i') : null,
                     'pickup_time_window' => $donation->pickup_time_window,
                     'claimed_at' => $donation->claimed_at ? \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') : null,

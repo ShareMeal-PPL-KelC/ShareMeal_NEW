@@ -58,6 +58,7 @@ class ConsumerController extends Controller
         if ($shippingOrdersCount > 0) {
             $criticalAlerts[] = [
                 'type' => 'info',
+                'title' => 'Status Pengiriman',
                 'message' => "Hore! Ada $shippingOrdersCount pesanan yang sedang dalam perjalanan ke tempat Anda.",
                 'link' => route('consumer.orders.active'),
                 'link_text' => 'Pantau Lokasi'
@@ -212,58 +213,99 @@ class ConsumerController extends Controller
         $firstItem = $cartItems->first();
         $product = $firstItem->product;
         
-        $pickupStart = $product->pickup_start_time ?? '18:00';
-        $pickupEnd = $product->pickup_end_time ?? '20:00';
+        $profile = $product->user->profile;
+        $openingHours = $profile?->business_opening_hours ?? $profile?->opening_hours;
+        if (!empty($openingHours)) {
+            $parts = explode('-', $openingHours);
+            $pickupStart = isset($parts[0]) ? trim($parts[0]) : '08:00';
+            $pickupEnd = isset($parts[1]) ? trim($parts[1]) : '20:00';
+        } else {
+            $pickupStart = $product->pickup_start_time ?? '18:00';
+            $pickupEnd = $product->pickup_end_time ?? '20:00';
+        }
 
         $slotLimit = $product->user->profile?->delivery_slot_limit ?? 10;
         
-        // Count orders per slot for today
-        $orderCounts = Order::where('mitra_id', $product->user_id)
+        // Count orders per slot for today and tomorrow
+        $orderCountsTodayRaw = Order::where('mitra_id', $product->user_id)
             ->whereDate('created_at', now()->toDateString())
             ->whereNotNull('delivery_time_slot')
             ->groupBy('delivery_time_slot')
             ->select('delivery_time_slot', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
             ->pluck('count', 'delivery_time_slot');
 
-        // Generate 1-hour slots within window
+        $orderCountsTomorrowRaw = Order::where('mitra_id', $product->user_id)
+            ->whereDate('created_at', now()->addDay()->toDateString())
+            ->whereNotNull('delivery_time_slot')
+            ->groupBy('delivery_time_slot')
+            ->select('delivery_time_slot', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->pluck('count', 'delivery_time_slot');
+
+        $orderCountsToday = [];
+        foreach ($orderCountsTodayRaw as $slotKey => $count) {
+            $rawKey = str_replace(['Hari ini, ', 'Besok, '], '', $slotKey);
+            $orderCountsToday[$rawKey] = ($orderCountsToday[$rawKey] ?? 0) + $count;
+        }
+
+        $orderCountsTomorrow = [];
+        foreach ($orderCountsTomorrowRaw as $slotKey => $count) {
+            $rawKey = str_replace(['Hari ini, ', 'Besok, '], '', $slotKey);
+            $orderCountsTomorrow[$rawKey] = ($orderCountsTomorrow[$rawKey] ?? 0) + $count;
+        }
+
+        // Generate 1-hour slots within window for today and tomorrow
         $slots = [];
         try {
             $startStr = !empty($pickupStart) ? $pickupStart : '18:00';
             $endStr = !empty($pickupEnd) ? $pickupEnd : '20:00';
             
-            $start = \Carbon\Carbon::parse($startStr);
-            $end = \Carbon\Carbon::parse($endStr);
+            $now = now();
             
-            if ($end->lt($start)) {
-                $end->addDay();
+            // Generate for Today
+            $startToday = \Carbon\Carbon::parse($startStr);
+            $endToday = \Carbon\Carbon::parse($endStr);
+            if ($endToday->lt($startToday)) {
+                $endToday->addDay();
             }
             
             $maxSlots = 24;
-            while ($start->lt($end) && $maxSlots > 0) {
-                $slotStart = $start->format('H:i');
-                $start->addHours(1);
-                if ($start->gt($end)) break;
-                $slotEnd = $start->format('H:i');
+            while ($startToday->lt($endToday) && $maxSlots > 0) {
+                $slotStart = $startToday->format('H:i');
+                $startToday->addHours(1);
+                if ($startToday->gt($endToday)) break;
+                $slotEnd = $startToday->format('H:i');
                 $slotLabel = "$slotStart - $slotEnd";
+                $rawSlotLabel = "$slotStart - $slotEnd";
                 
-                $currentCount = $orderCounts[$slotLabel] ?? 0;
-                $isFull = $currentCount >= $slotLimit;
-                
-                $slots[] = (object) [
-                    'label' => $slotLabel,
-                    'is_full' => $isFull,
-                    'remaining' => max(0, $slotLimit - $currentCount)
-                ];
+                // Only show if the slot start time is in the future
+                $slotStartToday = \Carbon\Carbon::today()->setTimeFromTimeString($slotStart);
+                if ($slotStartToday->gt($now)) {
+                    $currentCount = $orderCountsToday[$rawSlotLabel] ?? 0;
+                    $isFull = $currentCount >= $slotLimit;
+                    
+                    $slots[] = (object) [
+                        'label' => $slotLabel,
+                        'is_full' => $isFull,
+                        'remaining' => max(0, $slotLimit - $currentCount)
+                    ];
+                }
             }
+            
             if (empty($slots)) {
-                $slotLabel = \Carbon\Carbon::parse($startStr)->format('H:i') . ' - ' . \Carbon\Carbon::parse($endStr)->format('H:i');
-                $currentCount = $orderCounts[$slotLabel] ?? 0;
-                $isFull = $currentCount >= $slotLimit;
-                $slots[] = (object) [
-                    'label' => $slotLabel,
-                    'is_full' => $isFull,
-                    'remaining' => max(0, $slotLimit - $currentCount)
-                ];
+                $slotLabelRaw = \Carbon\Carbon::parse($startStr)->format('H:i') . ' - ' . \Carbon\Carbon::parse($endStr)->format('H:i');
+                
+                // Today fallback (only if future)
+                $slotStartToday = \Carbon\Carbon::today()->setTimeFromTimeString($startStr);
+                if ($slotStartToday->gt($now)) {
+                    $slotLabel = $slotLabelRaw;
+                    $currentCount = $orderCountsToday[$slotLabelRaw] ?? 0;
+                    $isFull = $currentCount >= $slotLimit;
+                    $slots[] = (object) [
+                        'label' => $slotLabel,
+                        'is_full' => $isFull,
+                        'remaining' => max(0, $slotLimit - $currentCount)
+                    ];
+                }
             }
         } catch (\Exception $e) {
             \Log::error('Error generating slots: ' . $e->getMessage());
@@ -272,10 +314,12 @@ class ConsumerController extends Controller
         // Calculate subtotal and details from cart items
         $subtotal = 0;
         $itemsString = [];
+        $totalQty = 0;
         foreach ($cartItems as $item) {
             $itemPrice = ($item->product->status === 'flash-sale' && $item->product->discount_price > 0) ? $item->product->discount_price : $item->product->price;
             $subtotal += $itemPrice * $item->quantity;
-            $itemsString[] = $item->product->name . ' (' . $item->quantity . ' pcs)';
+            $itemsString[] = $item->product->name;
+            $totalQty += $item->quantity;
         }
 
         // Hitung sisa detik dari expires_at keranjang
@@ -288,7 +332,7 @@ class ConsumerController extends Controller
             'storeName' => $product->user->displayName,
             'storeLogo' => $product->user->image,
             'dealItem' => implode(', ', $itemsString),
-            'quantity' => 1,
+            'quantity' => $totalQty,
             'price' => $subtotal,
             'status' => 'pending',
             'pickupTime' => now()->format('H:i') . ' - ' . now()->addHour()->format('H:i'),
@@ -409,9 +453,19 @@ class ConsumerController extends Controller
 
             if ($deliveryTimeSlot) {
                 $slotLimit = $mitra->profile->delivery_slot_limit ?? 10;
+                $isTomorrow = str_starts_with($deliveryTimeSlot, 'Besok, ');
+                $orderDate = $isTomorrow ? now()->addDay()->toDateString() : now()->toDateString();
+
+                $rawSlot = str_replace(['Hari ini, ', 'Besok, '], '', $deliveryTimeSlot);
+
                 $currentSlotCount = Order::where('mitra_id', $request->mitra_id)
-                    ->whereDate('created_at', now()->toDateString())
-                    ->where('delivery_time_slot', $deliveryTimeSlot)
+                    ->whereDate('created_at', $orderDate)
+                    ->where(function ($query) use ($deliveryTimeSlot, $rawSlot) {
+                        $query->where('delivery_time_slot', $deliveryTimeSlot)
+                            ->orWhere('delivery_time_slot', $rawSlot)
+                            ->orWhere('delivery_time_slot', 'Hari ini, ' . $rawSlot)
+                            ->orWhere('delivery_time_slot', 'Besok, ' . $rawSlot);
+                    })
                     ->count();
 
                 if ($currentSlotCount >= $slotLimit) {

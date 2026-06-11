@@ -167,7 +167,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-[#174413]/85">Kata Sandi</label>
-                                <a href="#" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition">Lupa sandi?</a>
+                                <a href="{{ route('password.request') }}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition">Lupa sandi?</a>
                             </div>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#174413]/40">

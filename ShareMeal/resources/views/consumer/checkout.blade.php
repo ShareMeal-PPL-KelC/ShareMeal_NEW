@@ -281,7 +281,7 @@
                     <div class="space-y-3">
                         <div class="flex justify-between text-xs font-medium text-luxury-slate">
                             <span>Subtotal</span>
-                            <span>Rp {{ number_format($booking->price * $booking->quantity, 0, ',', '.') }}</span>
+                            <span>Rp {{ number_format($booking->price, 0, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between text-xs font-medium text-luxury-slate" x-show="receivingMethod === 'delivery'">
                             <span>Biaya Pengiriman</span>
@@ -323,7 +323,7 @@
                 </div>
                 
                 <h2 class="text-2xl font-serif font-bold text-luxury-forest mb-2">Pemesanan Berhasil</h2>
-                <p class="text-luxury-slate text-xs font-medium mb-6 tracking-wide" x-text="receivingMethod === 'delivery' ? 'Makanan pesanan Anda sedang dipersiapkan dan akan segera diantarkan.' : 'Makanan Anda sudah aman dan siap diambil langsung di lokasi toko.'"></p>
+                <p class="text-luxury-slate text-xs font-medium mb-6 tracking-wide" x-text="receivingMethod === 'delivery' ? 'Makanan Anda akan segera diproses setelah mitra melakukan pengecekan pembayaran.' : 'Makanan Anda sudah aman dan siap diambil langsung di lokasi toko.'"></p>
 
                 <div class="bg-white/40 rounded-2xl border border-luxury-alabas p-5 mb-6 text-left relative overflow-hidden">
                     <!-- Invoice Decoration -->
@@ -442,7 +442,7 @@
             deliveryTimeSlot: '',
             deliveryFee: {{ (int)($booking->deliveryFee ?? 0) }},
             canDelivery: {{ $booking->canDelivery ? 'true' : 'false' }},
-            subtotal: {{ (int)($booking->price * $booking->quantity) }},
+            subtotal: {{ (int)($booking->price) }},
             countdown: {{ $booking->remainingSeconds ?? 300 }},
             isProcessing: false,
             processingMessage: 'Memverifikasi pembayaran...',

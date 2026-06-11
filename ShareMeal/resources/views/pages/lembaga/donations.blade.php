@@ -42,12 +42,22 @@
 
     <!-- Info Banner -->
     <div class="bg-purple-55 border border-purple-100 rounded-[2rem] p-6 mb-10 shadow-sm animate-in fade-in duration-300">
-        <div class="flex items-start gap-4">
-            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 flex-shrink-0">
-                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+        <div class="space-y-4">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 flex-shrink-0">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                </div>
+                <div class="text-sm text-purple-900 leading-relaxed text-left">
+                    <strong>Prinsip First-Come, First-Served:</strong> Donasi surplus tersedia bersifat terbuka untuk diklaim secara adil oleh seluruh lembaga terverifikasi di platform. Harap pastikan kapasitas penyimpanan dan logistik armada Anda memadai sebelum melakukan klaim donasi.
+                </div>
             </div>
-            <div class="text-sm text-purple-900 leading-relaxed">
-                <strong>Prinsip First-Come, First-Served:</strong> Donasi surplus tersedia bersifat terbuka untuk diklaim secara adil oleh seluruh lembaga terverifikasi di platform. Harap pastikan kapasitas penyimpanan dan logistik armada Anda memadai sebelum melakukan klaim donasi.
+            <div class="flex items-start gap-4 pt-4 border-t border-purple-200/40">
+                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 flex-shrink-0">
+                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                </div>
+                <div class="text-sm text-purple-900 leading-relaxed text-left">
+                    <strong>Radius Batas Jarak:</strong> Item donasi yang muncul di halaman ini disaring secara otomatis dan hanya berasal dari toko yang berjarak di bawah 5 km saja dari lokasi lembaga Anda berada untuk menjaga kesegaran pangan selama proses penjemputan.
+                </div>
             </div>
         </div>
     </div>
@@ -192,7 +202,7 @@
                                                     <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest block mb-1">Jadwal Penjemputan Resmi</span>
                                                     <div class="flex items-center gap-2 text-blue-900 font-black text-base">
                                                         <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
-                                                        <span x-text="donation.pickup_time || 'Segera'"></span>
+                                                        <span x-text="donation.pickup_time || 'Belum ditentukan'"></span>
                                                     </div>
                                                 </div>
                                                 <p class="text-[10px] text-blue-600 italic font-medium leading-relaxed">Mohon pastikan armada penjemputan Anda tiba tepat waktu sesuai dengan jadwal yang disepakati.</p>
@@ -297,7 +307,7 @@
         <div class="fixed inset-0 bg-purple-950/40 backdrop-blur-md" @click="showClaimModal = false"></div>
 
         <!-- Modal Content -->
-        <div class="bg-white rounded-[3.5rem] w-full max-w-lg overflow-hidden shadow-2xl relative border border-purple-100 p-10 animate-in zoom-in-95 duration-300" 
+        <div class="bg-white rounded-[3.5rem] w-full max-w-2xl overflow-hidden shadow-2xl relative border border-purple-100 p-10 animate-in zoom-in-95 duration-300" 
              x-show="showClaimModal"
              x-transition:enter="transition ease-out duration-300 delay-100"
              x-transition:enter-start="opacity-0 scale-95 translate-y-4"
@@ -326,21 +336,48 @@
                     </div>
                 </div>
 
-                <div class="space-y-3">
+                <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pilih Jadwal Penjemputan</label>
                         <span class="text-[10px] bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-bold uppercase tracking-wider" x-text="selectedDonation?.pickup_time_window"></span>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                         <template x-for="slot in availableSlots" :key="slot">
-                             <label class="relative group cursor-pointer">
-                                 <input type="radio" name="pickup_time" :value="slot" class="sr-only peer" required>
-                                 <div class="p-4 text-center rounded-2xl border-2 border-gray-100 peer-checked:border-purple-600 peer-checked:bg-purple-50 group-hover:border-purple-100 transition-all font-bold text-sm text-gray-600 peer-checked:text-purple-700 shadow-sm active:scale-95">
-                                     <span x-text="slot"></span>
-                                 </div>
-                             </label>
-                         </template>
+                    
+                    <div class="space-y-4 max-h-[200px] overflow-y-auto pr-1">
+                        <!-- Hari Ini Section -->
+                        <template x-if="todaySlots().length > 0">
+                            <div>
+                                <span class="text-[9px] font-black text-purple-600 uppercase tracking-widest block mb-2">Hari Ini</span>
+                                <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                     <template x-for="slot in todaySlots()" :key="slot.value">
+                                         <label class="relative group cursor-pointer">
+                                             <input type="radio" name="pickup_time" :value="slot.value" class="sr-only peer" required>
+                                             <div class="py-2 px-1 text-center rounded-xl border border-gray-200 peer-checked:border-purple-600 peer-checked:bg-purple-50 group-hover:border-purple-100 transition-all font-bold text-xs text-gray-600 peer-checked:text-purple-700 shadow-sm active:scale-95">
+                                                 <span x-text="slot.time"></span>
+                                             </div>
+                                         </label>
+                                     </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Besok Section -->
+                        <template x-if="tomorrowSlots().length > 0">
+                            <div class="pt-2 border-t border-gray-50">
+                                <span class="text-[9px] font-black text-purple-600 uppercase tracking-widest block mb-2">Besok</span>
+                                <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                     <template x-for="slot in tomorrowSlots()" :key="slot.value">
+                                         <label class="relative group cursor-pointer">
+                                             <input type="radio" name="pickup_time" :value="slot.value" class="sr-only peer" required>
+                                             <div class="py-2 px-1 text-center rounded-xl border border-gray-200 peer-checked:border-purple-600 peer-checked:bg-purple-50 group-hover:border-purple-100 transition-all font-bold text-xs text-gray-600 peer-checked:text-purple-700 shadow-sm active:scale-95">
+                                                 <span x-text="slot.time"></span>
+                                             </div>
+                                         </label>
+                                     </template>
+                                </div>
+                            </div>
+                        </template>
                     </div>
+
                     <p class="text-[11px] text-gray-400 flex items-center gap-1.5 mt-2">
                         <i data-lucide="info" class="w-4 h-4 text-gray-450 shrink-0"></i>
                         Pilihlah opsi slot waktu yang tersedia sesuai jam operasional mitra toko.
@@ -590,6 +627,12 @@
             completedDonations() {
                 return this.donations.filter(d => d.status === 'completed');
             },
+            todaySlots() {
+                return this.availableSlots.filter(s => s.day === 'Hari ini');
+            },
+            tomorrowSlots() {
+                return this.availableSlots.filter(s => s.day === 'Besok');
+            },
 
             showReportModal: false,
             selectedDonationForReport: null,
@@ -685,7 +728,7 @@
 
             openClaimModal(donation) {
                 this.selectedDonation = donation;
-                this.availableSlots = this.generateSlots(donation.pickup_start, donation.pickup_end);
+                this.availableSlots = this.generateSlots(donation.pickup_start, donation.pickup_end, donation.expires_at);
                 this.showClaimModal = true;
                 
                 setTimeout(() => {
@@ -693,23 +736,90 @@
                 }, 50);
             },
 
-            generateSlots(start, end) {
-                if (!start || !end) return ['18:00', '18:30', '19:00', '19:30'];
+            generateSlots(start, end, expiresAtStr) {
+                if (!start || !end) {
+                    const storeHours = this.selectedDonation?.store?.opening_hours || '08:00 - 20:00';
+                    const parts = storeHours.split('-');
+                    if (!start) start = parts[0] ? parts[0].trim() : '08:00';
+                    if (!end) end = parts[1] ? parts[1].trim() : '20:00';
+                }
                 
                 const slots = [];
                 let [startH, startM] = start.split(':').map(Number);
                 let [endH, endM] = end.split(':').map(Number);
                 
-                let current = new Date();
-                current.setHours(startH, startM, 0);
+                const now = new Date();
+                const expiresAt = expiresAtStr ? new Date(expiresAtStr) : null;
                 
-                let endTime = new Date();
-                endTime.setHours(endH, endM, 0);
+                // Day-level expiration dates
+                let tomorrowStartDay = new Date(now);
+                tomorrowStartDay.setDate(tomorrowStartDay.getDate() + 1);
+                tomorrowStartDay.setHours(0, 0, 0, 0);
                 
-                while (current < endTime) {
-                    let hh = String(current.getHours()).padStart(2, '0');
-                    let mm = String(current.getMinutes()).padStart(2, '0');
-                    slots.push(`${hh}:${mm}`);
+                let expiresAtDateDay = expiresAt ? new Date(expiresAt) : null;
+                if (expiresAtDateDay) {
+                    expiresAtDateDay.setHours(0, 0, 0, 0);
+                }
+                
+                // Generate slots for today
+                let todayStart = new Date(now);
+                todayStart.setHours(startH, startM, 0, 0);
+                
+                let todayEnd = new Date(now);
+                todayEnd.setHours(endH, endM, 0, 0);
+                if (todayEnd < todayStart) {
+                    todayEnd.setDate(todayEnd.getDate() + 1);
+                }
+                
+                let current = new Date(todayStart);
+                while (current < todayEnd) {
+                    if (current > now) {
+                        // Check if donation is still valid at this slot
+                        if (!expiresAt || expiresAt >= current) {
+                            let hh = String(current.getHours()).padStart(2, '0');
+                            let mm = String(current.getMinutes()).padStart(2, '0');
+                            let yyyy = current.getFullYear();
+                            let month = String(current.getMonth() + 1).padStart(2, '0');
+                            let date = String(current.getDate()).padStart(2, '0');
+                            slots.push({
+                                value: `${yyyy}-${month}-${date} ${hh}:${mm}`,
+                                time: `${hh}:${mm}`,
+                                day: 'Hari ini',
+                                label: `Hari ini, ${hh}:${mm}`
+                            });
+                        }
+                    }
+                    current.setMinutes(current.getMinutes() + 30);
+                }
+                
+                // Generate slots for tomorrow
+                let tomorrowStart = new Date(now);
+                tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+                tomorrowStart.setHours(startH, startM, 0, 0);
+                
+                let tomorrowEnd = new Date(now);
+                tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+                tomorrowEnd.setHours(endH, endM, 0, 0);
+                if (tomorrowEnd < tomorrowStart) {
+                    tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+                }
+                
+                current = new Date(tomorrowStart);
+                while (current < tomorrowEnd) {
+                    // Check if donation is still valid tomorrow at day-level
+                    if (!expiresAtDateDay || expiresAtDateDay >= tomorrowStartDay) {
+                        let hh = String(current.getHours()).padStart(2, '0');
+                        let mm = String(current.getMinutes()).padStart(2, '0');
+                        let yyyy = current.getFullYear();
+                        let month = String(current.getMonth() + 1).padStart(2, '0');
+                        let date = String(current.getDate()).padStart(2, '0');
+                        slots.push({
+                            value: `${yyyy}-${month}-${date} ${hh}:${mm}`,
+                            time: `${hh}:${mm}`,
+                            day: 'Besok',
+                            label: `Besok, ${hh}:${mm}`
+                        });
+                    }
                     current.setMinutes(current.getMinutes() + 30);
                 }
                 

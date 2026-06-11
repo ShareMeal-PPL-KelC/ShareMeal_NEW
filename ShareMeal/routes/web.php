@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ConsumerController;
 use App\Http\Controllers\ShareMealController;
+use App\Http\Controllers\FeedbackController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ShareMealController::class, 'landing'])->name('home');
@@ -9,6 +10,14 @@ Route::get('/login', [ShareMealController::class, 'login'])->name('login');
 Route::post('/login', [ShareMealController::class, 'doLogin'])->middleware('throttle:5,1')->name('login.submit');
 Route::get('/register', [ShareMealController::class, 'register'])->name('register');
 Route::post('/register', [ShareMealController::class, 'doRegister'])->name('register.submit');
+
+// Password Reset Routes
+Route::get('/forgot-password', [ShareMealController::class, 'forgotPassword'])->name('password.request');
+Route::post('/forgot-password', [ShareMealController::class, 'sendResetOtp'])->name('password.email');
+Route::get('/verify-reset-otp', [ShareMealController::class, 'verifyResetOtpForm'])->name('password.verify_otp_form');
+Route::post('/verify-reset-otp', [ShareMealController::class, 'verifyResetOtp'])->name('password.verify_otp');
+Route::get('/reset-password', [ShareMealController::class, 'resetPassword'])->name('password.reset');
+Route::post('/reset-password', [ShareMealController::class, 'updatePassword'])->name('password.update');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [ShareMealController::class, 'logout'])->name('logout');
@@ -43,6 +52,8 @@ Route::prefix('consumer')->name('consumer.')->middleware('role:consumer')->group
     Route::post('/checkout', [ConsumerController::class, 'storeOrder'])->name('checkout.store');
     Route::post('/report', [ConsumerController::class, 'submitProblemReport'])->name('report.submit');
     // Route::get('/favorites', [ConsumerController::class, 'favorites'])->name('favorites');
+    Route::get('/feedback', [FeedbackController::class, 'create'])->name('feedback');
+    Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 });
 
 Route::prefix('mitra')->name('mitra.')->middleware(['role:mitra', 'profile.complete'])->group(function () {
@@ -67,6 +78,8 @@ Route::prefix('mitra')->name('mitra.')->middleware(['role:mitra', 'profile.compl
     Route::post('/donations', [ShareMealController::class, 'mitraDonationStore'])->name('donations.store');
     Route::post('/donations/{donationId}/complete', [ShareMealController::class, 'mitraDonationComplete'])->name('donations.complete');
     Route::post('/donations/{donationId}/cancel', [ShareMealController::class, 'mitraDonationCancel'])->name('donations.cancel');
+    Route::get('/feedback', [FeedbackController::class, 'create'])->name('feedback');
+    Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 });
 
 Route::prefix('lembaga')->name('lembaga.')->middleware(['role:lembaga', 'profile.complete'])->group(function () {
@@ -77,6 +90,8 @@ Route::prefix('lembaga')->name('lembaga.')->middleware(['role:lembaga', 'profile
     Route::post('/donations/{donationId}/claim', [ShareMealController::class, 'lembagaClaimDonation'])->name('donations.claim');
     Route::post('/donations/{donationId}/complete', [ShareMealController::class, 'lembagaCompleteDonation'])->name('donations.complete');
     Route::post('/report', [ShareMealController::class, 'lembagaSubmitProblemReport'])->name('report.submit');
+    Route::get('/feedback', [FeedbackController::class, 'create'])->name('feedback');
+    Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 });
 
 Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
@@ -105,4 +120,7 @@ Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function
     Route::post('/problem-reports/{report}/warn', [ShareMealController::class, 'adminWarnMitraReport'])->name('problem-reports.warn');
     Route::post('/problem-reports/{report}/block', [ShareMealController::class, 'adminBlockMitraReport'])->name('problem-reports.block');
     Route::get('/logs', [ShareMealController::class, 'adminLogs'])->name('logs');
+    Route::get('/feedbacks', [FeedbackController::class, 'adminIndex'])->name('feedbacks.index');
+    Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'adminDelete'])->name('feedbacks.delete');
+    Route::post('/feedbacks/{feedback}/toggle-status', [FeedbackController::class, 'adminToggleStatus'])->name('feedbacks.toggle-status');
 });

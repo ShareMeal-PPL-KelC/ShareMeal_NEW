@@ -67,7 +67,7 @@
         <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-16 z-10">
             <!-- Blur overlay and image -->
             <div class="absolute inset-0 z-0">
-                <img src="https://images.unsplash.com/photo-1593113702251-272b1bc414a9?auto=format&fit=crop&q=80&w=1200" alt="Sustainable Future" class="absolute inset-0 h-full w-full object-cover">
+                <img src="/images/logo.png" alt="Sustainable Future" class="absolute inset-0 h-full w-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#0b240a]/95 via-[#0e350b]/85 to-[#1b5017]/35 mix-blend-multiply"></div>
             </div>
 

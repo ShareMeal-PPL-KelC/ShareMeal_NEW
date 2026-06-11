@@ -103,6 +103,72 @@
         .delay-300 { transition-delay: 300ms; }
         .delay-400 { transition-delay: 400ms; }
         .delay-500 { transition-delay: 500ms; }
+
+        /* Falling Leaves CSS */
+        .leaf-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .leaf-item {
+            position: absolute;
+            top: -60px;
+            pointer-events: none;
+            will-change: transform;
+            animation-name: leaf-fall;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+        }
+
+        .leaf-wind {
+            pointer-events: none;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+        }
+
+        .leaf-svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            will-change: transform;
+            animation-name: leaf-sway;
+            animation-iteration-count: infinite;
+            animation-direction: alternate;
+            animation-timing-function: ease-in-out;
+            transform-origin: center;
+        }
+
+        /* Leaf Colors */
+        svg.leaf-svg path.leaf-color-1 { fill: #1b5e20 !important; }
+        svg.leaf-svg path.leaf-color-2 { fill: #2e7d32 !important; }
+        svg.leaf-svg path.leaf-color-3 { fill: #4caf50 !important; }
+        svg.leaf-svg path.leaf-color-4 { fill: #81c784 !important; }
+        svg.leaf-svg path.leaf-color-5 { fill: #a5d6a7 !important; }
+
+        @keyframes leaf-fall {
+            0% {
+                transform: translateY(-60px);
+            }
+            100% {
+                transform: translateY(105vh);
+            }
+        }
+
+        @keyframes leaf-sway {
+            0% {
+                transform: rotate3d(1, 0.5, 0.2, -45deg) rotateZ(-30deg) translateX(-15px);
+            }
+            100% {
+                transform: rotate3d(0.2, 1, 0.5, 45deg) rotateZ(30deg) translateX(15px);
+            }
+        }
     </style>
 
     <div class="landing-font min-h-screen bg-slate-50/40 relative overflow-x-hidden">
@@ -114,6 +180,9 @@
             <div id="blob-3" class="absolute top-[55%] left-[-20%] w-[50rem] h-[50rem] bg-lime-100/30 rounded-full blur-[150px] animate-float-3 transition-transform duration-300 ease-out"></div>
             <div id="blob-4" class="absolute top-[75%] right-[-10%] w-[38rem] h-[38rem] bg-amber-100/25 rounded-full blur-[120px] animate-float-1 transition-transform duration-300 ease-out"></div>
         </div>
+
+        <!-- Falling Leaves Background Effect -->
+        <div id="falling-leaves-container" class="leaf-container"></div>
 
         <!-- Sticky Glassmorphic Header -->
         <header id="main-header" class="sticky top-0 z-40 glass-nav-effect">
@@ -162,7 +231,7 @@
                     <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-teal-500/5 rounded-[2.5rem] blur-2xl transform rotate-2"></div>
                     <div class="relative p-4 glass-card rounded-[2.5rem] shadow-2xl transition-all duration-500 hover:rotate-1 hover:scale-[1.01]">
                         <div class="overflow-hidden rounded-[2rem]">
-                            <img src="https://images.unsplash.com/photo-1563485571829-7032f428f3ce?auto=format&fit=crop&q=80&w=1200" alt="Fresh food" class="h-[28rem] w-full object-cover">
+                            <img src="images/dashboardIcon.png" alt="Fresh food" class="h-[28rem] w-full object-cover">
                         </div>
                     </div>
                 </div>
@@ -287,7 +356,10 @@
                         ['Rating & Review', 'Sistem rating transparan dengan upload foto bukti kualitas'], 
                         ['Verifikasi Admin', 'Semua mitra dan lembaga terverifikasi untuk keamanan maksimal'], 
                         ['Kurangi Food Waste', 'Distribusi otomatis ke Jual atau Donasi berdasarkan kelayakan'], 
-                        ['Multi-Cabang', 'Kelola inventaris berbagai cabang dalam satu akun induk']
+                        ['Pesan Antar & Ambil', 'Pilihan fleksibel pengantaran pesanan atau ambil langsung di lokasi mitra'],
+                        ['Sesi Kunci Stok', 'Sistem penguncian stok otomatis saat produk masuk keranjang demi keadilan pembelian'],
+                        ['Moderasi & Log Admin', 'Pencatatan aktivitas admin secara transparan untuk menjaga keamanan ekosistem'],
+                        ['Notifikasi Real-time', 'Notifikasi instan untuk status pesanan, klaim donasi, dan peringatan akun']
                     ] as $feature)
                         <div class="glass-card glass-card-hover p-8 text-center rounded-3xl flex flex-col justify-between reveal delay-{{ ($loop->index % 3 + 1) * 100 }}">
                             <div>
@@ -327,11 +399,32 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </div>
-                                @else
-                                    <!-- Multi-Branch Icon -->
+                                @elseif($feature[0] === 'Pesan Antar & Ambil')
+                                    <!-- Delivery & Pickup Icon -->
                                     <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/10">
                                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                    </div>
+                                @elseif($feature[0] === 'Sesi Kunci Stok')
+                                    <!-- Lock Icon -->
+                                    <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-500 text-white shadow-md shadow-rose-500/10">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                    </div>
+                                @elseif($feature[0] === 'Moderasi & Log Admin')
+                                    <!-- Clipboard List Icon -->
+                                    <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/10">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                        </svg>
+                                    </div>
+                                @else
+                                    <!-- Notifikasi Real-time Bell Icon -->
+                                    <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-500 text-white shadow-md shadow-cyan-500/10">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                         </svg>
                                     </div>
                                 @endif
@@ -351,7 +444,7 @@
                     <div class="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent rounded-[2.5rem] blur-2xl transform -rotate-2"></div>
                     <div class="relative p-4 glass-card rounded-[2.5rem] shadow-xl hover:-rotate-1 hover:scale-[1.01] transition-all duration-500">
                         <div class="overflow-hidden rounded-[2rem]">
-                            <img src="https://images.unsplash.com/photo-1593113702251-272b1bc414a9?auto=format&fit=crop&q=80&w=1200" alt="Food donation" class="h-[28rem] w-full object-cover">
+                            <img src="/images/logo.png" alt="Food donation" class="h-[28rem] w-full object-cover">
                         </div>
                     </div>
                 </div>
@@ -496,6 +589,131 @@
 
             const revealElements = document.querySelectorAll('.reveal');
             revealElements.forEach(el => observer.observe(el));
+
+            // 4. Falling Leaves Dynamic Generator
+            const leafContainer = document.getElementById('falling-leaves-container');
+            if (leafContainer) {
+                const leafTemplates = [
+                    // Leaf 1: Classic Oval Leaf
+                    `<svg class="leaf-svg" viewBox="0 0 100 100">
+                        <path d="M50,10 C30,30 20,55 35,75 C45,85 55,85 65,75 C80,55 70,30 50,10 Z" />
+                    </svg>`,
+                    // Leaf 2: Curved Bamboo/Eucalyptus Leaf
+                    `<svg class="leaf-svg" viewBox="0 0 100 100">
+                        <path d="M50,5 C42,20 40,50 48,95 C52,95 56,60 52,20 C52,10 51,5 50,5 Z" />
+                    </svg>`,
+                    // Leaf 3: Oak-like Lobed Leaf
+                    `<svg class="leaf-svg" viewBox="0 0 100 100">
+                        <path d="M50,10 C45,20 35,22 40,32 C30,35 25,45 35,52 C25,60 30,75 50,85 C70,75 75,60 65,52 C75,45 70,35 60,32 C65,22 55,20 50,10 Z" />
+                    </svg>`
+                ];
+
+                const colorClasses = [
+                    'leaf-color-1', // Forest Green
+                    'leaf-color-2', // Emerald Green
+                    'leaf-color-3', // Sage Green
+                    'leaf-color-4', // Mint Green
+                    'leaf-color-5'  // Lime Green
+                ];
+
+                const numLeaves = 18;
+
+                for (let i = 0; i < numLeaves; i++) {
+                    const leafItem = document.createElement('div');
+                    leafItem.className = 'leaf-item';
+                    
+                    const size = Math.floor(Math.random() * 16) + 15; // 15px to 30px
+                    const left = Math.random() * 100; // 0% to 100%
+                    const opacity = (Math.random() * 0.3) + 0.15; // 0.15 to 0.45
+                    
+                    const fallDuration = (Math.random() * 12) + 12; // 12s to 24s
+                    const fallDelay = Math.random() * -24; // negative delay to start immediately at different phases
+                    
+                    const swayDuration = (Math.random() * 3) + 3; // 3s to 6s
+                    const swayDelay = Math.random() * -6;
+                    
+                    leafItem.style.width = `${size}px`;
+                    leafItem.style.height = `${size}px`;
+                    leafItem.style.left = `${left}%`;
+                    leafItem.style.opacity = opacity;
+                    leafItem.style.animationDuration = `${fallDuration}s`;
+                    leafItem.style.animationDelay = `${fallDelay}s`;
+
+                    const windWrapper = document.createElement('div');
+                    windWrapper.className = 'leaf-wind';
+
+                    const templateIdx = Math.floor(Math.random() * leafTemplates.length);
+                    const colorClass = colorClasses[Math.floor(Math.random() * colorClasses.length)];
+                    
+                    // Create SVG element from template
+                    windWrapper.innerHTML = leafTemplates[templateIdx];
+                    const svgPath = windWrapper.querySelector('path');
+                    if (svgPath) {
+                        svgPath.className.baseVal = colorClass;
+                    }
+                    
+                    const leafSvg = windWrapper.querySelector('.leaf-svg');
+                    if (leafSvg) {
+                        leafSvg.style.animationDuration = `${swayDuration}s`;
+                        leafSvg.style.animationDelay = `${swayDelay}s`;
+                    }
+
+                    leafItem.appendChild(windWrapper);
+                    leafContainer.appendChild(leafItem);
+                }
+
+                // Cursor Wind Deflection Logic (only if not a mobile device to save CPU)
+                if (!('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+                    const leaves = leafContainer.querySelectorAll('.leaf-item');
+                    let mouseX = 0;
+                    let mouseY = 0;
+                    let prevMouseX = 0;
+                    let prevMouseY = 0;
+                    let mouseSpeedX = 0;
+                    let mouseSpeedY = 0;
+
+                    window.addEventListener('mousemove', (e) => {
+                        mouseX = e.clientX;
+                        mouseY = e.clientY;
+                        
+                        mouseSpeedX = mouseX - prevMouseX;
+                        mouseSpeedY = mouseY - prevMouseY;
+                        
+                        prevMouseX = mouseX;
+                        prevMouseY = mouseY;
+                        
+                        leaves.forEach(leaf => {
+                            const rect = leaf.getBoundingClientRect();
+                            const leafX = rect.left + rect.width / 2;
+                            const leafY = rect.top + rect.height / 2;
+                            
+                            const dx = leafX - mouseX;
+                            const dy = leafY - mouseY;
+                            const distance = Math.hypot(dx, dy);
+                            
+                            // Check if cursor is within 150px of the leaf
+                            if (distance < 150) {
+                                const windWrapper = leaf.querySelector('.leaf-wind');
+                                if (windWrapper) {
+                                    const strength = (150 - distance) / 150;
+                                    
+                                    // Push away from cursor + add wind force based on mouse movement speed
+                                    const pushX = (dx / (distance || 1)) * strength * 25 + mouseSpeedX * strength * 0.6;
+                                    const pushY = (dy / (distance || 1)) * strength * 12 + mouseSpeedY * strength * 0.3;
+                                    
+                                    windWrapper.style.transform = `translate3d(${pushX}px, ${pushY}px, 0)`;
+                                    
+                                    // Smooth return to original path
+                                    clearTimeout(windWrapper.timeoutId);
+                                    windWrapper.timeoutId = setTimeout(() => {
+                                        windWrapper.style.transform = 'translate3d(0, 0, 0)';
+                                    }, 800);
+                                }
+                            }
+                        });
+                    });
+                }
+            }
         });
     </script>
 </x-layouts.app>

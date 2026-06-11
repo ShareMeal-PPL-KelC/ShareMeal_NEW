@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
                 'latitude' => -6.974128,
                 'longitude' => 107.630928,
                 'is_verified' => true,
+                'avatar' => 'images/profile',
             ]
         );
 
@@ -206,7 +207,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Croissant Cokelat Per Box',
             'category' => 'Bakery',
             'price' => 25000,
-            'discount_price' => 15000,
+            'discount_price' => 17500,
             'stock' => 5,
             'expires_at' => now()->addHours(3),
             'status' => 'flash-sale',
@@ -219,7 +220,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Nasi Goreng Spesial',
             'category' => 'Meals',
             'price' => 18000,
-            'discount_price' => 12000,
+            'discount_price' => 12600,
             'stock' => 8,
             'expires_at' => now()->addHours(4),
             'status' => 'flash-sale',
@@ -230,7 +231,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Indomie Orak Arik Nyemek',
             'category' => 'Meals',
             'price' => 12000,
-            'discount_price' => 8000,
+            'discount_price' => 8400,
             'stock' => 4,
             'expires_at' => now()->addHours(2),
             'status' => 'flash-sale',
@@ -243,7 +244,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Ayam Geprek Sambal Korek',
             'category' => 'Meals',
             'price' => 22000,
-            'discount_price' => 15000,
+            'discount_price' => 15400,
             'stock' => 12,
             'expires_at' => now()->addHours(6),
             'status' => 'flash-sale',
@@ -256,7 +257,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Fruit Salad Yogurt Jumbo',
             'category' => 'Healthy',
             'price' => 30000,
-            'discount_price' => 20000,
+            'discount_price' => 21000,
             'stock' => 6,
             'expires_at' => now()->addHours(8),
             'status' => 'flash-sale',
@@ -274,7 +275,7 @@ class DatabaseSeeder extends Seeder
             'pickup_code' => 'XYZ123',
             'pickup_time' => now()->addHours(2),
             'receiving_method' => 'pickup',
-            'payment_method' => 'Saldo ShareMeal',
+            'payment_method' => 'GoPay',
         ]);
         OrderItem::create([
             'order_id' => $order1->id,
@@ -330,7 +331,7 @@ class DatabaseSeeder extends Seeder
             'pickup_code' => 'PRC101',
             'pickup_time' => now()->addHours(1),
             'receiving_method' => 'pickup',
-            'payment_method' => 'Saldo ShareMeal',
+            'payment_method' => 'QRIS',
         ]);
         OrderItem::create([
             'order_id' => $order10->id,
@@ -408,7 +409,7 @@ class DatabaseSeeder extends Seeder
             'receiving_method' => 'delivery',
             'delivery_fee' => 5000,
             'delivery_time_slot' => '15:00 - 16:00',
-            'payment_method' => 'Saldo ShareMeal',
+            'payment_method' => 'DANA',
         ]);
         OrderItem::create([
             'order_id' => $order13->id,
@@ -428,7 +429,7 @@ class DatabaseSeeder extends Seeder
             'receiving_method' => 'delivery',
             'delivery_fee' => 5000,
             'delivery_time_slot' => '12:00 - 13:00',
-            'payment_method' => 'Saldo ShareMeal',
+            'payment_method' => 'OVO',
         ]);
         OrderItem::create([
             'order_id' => $order4->id,
@@ -447,7 +448,7 @@ class DatabaseSeeder extends Seeder
             'pickup_code' => 'ABC987',
             'pickup_time' => now()->subHours(5),
             'receiving_method' => 'pickup',
-            'payment_method' => 'Saldo ShareMeal',
+            'payment_method' => 'GoPay',
         ]);
         OrderItem::create([
             'order_id' => $order5->id,
@@ -528,7 +529,7 @@ class DatabaseSeeder extends Seeder
             'receiving_method' => 'delivery',
             'delivery_fee' => 5000,
             'delivery_time_slot' => '09:00 - 10:00',
-            'payment_method' => 'Saldo ShareMeal',
+            'payment_method' => 'QRIS',
         ]);
         OrderItem::create([
             'order_id' => $order16->id,
@@ -567,7 +568,7 @@ class DatabaseSeeder extends Seeder
             'pickup_code' => 'CAN111',
             'pickup_time' => now()->subHours(2),
             'receiving_method' => 'pickup',
-            'payment_method' => 'Saldo ShareMeal',
+            'payment_method' => 'DANA',
             'cancel_reason' => 'Stok gandum hari ini habis total karena salah input inventaris.',
         ]);
         OrderItem::create([
@@ -615,6 +616,7 @@ class DatabaseSeeder extends Seeder
             LembagaSeeder::class,
             DonationDummySeeder::class,
             ArticleSeeder::class,
+            FeedbackSeeder::class,
         ]);
     }
 }

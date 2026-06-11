@@ -63,6 +63,7 @@ class AutoDonationService
         $count = DB::transaction(function () use ($mitraId, &$movedDonations) {
             $products = Product::whereIn('status', ['normal', 'flash-sale'])
                 ->where('stock', '>', 0)
+                ->where('donatable', true)
                 ->whereNotNull('expires_at')
                 ->where('expires_at', '<=', now()->addHours(2))
                 ->where('expires_at', '>', now())
