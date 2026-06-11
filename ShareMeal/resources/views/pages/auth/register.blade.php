@@ -54,7 +54,7 @@
         }
     </style>
 
-    <div class="register-font grid min-h-screen lg:grid-cols-2 relative bg-[#f4f7f4] overflow-hidden">
+    <div class="register-font flex h-screen overflow-hidden lg:grid lg:grid-cols-2 relative bg-[#f4f7f4]">
         
         <!-- Animated Background Blobs -->
         <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -63,11 +63,14 @@
             <div class="absolute top-[40%] left-[30%] w-[35%] h-[35%] rounded-full bg-green-200/35 blur-[100px] animate-float-3"></div>
         </div>
 
+        {{-- Falling Leaves Effect --}}
+        <x-falling-leaves />
+
         <!-- Left Column: Elegant Visual Hero Panel (Desktop) -->
-        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-16 z-10">
+        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-16 z-10 h-screen flex-shrink-0">
             <!-- Blur overlay and image -->
             <div class="absolute inset-0 z-0">
-                <img src="/images/logo.png" alt="Sustainable Future" class="absolute inset-0 h-full w-full object-cover">
+                <img src="/images/logo2.png" alt="Sustainable Future" class="absolute inset-0 h-full w-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#0b240a]/95 via-[#0e350b]/85 to-[#1b5017]/35 mix-blend-multiply"></div>
             </div>
 
@@ -98,8 +101,8 @@
             </div>
         </div>
 
-        <!-- Right Column: Translucent Form Wrapper -->
-        <div class="flex items-center justify-center px-6 py-12 lg:px-16 z-10 relative overflow-y-auto">
+        <!-- Right Column: Scrollable Form Wrapper -->
+        <div class="flex-1 overflow-y-auto h-screen flex items-start justify-center px-6 py-12 lg:px-16 z-10 relative">
             <div class="w-full max-w-lg">
                 <!-- Mobile Logo Header -->
                 <div class="mb-8 lg:hidden">

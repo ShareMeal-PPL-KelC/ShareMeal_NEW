@@ -157,7 +157,7 @@
                 transform: translateY(-60px);
             }
             100% {
-                transform: translateY(105vh);
+                transform: translateY(var(--leaf-fall-distance, 200vh));
             }
         }
 
@@ -169,6 +169,8 @@
                 transform: rotate3d(0.2, 1, 0.5, 45deg) rotateZ(30deg) translateX(15px);
             }
         }
+
+
     </style>
 
     <div class="landing-font min-h-screen bg-slate-50/40 relative overflow-x-hidden">
@@ -616,7 +618,7 @@
                     'leaf-color-5'  // Lime Green
                 ];
 
-                const numLeaves = 18;
+                const numLeaves = 30;
 
                 for (let i = 0; i < numLeaves; i++) {
                     const leafItem = document.createElement('div');
@@ -661,6 +663,22 @@
                     leafItem.appendChild(windWrapper);
                     leafContainer.appendChild(leafItem);
                 }
+
+                // Calculate full page height and set fall distance so leaves
+                // fall all the way from top to just above the footer
+                function updateLeafFallDistance() {
+                    const footer = document.querySelector('footer');
+                    const pageHeight = document.documentElement.scrollHeight;
+                    const footerHeight = footer ? footer.offsetHeight : 0;
+                    // Fall distance = full page height minus footer, plus a little buffer
+                    const fallDistance = pageHeight - footerHeight + 60;
+                    document.documentElement.style.setProperty('--leaf-fall-distance', `${fallDistance}px`);
+                }
+
+                updateLeafFallDistance();
+
+                // Update on resize in case page height changes
+                window.addEventListener('resize', updateLeafFallDistance, { passive: true });
 
                 // Cursor Wind Deflection Logic (only if not a mobile device to save CPU)
                 if (!('ontouchstart' in window || navigator.maxTouchPoints > 0)) {

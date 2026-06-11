@@ -2,55 +2,78 @@
     <!-- Style & Google Fonts Import -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        
-        .login-font {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        
-        /* Glassmorphism Cards */
+        .login-font { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
         .glass-card {
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 20px 50px -15px rgba(23, 68, 19, 0.05);
+            background: rgba(255,255,255,0.50);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 20px 50px -15px rgba(23,68,19,0.08);
         }
-
         .glass-card-dark {
-            background: rgba(16, 44, 13, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10,30,8,0.5);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
         }
 
-        /* Floating background blobs */
-        @keyframes float-1 {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(40px, -60px) scale(1.1); }
-            66% { transform: translate(-30px, 30px) scale(0.95); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        /* Right panel blobs */
+        @keyframes float-1 { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(40px,-60px) scale(1.1)} 66%{transform:translate(-30px,30px) scale(0.95)} 100%{transform:translate(0,0) scale(1)} }
+        @keyframes float-2 { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(-50px,40px) scale(0.95)} 66%{transform:translate(40px,-40px) scale(1.15)} 100%{transform:translate(0,0) scale(1)} }
+        @keyframes float-3 { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(40px,50px) scale(1.08)} 66%{transform:translate(-40px,-40px) scale(0.92)} 100%{transform:translate(0,0) scale(1)} }
+        .animate-float-1 { animation: float-1 22s infinite alternate ease-in-out; }
+        .animate-float-2 { animation: float-2 25s infinite alternate ease-in-out; }
+        .animate-float-3 { animation: float-3 24s infinite alternate ease-in-out; }
+
+        /* Aurora Orbs */
+        @keyframes aurora-1 {
+            0%   { transform: translate(0,0)       scale(1);    opacity:.55; }
+            35%  { transform: translate(60px,-80px) scale(1.2); opacity:.72; }
+            70%  { transform: translate(-40px,40px) scale(0.9); opacity:.48; }
+            100% { transform: translate(0,0)       scale(1);    opacity:.55; }
         }
-        @keyframes float-2 {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(-50px, 40px) scale(0.95); }
-            66% { transform: translate(40px, -40px) scale(1.15); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        @keyframes aurora-2 {
+            0%   { transform: translate(0,0)        scale(1);    opacity:.4; }
+            40%  { transform: translate(-70px,60px) scale(1.3);  opacity:.6; }
+            75%  { transform: translate(50px,-50px) scale(0.85); opacity:.35; }
+            100% { transform: translate(0,0)        scale(1);    opacity:.4; }
         }
-        @keyframes float-3 {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(40px, 50px) scale(1.08); }
-            66% { transform: translate(-40px, -40px) scale(0.92); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        @keyframes aurora-3 {
+            0%   { transform: translate(0,0)         scale(1);    opacity:.3; }
+            50%  { transform: translate(40px,70px)   scale(1.15); opacity:.5; }
+            85%  { transform: translate(-60px,-30px) scale(0.9);  opacity:.25; }
+            100% { transform: translate(0,0)         scale(1);    opacity:.3; }
         }
-        
-        .animate-float-1 {
-            animation: float-1 22s infinite alternate ease-in-out;
+        .aurora-orb-1 {
+            position:absolute; width:420px; height:420px; border-radius:50%;
+            background: radial-gradient(circle, rgba(52,211,153,.55) 0%, rgba(16,185,129,.18) 50%, transparent 75%);
+            filter: blur(60px);
+            animation: aurora-1 18s infinite ease-in-out;
+            pointer-events:none;
         }
-        .animate-float-2 {
-            animation: float-2 25s infinite alternate ease-in-out;
+        .aurora-orb-2 {
+            position:absolute; width:360px; height:360px; border-radius:50%;
+            background: radial-gradient(circle, rgba(251,191,36,.5) 0%, rgba(245,158,11,.15) 50%, transparent 75%);
+            filter: blur(70px);
+            animation: aurora-2 22s infinite ease-in-out;
+            pointer-events:none;
         }
-        .animate-float-3 {
-            animation: float-3 24s infinite alternate ease-in-out;
+        .aurora-orb-3 {
+            position:absolute; width:280px; height:280px; border-radius:50%;
+            background: radial-gradient(circle, rgba(110,231,183,.4) 0%, rgba(52,211,153,.1) 55%, transparent 75%);
+            filter: blur(50px);
+            animation: aurora-3 26s infinite ease-in-out;
+            pointer-events:none;
+        }
+
+        /* Shimmer badge */
+        @keyframes shimmer-badge {
+            0%   { background-position: -200% center; }
+            100% { background-position:  200% center; }
+        }
+        .badge-shimmer {
+            background: linear-gradient(90deg, rgba(52,211,153,.15) 0%, rgba(52,211,153,.4) 40%, rgba(251,191,36,.45) 55%, rgba(52,211,153,.4) 70%, rgba(52,211,153,.15) 100%);
+            background-size: 200% auto;
+            animation: shimmer-badge 4s linear infinite;
         }
     </style>
 
@@ -63,42 +86,96 @@
             <div class="absolute top-[40%] left-[30%] w-[35%] h-[35%] rounded-full bg-green-200/35 blur-[100px] animate-float-3"></div>
         </div>
 
-        <!-- Left Column: Elegant Visual Hero Panel (Desktop) -->
-        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-16 z-10">
-            <!-- Blur overlay and image -->
+        {{-- Falling Leaves Effect --}}
+        <x-falling-leaves />
+
+        <!-- Left Column: Cinematic Hero Panel (Desktop) -->
+        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-14 z-10">
+
+            <!-- Base image + lighter cinematic gradient (Opsi 2) -->
             <div class="absolute inset-0 z-0">
-                <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1200" alt="ShareMeal Marketplace" class="absolute inset-0 h-full w-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-tr from-[#0b240a]/95 via-[#0e350b]/80 to-[#1b5017]/35 mix-blend-multiply"></div>
+                <img src="/images/logo2.png" alt="ShareMeal" class="absolute inset-0 h-full w-full object-cover object-center">
+                <!-- Lighter gradient so image breathes more -->
+                <div class="absolute inset-0 bg-gradient-to-b from-[#041404]/50 via-[#071e07]/35 to-[#030e03]/70"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-[#041404]/55 via-transparent to-transparent"></div>
             </div>
 
-            <!-- Top Header Logo -->
+            <!-- Aurora Orbs -->
+            <div class="aurora-orb-1" style="top:-80px;left:-60px;"></div>
+            <div class="aurora-orb-2" style="bottom:70px;right:-90px;"></div>
+            <div class="aurora-orb-3" style="top:42%;left:28%;"></div>
+
+            <!-- TOP: Logo -->
             <div class="relative z-10">
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-3 group">
-                    <img src="{{ asset('images/logo.png') }}" class="h-12 w-12 object-cover rounded-full transition-transform group-hover:scale-105" alt="ShareMeal Logo">
-                    <span class="text-3xl font-extrabold text-white tracking-tight">ShareMeal</span>
+                    <div class="relative">
+                        <div class="absolute inset-0 rounded-full bg-emerald-400/30 blur-md group-hover:blur-lg transition-all"></div>
+                        <img src="{{ asset('images/logo.png') }}" class="relative h-11 w-11 object-cover rounded-full ring-2 ring-white/20 transition-transform group-hover:scale-105" alt="ShareMeal Logo">
+                    </div>
+                    <span class="text-2xl font-extrabold text-white tracking-tight">ShareMeal</span>
                 </a>
-                <p class="mt-4 max-w-sm text-sm text-emerald-100/80 leading-relaxed">Cultivating a zero-waste future through the art of surplus distribution.</p>
             </div>
 
-            <!-- Floating Info Card -->
-            <div class="relative z-10 glass-card-dark max-w-lg p-8 rounded-[2rem] text-white">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                        <i data-lucide="leaf" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">The Living Pantry</span>
+            <!-- MIDDLE: Storytelling -->
+            <div class="relative z-10 space-y-6">
+                <!-- Shimmer badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-400/30 badge-shimmer">
+                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping inline-block"></span>
+                    <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-200">Platform Pangan Berkelanjutan</span>
                 </div>
-                <h3 class="text-2xl font-bold tracking-tight leading-snug">Turn Surplus Food Into Shared Nourishment</h3>
-                <p class="mt-3 text-sm leading-relaxed text-emerald-100/75">Join thousands of community members actively reducing waste and building a sustainable circular economy. Simple, delicious, and deeply impactful.</p>
-                
-                <div class="mt-6 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-emerald-200/60 font-semibold tracking-wider uppercase">
-                    <span>Active Food Hub</span>
-                    <span class="flex items-center gap-2 text-emerald-400">
-                        <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
-                        Live Community
-                    </span>
+
+                <!-- Big headline -->
+                <div>
+                    <h2 class="text-[2.6rem] font-extrabold leading-[1.12] text-white tracking-tight">
+                        Bersama Kurangi<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300">Limbah, Berbagi</span><br>
+                        Berkah.
+                    </h2>
+                    <p class="mt-4 text-sm text-emerald-100/65 leading-relaxed max-w-xs">
+                        Bergabunglah dengan ribuan komunitas yang aktif menyelamatkan surplus makanan dan membangun ekosistem pangan yang adil.
+                    </p>
+                </div>
+
+                <!-- Micro stats -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="glass-card-dark rounded-2xl p-4 text-center">
+                        <div class="text-2xl font-extrabold text-emerald-300">15k+</div>
+                        <div class="mt-1 text-[10px] font-semibold text-emerald-100/50 uppercase tracking-wider leading-tight">Makanan<br>Terselamatkan</div>
+                    </div>
+                    <div class="glass-card-dark rounded-2xl p-4 text-center">
+                        <div class="text-2xl font-extrabold text-amber-300">200+</div>
+                        <div class="mt-1 text-[10px] font-semibold text-emerald-100/50 uppercase tracking-wider leading-tight">Mitra<br>Aktif</div>
+                    </div>
+                    <div class="glass-card-dark rounded-2xl p-4 text-center">
+                        <div class="text-2xl font-extrabold text-teal-300">50+</div>
+                        <div class="mt-1 text-[10px] font-semibold text-emerald-100/50 uppercase tracking-wider leading-tight">Lembaga<br>Sosial</div>
+                    </div>
                 </div>
             </div>
+
+            <!-- BOTTOM: Testimonial card -->
+            <div class="relative z-10">
+                <div class="glass-card-dark rounded-[1.5rem] p-5">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow-lg">A</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-emerald-100/80 leading-relaxed italic">&ldquo;ShareMeal membantu restoran saya mengurangi limbah makanan hingga 60%. Luar biasa!&rdquo;</p>
+                            <div class="mt-2.5 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs font-bold text-white">Andi Prasetyo</span>
+                                    <span class="text-[10px] text-emerald-300/70 ml-1.5">· Mitra, Jakarta</span>
+                                </div>
+                                <div class="flex gap-0.5">
+                                    @for($s=0;$s<5;$s++)
+                                        <svg class="w-3 h-3 fill-amber-400" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                    @endfor
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Right Column: Translucent Form Wrapper -->
@@ -175,7 +252,6 @@
                                 </span>
                                 <input class="w-full pl-11 pr-12 py-3.5 bg-white/80 border border-[#174413]/15 rounded-2xl text-sm font-medium text-[#174413] placeholder-emerald-800/25 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none @error('password') border-red-400 @enderror" 
                                        :type="showPassword ? 'text' : 'password'" name="password" placeholder="••••••••" required>
-                                
                                 <button type="button" @click="showPassword = !showPassword" class="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-xl hover:bg-emerald-50 text-emerald-800/40 hover:text-[#174413] transition" :aria-label="showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'">
                                     <i data-lucide="eye" class="h-4.5 w-4.5" x-show="!showPassword"></i>
                                     <i data-lucide="eye-off" class="h-4.5 w-4.5" x-show="showPassword" x-cloak></i>

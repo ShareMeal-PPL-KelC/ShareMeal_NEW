@@ -53,10 +53,13 @@
             <div class="absolute top-[40%] left-[30%] w-[35%] h-[35%] rounded-full bg-green-200/35 blur-[100px] animate-float-3"></div>
         </div>
 
+        {{-- Falling Leaves Effect --}}
+        <x-falling-leaves />
+
         <!-- Left Column: Elegant Visual Hero Panel -->
         <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-16 z-10">
             <div class="absolute inset-0 z-0">
-                <img src="/images/logo.png" alt="ShareMeal Marketplace" class="absolute inset-0 h-full w-full object-cover">
+                <img src="/images/logo2.png" alt="ShareMeal Marketplace" class="absolute inset-0 h-full w-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#0b240a]/95 via-[#0e350b]/80 to-[#1b5017]/35 mix-blend-multiply"></div>
             </div>
 
