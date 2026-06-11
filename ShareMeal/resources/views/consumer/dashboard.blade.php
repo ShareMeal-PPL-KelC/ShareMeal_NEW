@@ -1,149 +1,266 @@
 @extends('layouts.dashboard')
 
 @section('content')
+@php
+    $profile = auth()->user()->profile;
+    $profileComplete = $profile && !empty($profile->phone) && !empty($profile->address);
+@endphp
+
+@if(!$profileComplete)
+<div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 backdrop-blur-md border border-amber-200/50 p-6 rounded-[2rem] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-12 h-12 bg-amber-100/60 rounded-xl flex items-center justify-center text-amber-700 flex-shrink-0 border border-amber-200/30">
+            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+        </div>
+        <div class="text-left">
+            <h3 class="text-base font-bold text-amber-950 text-left">Profil Anda Belum Lengkap</h3>
+            <p class="text-amber-900/80 font-semibold leading-relaxed text-xs mt-1 text-left">
+                Silakan lengkapi nomor telepon dan alamat Anda terlebih dahulu untuk dapat memesan makanan penyelamatan surplus.
+            </p>
+        </div>
+    </div>
+    <a href="{{ route('profile.edit') }}" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all duration-300 shrink-0">
+        Lengkapi Profil
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+    </a>
+</div>
+@endif
+
 <div class="space-y-6" x-data="{
     openManage: false, 
-    allStores: [
-        {id: 1, name: 'Toko Roti Makmur', category: 'Bakery', distance: '0.5 km', rating: 4.8, activeDeals: 2, isFavorite: true},
-        {id: 2, name: 'Healthy Cafe', category: 'Healthy Food', distance: '1.2 km', rating: 4.5, activeDeals: 1, isFavorite: true},
-        {id: 3, name: 'Warung Ibu Rina', category: 'Indonesian', distance: '0.8 km', rating: 4.7, activeDeals: 5, isFavorite: false},
-        {id: 4, name: 'Bakery Delight', category: 'Bakery', distance: '2.1 km', rating: 4.2, activeDeals: 1, isFavorite: false},
-        {id: 5, name: 'Fresh Salads', category: 'Healthy Food', distance: '1.5 km', rating: 4.6, activeDeals: 3, isFavorite: true},
-        {id: 6, name: 'Kedai Kopi Janji', category: 'Coffee', distance: '0.3 km', rating: 4.4, activeDeals: 0, isFavorite: false},
-    ],
-    get favorites() {
+    showProfileAlert: false,
+    allStores: {{ $favoriteStores->toJson() }},
+    favorites: JSON.parse(localStorage.getItem('favoriteStores') || '[]'),
+    init() {
+        this.allStores.forEach(store => {
+            store.isFavorite = this.favorites.includes(store.id);
+        });
+        this.$watch('openManage', value => {
+            if (value) {
+                document.body.classList.add('overflow-hidden');
+            } else {
+                document.body.classList.remove('overflow-hidden');
+            }
+        });
+    },
+    get favoriteList() {
         return this.allStores.filter(s => s.isFavorite);
     },
     toggleFavorite(id) {
         const store = this.allStores.find(s => s.id === id);
-        if (store) store.isFavorite = !store.isFavorite;
+        if (store) {
+            store.isFavorite = !store.isFavorite;
+            if (store.isFavorite) {
+                if (!this.favorites.includes(id)) this.favorites.push(id);
+            } else {
+                this.favorites = this.favorites.filter(fid => fid !== id);
+            }
+            localStorage.setItem('favoriteStores', JSON.stringify(this.favorites));
+        }
     }
 }">
-    <div>
-        <h1 class="text-3xl font-bold text-gray-900">Dashboard Konsumen</h1>
-        <p class="text-gray-600 mt-1">Hemat uang dan selamatkan lingkungan</p>
+    <!-- Welcome Greeting Hero Banner -->
+    <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#12360f] to-[#1c5317] p-8 md:p-12 text-white border border-white/10 shadow-2xl reveal mb-10">
+        <!-- Internal Glowing Blobs -->
+        <div class="absolute top-[-30%] left-[-15%] w-[30rem] h-[30rem] bg-emerald-400/20 rounded-full blur-[90px] pointer-events-none"></div>
+        <div class="absolute bottom-[-30%] right-[-15%] w-[32rem] h-[32rem] bg-lime-400/15 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div class="relative z-10 md:w-2/3">
+            <span class="bg-white/10 text-emerald-300 border border-white/10 backdrop-blur px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6 inline-block">
+                🌿 Sahabat Bumi
+            </span>
+            <h1 class="text-4xl md:text-5xl font-black mb-4 leading-tight font-serif text-white">
+                Selamat Datang Kembali!
+            </h1>
+            <p class="text-emerald-100 text-base md:text-lg max-w-xl font-medium opacity-90 leading-relaxed">
+                Setiap surplus pangan yang Anda selamatkan hari ini membantu mengurangi emisi gas rumah kaca dan menghemat sumber daya berharga bumi kita.
+            </p>
+        </div>
+        
+        <!-- Background Leaf Deco -->
+        <div class="absolute -right-16 -bottom-16 opacity-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-80 h-80"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg>
+        </div>
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="text-center">
-                <div class="text-3xl font-bold text-green-600">{{ $stats->savedMeals }}</div>
-                <div class="text-xs text-gray-500 mt-1 font-medium uppercase tracking-wider">Makanan Diselamatkan</div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+        <div class="glass-card glass-card-hover p-8 md:p-10 rounded-[2.5rem] group transition-all duration-500 reveal delay-100">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-100 transition-all duration-300">
+                    <i data-lucide="package" class="w-7 h-7"></i>
+                </div>
+                <div class="text-3xl md:text-4xl font-serif font-black text-luxury-forest group-hover:text-emerald-600 transition-colors leading-none">{{ $stats->savedMeals }}</div>
+                <div class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em] text-center mt-4 group-hover:text-luxury-forest transition-colors">Makanan Diselamatkan</div>
             </div>
         </div>
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="text-center">
-                <div class="text-3xl font-bold text-blue-600">Rp {{ number_format($stats->moneySaved, 0, ',', '.') }}</div>
-                <div class="text-xs text-gray-500 mt-1 font-medium uppercase tracking-wider">Uang Dihemat</div>
+        <div class="glass-card glass-card-hover p-8 md:p-10 rounded-[2.5rem] group transition-all duration-500 reveal delay-200">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-14 h-14 bg-teal-50 text-teal-650 border border-teal-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-teal-100 transition-all duration-300">
+                    <i data-lucide="trending-up" class="w-7 h-7"></i>
+                </div>
+                <div class="text-3xl md:text-4xl font-serif font-black text-luxury-forest group-hover:text-emerald-600 transition-colors leading-none">Rp {{ number_format($stats->moneySaved, 0, ',', '.') }}</div>
+                <div class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em] text-center mt-4 group-hover:text-luxury-forest transition-colors">Uang Dihemat</div>
             </div>
         </div>
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="text-center">
-                <div class="text-3xl font-bold text-green-600">{{ $stats->co2Reduced }} kg</div>
-                <div class="text-xs text-gray-500 mt-1 font-medium uppercase tracking-wider">CO₂ Dikurangi</div>
+        <div class="glass-card glass-card-hover p-8 md:p-10 rounded-[2.5rem] group transition-all duration-500 reveal delay-300">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-14 h-14 bg-lime-50 text-lime-650 border border-lime-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-lime-100 transition-all duration-300">
+                    <i data-lucide="leaf" class="w-7 h-7"></i>
+                </div>
+                <div class="text-3xl md:text-4xl font-serif font-black text-luxury-forest group-hover:text-emerald-600 transition-colors leading-none">{{ $stats->co2Reduced }} kg</div>
+                <div class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em] text-center mt-4 group-hover:text-luxury-forest transition-colors">CO₂ Dikurangi</div>
             </div>
         </div>
-        <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <div class="text-center">
-                <div class="text-3xl font-bold text-purple-600" x-text="favorites.length"></div>
-                <div class="text-xs text-gray-500 mt-1 font-medium uppercase tracking-wider">Toko Favorit</div>
+        <div class="glass-card glass-card-hover p-8 md:p-10 rounded-[2.5rem] group transition-all duration-500 reveal delay-400">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-14 h-14 bg-amber-50 text-amber-600 border border-amber-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-100 transition-all duration-300">
+                    <i data-lucide="heart" class="w-7 h-7"></i>
+                </div>
+                <div class="text-3xl md:text-4xl font-serif font-black text-luxury-forest group-hover:text-emerald-600 transition-colors leading-none" x-text="favorites.length"></div>
+                <div class="text-[10px] text-luxury-slate font-black uppercase tracking-[0.2em] text-center mt-4 group-hover:text-luxury-forest transition-colors">Toko Favorit</div>
             </div>
         </div>
     </div>
 
 
     <!-- Flash Sales -->
-    <div>
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-gray-900">Flash Sale Terdekat</h2>
-            <a href="{{ route('consumer.search') }}" class="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <div class="mb-20">
+        <div class="flex items-end justify-between mb-10 reveal">
+            <div>
+                <span class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/80 backdrop-blur-md mb-3 uppercase tracking-wide">Paling Segar</span>
+                <h2 class="text-3xl font-serif font-bold text-luxury-forest">Flash Sale Terdekat</h2>
+                <div class="h-1 w-12 bg-luxury-gold mt-2 rounded-full"></div>
+            </div>
+            <a href="{{ route('consumer.search') }}" class="text-xs font-black uppercase tracking-[0.2em] text-luxury-gold hover:text-luxury-forest transition-colors flex items-center gap-2 group bg-white/60 border border-luxury-alabas/85 px-5 py-3 rounded-2xl shadow-sm">
                 Lihat Semua
+                <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($flashSales as $sale)
-            <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition group flex flex-col">
-                <div class="relative h-48 overflow-hidden flex-shrink-0">
-                    <img src="{{ $sale->image }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                    <div class="absolute top-3 right-3 bg-red-600 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-lg tracking-widest">
-                        -{{ $sale->discount }}%
+        @if($flashSales && count($flashSales) > 0)
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                @foreach($flashSales as $sale)
+                <div class="group relative glass-card glass-card-hover rounded-[2.5rem] overflow-hidden transition-all duration-500 reveal delay-{{ $loop->iteration * 100 }} flex flex-col justify-between">
+                    <div class="relative h-56 overflow-hidden flex-shrink-0">
+                        <img src="{{ $sale->image }}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-luxury-forest/80 via-transparent to-transparent opacity-60"></div>
+                        
+                        <div class="absolute top-4 right-4">
+                            <div class="glass-panel px-4 py-2 rounded-full text-xs font-black text-luxury-forest uppercase tracking-widest border border-white/40 shadow-sm">
+                                -{{ $sale->discount }}%
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-4 left-4">
+                            <div class="flex items-center gap-2 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/50 shadow-sm">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-orange-650 animate-pulse"></i>
+                                <span class="text-[10px] font-bold text-orange-650 uppercase tracking-wider">{{ $sale->expiresIn }}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-orange-600"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        <span class="text-orange-600">{{ $sale->expiresIn }}</span>
+
+                    <div class="p-8 flex-1 flex flex-col justify-between bg-white/10">
+                        <div>
+                            <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-1.5 leading-snug">{{ $sale->item }}</h3>
+                            <div class="flex items-center gap-2 text-[10px] font-bold text-luxury-slate uppercase tracking-widest mb-4">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-luxury-gold"></i>
+                                <span>{{ $sale->store }}</span>
+                                <span class="text-luxury-alabas">•</span>
+                                <span>{{ $sale->distance }}</span>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 mb-6">
+                                <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                                <span class="font-black text-luxury-forest text-sm">{{ $sale->rating }}</span>
+                                <span class="text-luxury-alabas/80">•</span>
+                                <span class="text-luxury-slate text-xs font-semibold">Stok: {{ $sale->stock }}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-end justify-between border-t border-luxury-alabas/60 pt-6 mt-auto">
+                            <div>
+                                <div class="text-2xl font-serif font-black text-luxury-forest">Rp {{ number_format($sale->discountPrice, 0, ',', '.') }}</div>
+                                <div class="text-[10px] text-luxury-slate font-bold line-through mt-1">Rp {{ number_format($sale->originalPrice, 0, ',', '.') }}</div>
+                            </div>
+                            @if($profileComplete)
+                            <form action="{{ route('consumer.cart.add') }}" method="POST" class="inline">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $sale->id }}">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" 
+                                        class="bg-luxury-forest text-white w-14 h-14 rounded-[1.2rem] flex items-center justify-center hover:bg-luxury-gold transition-all duration-500 luxury-shadow hover:scale-105 active:scale-95 shadow-lg">
+                                    <i data-lucide="plus" class="w-6 h-6 text-white"></i>
+                                </button>
+                            </form>
+                            @else
+                            <button type="button" @click="showProfileAlert = true"
+                                    class="bg-luxury-forest text-white w-14 h-14 rounded-[1.2rem] flex items-center justify-center hover:bg-luxury-gold transition-all duration-500 luxury-shadow hover:scale-105 active:scale-95 shadow-lg">
+                                <i data-lucide="plus" class="w-6 h-6 text-white"></i>
+                            </button>
+                            @endif
+                        </div>
                     </div>
                 </div>
-                <div class="p-5 flex-1 flex flex-col">
-                    <h3 class="font-bold text-lg text-gray-900 mb-1">{{ $sale->item }}</h3>
-                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        <span>{{ $sale->store }}</span>
-                        <span class="text-gray-300">•</span>
-                        <span>{{ $sale->distance }}</span>
-                    </div>
-
-                    <div class="flex items-center gap-1.5 mb-5 flex-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                        <span class="font-bold text-gray-900">{{ $sale->rating }}</span>
-                        <span class="text-gray-400 text-xs">• Stok: {{ $sale->stock }}</span>
-                    </div>
-
-                    <div class="flex items-end justify-between border-t border-gray-50 pt-4 mt-auto">
-                        <div>
-                            <div class="text-2xl font-black text-green-600 leading-none">Rp {{ number_format($sale->discountPrice, 0, ',', '.') }}</div>
-                            <div class="text-xs text-gray-400 line-through mt-1">Rp {{ number_format($sale->originalPrice, 0, ',', '.') }}</div>
-                        </div>
-                        <a href="{{ route('consumer.checkout', ['product_id' => $sale->id]) }}" class="bg-[#174413] text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-[#256020] transition-colors flex items-center gap-2 shadow-lg shadow-green-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polyline points="22 8 12 18 2 8"></polyline></svg>
-                            Booking
-                        </a>
-                    </div>
+                @endforeach
+            </div>
+        @else
+            <!-- Empty state design for Flash Sales -->
+            <div class="glass-card rounded-[2.5rem] p-16 text-center max-w-2xl mx-auto reveal">
+                <div class="w-20 h-20 bg-luxury-ivory border border-luxury-alabas/55 rounded-3xl flex items-center justify-center mx-auto mb-6 text-luxury-slate/40 shadow-inner">
+                    <i data-lucide="shopping-bag" class="w-10 h-10 stroke-[1.5]"></i>
+                </div>
+                <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-2.5">Belum Ada Flash Sale Terdekat</h3>
+                <p class="text-sm font-medium text-luxury-slate max-w-md mx-auto leading-relaxed">
+                    Saat ini belum ada produk flash sale terdekat di sekitar lokasi Anda. Silakan cek kembali nanti atau cari kuliner lezat lainnya!
+                </p>
+                <div class="mt-8">
+                    <a href="{{ route('consumer.search') }}" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-luxury-forest text-white border border-luxury-forest text-xs font-black uppercase tracking-widest hover:bg-transparent hover:text-luxury-forest transition-all duration-300 shadow-md shadow-emerald-950/10">
+                        <i data-lucide="search" class="w-4 h-4 stroke-[2.5]"></i>
+                        Cari Makanan Lainnya
+                    </a>
                 </div>
             </div>
-            @endforeach
-        </div>
+        @endif
     </div>
 
     <!-- Favorite Stores -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-6">
-        <div class="p-6 border-b border-gray-50 flex items-center justify-between">
-            <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-red-600"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+    <div class="glass-card rounded-[3rem] overflow-hidden mt-6 reveal">
+        <div class="p-10 border-b border-luxury-alabas/60 flex items-center justify-between bg-white/30">
+            <h2 class="text-2xl font-serif font-bold text-luxury-forest flex items-center gap-3">
+                <i data-lucide="heart" class="w-6 h-6 text-red-500 fill-red-500 animate-pulse"></i>
                 Toko Favorit
             </h2>
-            <button @click="openManage = true" class="text-sm font-semibold text-[#174413] hover:text-[#256020] transition-colors px-3 py-1 bg-green-50 rounded-md">Kelola</button>
+            <button @click="openManage = true" class="px-6 py-3 rounded-2xl bg-white/80 border border-luxury-alabas/85 text-[10px] font-black uppercase tracking-[0.2em] text-luxury-forest hover:bg-luxury-forest hover:text-white transition-all duration-500 luxury-shadow">Kelola</button>
         </div>
-        <div class="divide-y divide-gray-50">
-            <template x-for="store in favorites" :key="store.id">
-                <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition cursor-pointer group">
+        <div class="divide-y divide-luxury-alabas/40 bg-white/20">
+            <template x-for="store in favoriteList" :key="store.id">
+                <div class="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white/40 transition-all duration-500 cursor-pointer group">
                     <div class="flex-1">
-                        <div class="font-bold text-gray-900 text-lg" x-text="store.name"></div>
-                        <div class="text-sm text-gray-500 flex flex-wrap items-center gap-4 mt-2">
-                            <span class="font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded text-xs" x-text="store.category"></span>
-                            <span class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <div class="font-serif text-2xl font-bold text-luxury-forest group-hover:text-luxury-gold transition-colors" x-text="store.displayName || store.name"></div>
+                        <div class="flex flex-wrap items-center gap-4 mt-2.5">
+                            <span class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.2em] bg-luxury-gold/10 px-3 py-1 rounded-full" x-text="store.category"></span>
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-luxury-slate tracking-widest uppercase">
+                                <i data-lucide="navigation" class="w-3.5 h-3.5 text-luxury-gold"></i>
                                 <span x-text="store.distance"></span>
                             </span>
-                            <span class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-luxury-gold tracking-widest uppercase">
+                                <i data-lucide="star" class="w-3.5 h-3.5 fill-luxury-gold text-luxury-gold"></i>
                                 <span x-text="store.rating"></span>
                             </span>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span x-show="store.activeDeals > 0" class="bg-green-100 text-green-700 px-4 py-2 rounded-full text-xs font-bold border border-green-200">
-                            <span x-text="store.activeDeals"></span> deals aktif
+                    <div class="flex items-center gap-6">
+                        <span x-show="store.activeDeals > 0" class="text-[10px] font-black text-luxury-forest uppercase tracking-[0.2em] px-4 py-2 bg-luxury-ivory/80 rounded-xl border border-luxury-alabas/80">
+                            <span x-text="store.activeDeals"></span> promo aktif
                         </span>
-                        <button @click.stop="toggleFavorite(store.id)" class="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-red-500"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        <button @click.stop="toggleFavorite(store.id)" class="text-luxury-alabas hover:text-red-500 transition-all duration-300 transform hover:scale-125 p-2 rounded-full hover:bg-red-50/50">
+                            <i data-lucide="heart" class="w-6 h-6 fill-red-500 text-red-500"></i>
                         </button>
                     </div>
                 </div>
             </template>
-            <div x-show="favorites.length === 0" class="p-10 text-center text-gray-500">
+            <div x-show="favoriteList.length === 0" class="p-20 text-center text-luxury-slate font-serif italic text-lg bg-white/10">
                 Belum ada toko favorit. Klik Kelola untuk menambah.
             </div>
         </div>
@@ -151,81 +268,129 @@
 
     <!-- Manage Favorites Modal -->
     <div x-show="openManage"
-         class="fixed inset-0 z-[100] overflow-y-auto"
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
          x-cloak
          @keydown.escape.window="openManage = false">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openManage"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-                 @click="openManage = false"></div>
+        
+        <!-- Backdrop -->
+        <div x-show="openManage"
+             x-transition:enter="ease-out duration-500"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-luxury-forest/65 backdrop-blur-md"
+             @click="openManage = false"></div>
 
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+         <!-- Modal Content -->
+        <div x-show="openManage"
+             x-transition:enter="ease-out duration-500 delay-100"
+             x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="ease-in duration-300"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-8 scale-95"
+             class="relative glass-panel w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl border border-white/40">
 
-            <div x-show="openManage"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block w-full max-w-2xl p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl sm:my-8">
-
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-2xl font-bold text-gray-900">Kelola Toko Favorit</h3>
-                    <button @click="openManage = false" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+            <div class="p-10 border-b border-luxury-alabas/60 flex items-center justify-between bg-white/40">
+                <div>
+                    <h3 class="text-3xl font-serif font-bold text-luxury-forest">Jelajahi Toko</h3>
+                    <p class="text-[10px] text-luxury-gold font-black uppercase tracking-[0.2em] mt-1">Personalisasi pengalaman belanja Anda</p>
                 </div>
+                <button @click="openManage = false" class="w-12 h-12 flex items-center justify-center rounded-full bg-white text-luxury-slate hover:text-luxury-forest transition-all shadow-sm">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
 
-                <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                    <template x-for="store in allStores" :key="store.id">
-                        <div class="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                                </div>
-                                <div>
-                                    <div class="font-bold text-gray-900" x-text="store.name"></div>
-                                    <div class="text-sm text-gray-500" x-text="store.category + ' • ' + store.distance"></div>
-                                </div>
+            <div class="p-10 space-y-6 max-h-[50vh] overflow-y-auto custom-scrollbar bg-white/10">
+                <template x-for="store in allStores" :key="store.id">
+                    <div class="flex items-center justify-between p-6 bg-white/40 border border-luxury-alabas/80 rounded-[2rem] hover:bg-white/80 hover:shadow-md transition-all duration-500 group">
+                        <div class="flex items-center gap-6">
+                            <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-luxury-forest luxury-shadow border border-luxury-alabas/70 transition-transform group-hover:scale-110">
+                                <i data-lucide="store" class="w-6 h-6 stroke-[1.5]"></i>
                             </div>
-                            <button @click="toggleFavorite(store.id)"
-                                    :class="store.isFavorite ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-[#174413] border-green-100'"
-                                    class="px-4 py-2 rounded-lg text-sm font-bold border transition-colors flex items-center gap-2">
-                                <template x-if="store.isFavorite">
-                                    <span class="flex items-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                                        Hapus
-                                    </span>
-                                </template>
-                                <template x-if="!store.isFavorite">
-                                    <span class="flex items-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 5v14M5 12h14"></path></svg>
-                                        Tambah
-                                    </span>
-                                </template>
-                            </button>
+                            <div>
+                                <div class="font-bold text-luxury-forest text-lg" x-text="store.displayName || store.name"></div>
+                                <div class="text-[10px] text-luxury-slate font-black uppercase tracking-widest mt-1" x-text="store.category + ' • ' + store.distance"></div>
+                            </div>
                         </div>
-                    </template>
-                </div>
+                        <button @click="toggleFavorite(store.id)"
+                                :class="store.isFavorite ? 'bg-red-50 text-red-600 border-red-200' : 'bg-luxury-forest text-white border-luxury-forest'"
+                                class="w-12 h-12 rounded-2xl border transition-all duration-500 flex items-center justify-center luxury-shadow active:scale-90">
+                            <template x-if="store.isFavorite">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-red-600"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </template>
+                            <template x-if="!store.isFavorite">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </template>
+                        </button>
+                    </div>
+                </template>
+            </div>
 
-                <div class="mt-8 flex justify-end">
-                    <button @click="openManage = false" class="bg-[#174413] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#256020] transition-colors">
-                        Selesai
-                    </button>
-                </div>
+            <div class="p-10 bg-white/30 flex justify-end border-t border-luxury-alabas/60">
+                <button @click="openManage = false" class="bg-luxury-forest text-white px-12 py-4 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-luxury-gold transition-all duration-500 luxury-shadow">
+                    Selesai
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Premium Profile Completion Modal -->
+    <div x-show="showProfileAlert" 
+         class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6"
+         x-cloak
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-250"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-luxury-charcoal/60 backdrop-blur-md" @click="showProfileAlert = false"></div>
+
+        <!-- Modal Card -->
+        <div class="relative bg-white/95 rounded-[3rem] w-full max-w-md p-10 shadow-2xl border border-amber-100 text-center transform transition-all"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="scale-95 translate-y-4"
+             x-transition:enter-end="scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-250"
+             x-transition:leave-start="scale-100 translate-y-0"
+             x-transition:leave-end="scale-95 translate-y-4">
+            
+            <!-- Close Button -->
+            <button @click="showProfileAlert = false" class="absolute right-6 top-6 w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Warning Icon -->
+            <div class="w-20 h-20 bg-amber-50 border border-amber-100 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-amber-600 shadow-md">
+                <i data-lucide="user-cog" class="w-10 h-10 stroke-[2]"></i>
+            </div>
+
+            <h3 class="font-serif text-2xl font-bold text-luxury-forest mb-3">Lengkapi Profil Anda</h3>
+            <p class="text-sm font-medium text-luxury-slate leading-relaxed mb-8">
+                Silakan lengkapi nomor telepon dan alamat Anda terlebih dahulu sebelum dapat memesan makanan penyelamatan surplus.
+            </p>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button @click="showProfileAlert = false" class="flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest text-luxury-slate hover:bg-gray-50 hover:text-luxury-charcoal transition-colors border border-gray-100">
+                    Nanti Saja
+                </button>
+                <a href="{{ route('profile.edit') }}" class="flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-900/10 active:scale-95 transition-all text-center">
+                    Lengkapi Sekarang
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
 </script>
 @endsection

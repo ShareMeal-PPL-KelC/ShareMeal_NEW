@@ -32,7 +32,7 @@ class Pbi39PaymentMethodTest extends TestCase
             'payment_method' => 'qris'
         ]);
 
-        $response->assertRedirect(route('consumer.history'));
+        $response->assertRedirect(route('consumer.orders.active'));
         $this->assertDatabaseHas('orders', [
             'customer_id' => $consumer->id,
             'payment_method' => 'qris'

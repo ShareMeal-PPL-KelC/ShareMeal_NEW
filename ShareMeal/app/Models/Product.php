@@ -21,6 +21,7 @@ class Product extends Model
         'pickup_start_time',
         'pickup_end_time',
         'status',
+        'donatable',
         'image',
     ];
 
@@ -84,7 +85,11 @@ class Product extends Model
 
         public function getDiscountPriceAttribute()
         {
-        return $this->attributes['discount_price'] ?? 0;
+            $discountPrice = $this->attributes['discount_price'] ?? 0;
+            if (($this->status ?? '') === 'flash-sale' && $discountPrice <= 0) {
+                return floor(($this->price ?? 0) * 0.7);
+            }
+            return $discountPrice;
         }
 
         public function getDiscountAttribute()
@@ -101,7 +106,7 @@ class Product extends Model
         public function getExpiresInAttribute()
         {
         if (isset($this->attributes['expires_at']) && $this->expires_at) {
-            return $this->expires_at->diffForHumans();
+            return $this->expires_at->locale('id')->diffForHumans();
         }
         return '2 jam';
         }

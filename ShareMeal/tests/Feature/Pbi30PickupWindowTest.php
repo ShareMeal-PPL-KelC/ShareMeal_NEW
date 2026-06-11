@@ -80,11 +80,14 @@ class Pbi30PickupWindowTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('orders', [
-            'mitra_id' => $mitra->id,
-            'pickup_start_time' => '17:00:00',
-            'pickup_end_time' => '19:00:00',
-        ]);
+        $order = \App\Models\Order::where('mitra_id', $mitra->id)->first();
+        $this->assertNotNull($order);
+        
+        $start = \Carbon\Carbon::parse($order->pickup_start_time);
+        $end = \Carbon\Carbon::parse($order->pickup_end_time);
+        
+        $this->assertTrue(now()->diffInSeconds($start) < 60);
+        $this->assertTrue(now()->addHour()->diffInSeconds($end) < 60);
     }
 
     public function test_mitra_cannot_store_product_outside_operating_hours(): void

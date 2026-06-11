@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manajemen Data User - Admin ShareMeal</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -20,9 +21,7 @@
         <aside class="w-72 bg-white border-r border-gray-100 hidden lg:flex flex-col">
             <div class="p-8">
                 <div class="flex items-center gap-3 font-bold text-2xl text-green-600">
-                    <div class="bg-green-600 p-2 rounded-lg text-white">
-                        <i data-lucide="utensils-crosses" class="w-6 h-6"></i>
-                    </div>
+                    <img src="{{ asset('images/logo.png') }}" class="w-10 h-10 object-cover rounded-full" alt="ShareMeal Logo">
                     <span>ShareMeal</span>
                 </div>
             </div>
@@ -66,7 +65,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Manajemen Data User</h1>
-                        <p class="text-gray-500 mt-1">Kelola akun & moderasi pelanggaran (FR-20, FR-21)</p>
+                        <p class="text-gray-500 mt-1">Kelola akun & moderasi pelanggaran</p>
                     </div>
                 </div>
 

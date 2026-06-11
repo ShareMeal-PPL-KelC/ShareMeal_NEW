@@ -55,6 +55,13 @@ class Donation extends Model
             return substr($this->attributes['pickup_start_time'], 0, 5) . ' - ' . substr($this->attributes['pickup_end_time'], 0, 5);
         }
 
+        if ($this->mitra) {
+            $openingHours = $this->mitra->profile?->business_opening_hours ?? $this->mitra->profile?->opening_hours;
+            if ($openingHours) {
+                return $openingHours;
+            }
+        }
+
         return 'Belum ditentukan';
     }
 }

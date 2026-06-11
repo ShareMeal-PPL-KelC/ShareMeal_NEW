@@ -46,6 +46,22 @@ class DonationDummySeeder extends Seeder
             'status' => 'pending'
         ]);
 
+        $openingHours = $mitra->profile?->business_opening_hours ?? $mitra->profile?->opening_hours ?? '08:00 - 20:00';
+        $parts = explode(' - ', $openingHours);
+        $opStart = trim($parts[0] ?? '08:00');
+        $opEnd = trim($parts[1] ?? '20:00');
+
+        Donation::create([
+            'mitra_id' => $mitra->id,
+            'title' => 'Lauk Prasmanan Siang',
+            'quantity' => 10,
+            'unit' => 'porsi',
+            'expires_at' => now()->addDay()->setTime(17, 0, 0),
+            'status' => 'pending',
+            'pickup_start_time' => strlen($opStart) === 5 ? $opStart . ':00' : $opStart,
+            'pickup_end_time' => strlen($opEnd) === 5 ? $opEnd . ':00' : $opEnd,
+        ]);
+
         Donation::create([
             'mitra_id' => $mitra->id,
             'lembaga_id' => $lembaga?->id,
@@ -68,6 +84,7 @@ class DonationDummySeeder extends Seeder
             'expires_at' => now()->addDay(),
             'status' => 'claimed',
             'claimed_at' => now()->subHour(),
+            'pickup_time' => now()->addHours(2),
             'tracking_status' => 'confirmed'
         ]);
     }

@@ -20,6 +20,9 @@ class Order extends Model
             if ($order->wasChanged('status')) {
                 $order->customerRelation->notify(new OrderStatusUpdated($order));
             }
+            if ($order->wasChanged('is_delayed') && $order->is_delayed) {
+                $order->customerRelation->notify(new \App\Notifications\OrderDelayedNotification($order));
+            }
         });
     }
 
@@ -36,11 +39,18 @@ class Order extends Model
         'delivery_fee',
         'delivery_time_slot',
         'payment_method',
+        'confirmed_by_consumer',
+        'cancel_reason',
+        'is_delayed',
+        'delayed_at',
     ];
 
     protected $casts = [
         'pickup_time' => 'datetime',
         'delivery_fee' => 'integer',
+        'confirmed_by_consumer' => 'boolean',
+        'is_delayed' => 'boolean',
+        'delayed_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -65,18 +75,13 @@ class Order extends Model
 
     public function getExpiresAtAttribute()
     {
-        if ($this->relationLoaded('items') && $this->items->count() > 0) {
-            $minExpiresAt = $this->items->min(function($item) {
-                return $item->product ? $item->product->expires_at : null;
-            });
-            
-            if ($minExpiresAt) {
-                return \Carbon\Carbon::parse($minExpiresAt);
-            }
+        if (!empty($this->attributes['pickup_end_time'])) {
+            $date = $this->created_at ? $this->created_at->toDateString() : now()->toDateString();
+            return \Carbon\Carbon::parse($date . ' ' . $this->attributes['pickup_end_time']);
         }
         
-        // Fallback if relation not loaded or no product data
-        return $this->created_at ? $this->created_at->addHours(2) : now()->addHours(2);
+        // Fallback if no pickup_end_time data
+        return $this->created_at ? $this->created_at->addHour() : now()->addHour();
     }
 
     public function getAmountAttribute()
@@ -102,7 +107,7 @@ class Order extends Model
     {
         if ($this->relationLoaded('items')) {
             return $this->items->map(function($item) {
-                return ($item->product ? $item->product->name : 'Item') . ' (' . $item->quantity . ' pcs)';
+                return ($item->product ? $item->product->name : 'Produk') . ' (' . $item->quantity . ' pcs)';
             })->implode(', ');
         }
         return '-';
@@ -167,7 +172,7 @@ class Order extends Model
 
     public function getSavedAmountAttribute()
     {
-        return $this->getTotalAttribute();
+        return $this->getDiscountAttribute();
     }
 
     public function getStoreAttribute()
@@ -203,5 +208,21 @@ class Order extends Model
     public function reviewRelation(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    public static function checkAndApplyDelays()
+    {
+        $cutoff = now()->subMinutes(5);
+        $orders = self::where('status', 'processing')
+            ->where('is_delayed', false)
+            ->where('updated_at', '<=', $cutoff)
+            ->get();
+
+        foreach ($orders as $order) {
+            $order->update([
+                'is_delayed' => true,
+                'delayed_at' => now(),
+            ]);
+        }
     }
 }

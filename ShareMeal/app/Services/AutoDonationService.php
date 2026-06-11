@@ -63,6 +63,7 @@ class AutoDonationService
         $count = DB::transaction(function () use ($mitraId, &$movedDonations) {
             $products = Product::whereIn('status', ['normal', 'flash-sale'])
                 ->where('stock', '>', 0)
+                ->where('donatable', true)
                 ->whereNotNull('expires_at')
                 ->where('expires_at', '<=', now()->addHours(2))
                 ->where('expires_at', '>', now())
@@ -131,5 +132,24 @@ class AutoDonationService
                 new DonationAvailableNotification($mitraName, $donation->title, $donation->quantity . ' ' . $donation->unit)
             );
         }
+    }
+
+    public function releaseExpiredCartReservations(): int
+    {
+        return DB::transaction(function () {
+            $expiredCarts = \App\Models\CartItem::with('product')->where('expires_at', '<=', now())->get();
+            if ($expiredCarts->isEmpty()) {
+                return 0;
+            }
+
+            foreach ($expiredCarts as $item) {
+                if ($item->product) {
+                    $item->product->increment('stock', $item->quantity);
+                }
+                $item->delete();
+            }
+
+            return $expiredCarts->count();
+        });
     }
 }

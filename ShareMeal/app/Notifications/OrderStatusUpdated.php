@@ -40,14 +40,21 @@ class OrderStatusUpdated extends Notification
     public function toArray(object $notifiable): array
     {
         $statusMessages = [
-            'pending' => 'Pesanan Anda sedang diproses.',
-            'ready' => 'Pesanan Anda siap diambil!',
+            'pending' => 'Pesanan Anda sedang menunggu konfirmasi.',
+            'processing' => 'Pesanan Anda sedang diproses.',
+            'ready' => $this->order->receiving_method === 'delivery'
+                ? 'Pesanan Anda sudah siap, dan akan diantarkan oleh kurir kami.'
+                : 'Pesanan Anda sudah siap diambil! Mohon tunjukkan kode klaim kepada pelayan kami jika sudah sampai.',
             'shipping' => 'Pesanan Anda sedang dalam perjalanan oleh kurir mitra.',
             'completed' => 'Pesanan Anda telah selesai. Terima kasih!',
             'cancelled' => 'Mohon maaf, pesanan Anda telah dibatalkan.',
         ];
 
         $message = $statusMessages[$this->status] ?? "Status pesanan Anda telah berubah menjadi {$this->status}.";
+
+        if ($this->status === 'cancelled' && !empty($this->order->cancel_reason)) {
+            $message .= ' Alasan: ' . $this->order->cancel_reason;
+        }
 
         return [
             'order_id' => $this->order->id,

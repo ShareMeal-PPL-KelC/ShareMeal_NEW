@@ -43,6 +43,7 @@ class RegisterLembagaTest extends DuskTestCase
                     ->attach('document_identitas_lembaga', $dummyFilePath)
                     
                     // Step 4: Isi Biodata
+                    ->type('organization_name', 'Yayasan Kasih ShareMeal')
                     ->type('name', 'Yayasan ShareMeal Indonesia')
                     ->type('email', $uniqueEmail)
                     ->type('password', 'password123')

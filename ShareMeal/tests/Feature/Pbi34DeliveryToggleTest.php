@@ -29,6 +29,7 @@ class Pbi34DeliveryToggleTest extends TestCase
             'business_description' => 'Menjual roti segar.',
             'can_delivery' => 1,
             'delivery_fee' => 15000,
+            'delivery_slot_limit' => 10,
         ]);
 
         $response->assertRedirect();
@@ -47,6 +48,7 @@ class Pbi34DeliveryToggleTest extends TestCase
             'opening_end' => '20:00',
             'business_description' => 'Menjual roti segar.',
             'can_delivery' => 0,
+            'delivery_slot_limit' => 10,
         ]);
 
         $mitra->refresh();
@@ -71,6 +73,7 @@ class Pbi34DeliveryToggleTest extends TestCase
             'business_description' => 'Menjual roti segar.',
             'can_delivery' => 1,
             'delivery_fee' => '', // Should be required
+            'delivery_slot_limit' => 10,
         ]);
 
         $response->assertSessionHasErrors(['delivery_fee']);
