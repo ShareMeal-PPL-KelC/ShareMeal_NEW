@@ -388,7 +388,7 @@
                                      x-transition:enter="transition ease-out duration-300"
                                      x-transition:enter-start="transform opacity-0 translate-y-4 scale-95"
                                      x-transition:enter-end="transform opacity-100 translate-y-0 scale-100"
-                                     class="absolute right-0 mt-4 w-72 overflow-hidden rounded-[2rem] glass-panel luxury-shadow z-50"
+                                     class="absolute right-0 mt-4 w-72 overflow-hidden rounded-[2rem] bg-white/95 backdrop-blur-xl border border-luxury-alabas luxury-shadow z-50"
                                      x-cloak>
                                     <div class="px-6 py-6 border-b border-luxury-alabas bg-luxury-forest/5">
                                         <div class="flex items-center gap-4">

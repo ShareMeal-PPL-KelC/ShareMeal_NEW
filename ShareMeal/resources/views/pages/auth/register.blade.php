@@ -1,7 +1,7 @@
 <x-layouts.app title="Daftar - ShareMeal">
     <!-- Style & Google Fonts Import -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
         
         .register-font {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -9,18 +9,16 @@
         
         /* Glassmorphism Cards */
         .glass-card {
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 20px 50px -15px rgba(23, 68, 19, 0.05);
+            background: rgba(255,255,255,0.50);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 20px 50px -15px rgba(23,68,19,0.08);
         }
 
         .glass-card-dark {
-            background: rgba(16, 44, 13, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10,30,8,0.5);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
         }
 
         /* Floating background blobs */
@@ -52,6 +50,94 @@
         .animate-float-3 {
             animation: float-3 24s infinite alternate ease-in-out;
         }
+
+        /* Dashboard Float Animations */
+        @keyframes float-dashboard {
+            0% { transform: translateY(0px) rotate(-0.2deg); }
+            50% { transform: translateY(-10px) rotate(0.2deg); }
+            100% { transform: translateY(0px) rotate(-0.2deg); }
+        }
+        @keyframes float-badge-up {
+            0% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-14px) translateX(-4px); }
+            100% { transform: translateY(0px) translateX(0px); }
+        }
+        .animate-float-dashboard {
+            animation: float-dashboard 7s infinite ease-in-out;
+        }
+        .animate-float-badge-up {
+            animation: float-badge-up 6s infinite ease-in-out;
+        }
+
+        /* Radar and Pin Animations */
+        @keyframes radar-pulse {
+            0% { transform: scale(0.2); opacity: 0.8; }
+            80% { transform: scale(1.2); opacity: 0; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+        .animate-radar-pulse {
+            animation: radar-pulse 3s infinite ease-out;
+        }
+        @keyframes pin-glow {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+            70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+        }
+        .animate-pin-glow {
+            animation: pin-glow 2s infinite ease-in-out;
+        }
+
+        /* Aurora Orbs */
+        @keyframes aurora-1 {
+            0%   { transform: translate(0,0)       scale(1);    opacity:.55; }
+            35%  { transform: translate(60px,-80px) scale(1.2); opacity:.72; }
+            70%  { transform: translate(-40px,40px) scale(0.9); opacity:.48; }
+            100% { transform: translate(0,0)       scale(1);    opacity:.55; }
+        }
+        @keyframes aurora-2 {
+            0%   { transform: translate(0,0)        scale(1);    opacity:.4; }
+            40%  { transform: translate(-70px,60px) scale(1.3);  opacity:.6; }
+            75%  { transform: translate(50px,-50px) scale(0.85); opacity:.35; }
+            100% { transform: translate(0,0)        scale(1);    opacity:.4; }
+        }
+        @keyframes aurora-3 {
+            0%   { transform: translate(0,0)         scale(1);    opacity:.3; }
+            50%  { transform: translate(40px,70px)   scale(1.15); opacity:.5; }
+            85%  { transform: translate(-60px,-30px) scale(0.9);  opacity:.25; }
+            100% { transform: translate(0,0)         scale(1);    opacity:.3; }
+        }
+        .aurora-orb-1 {
+            position:absolute; width:420px; height:420px; border-radius:50%;
+            background: radial-gradient(circle, rgba(52,211,153,.35) 0%, rgba(16,185,129,.1) 50%, transparent 75%);
+            filter: blur(60px);
+            animation: aurora-1 18s infinite ease-in-out;
+            pointer-events:none;
+        }
+        .aurora-orb-2 {
+            position:absolute; width:360px; height:360px; border-radius:50%;
+            background: radial-gradient(circle, rgba(52,211,153,.3) 0%, rgba(16,185,129,.08) 50%, transparent 75%);
+            filter: blur(70px);
+            animation: aurora-2 22s infinite ease-in-out;
+            pointer-events:none;
+        }
+        .aurora-orb-3 {
+            position:absolute; width:280px; height:280px; border-radius:50%;
+            background: radial-gradient(circle, rgba(110,231,183,.3) 0%, rgba(52,211,153,.08) 55%, transparent 75%);
+            filter: blur(50px);
+            animation: aurora-3 26s infinite ease-in-out;
+            pointer-events:none;
+        }
+
+        /* Shimmer badge */
+        @keyframes shimmer-badge {
+            0%   { background-position: -200% center; }
+            100% { background-position:  200% center; }
+        }
+        .badge-shimmer {
+            background: linear-gradient(90deg, rgba(52,211,153,.15) 0%, rgba(52,211,153,.35) 40%, rgba(52,211,153,.45) 55%, rgba(52,211,153,.35) 70%, rgba(52,211,153,.15) 100%);
+            background-size: 200% auto;
+            animation: shimmer-badge 4s linear infinite;
+        }
     </style>
 
     <div class="register-font flex h-screen overflow-hidden lg:grid lg:grid-cols-2 relative bg-[#f4f7f4]">
@@ -67,36 +153,139 @@
         <x-falling-leaves />
 
         <!-- Left Column: Elegant Visual Hero Panel (Desktop) -->
-        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-16 z-10 h-screen flex-shrink-0">
-            <!-- Blur overlay and image -->
+        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-12 z-10 h-screen flex-shrink-0">
+            <!-- Base image + light green transparent overlay -->
             <div class="absolute inset-0 z-0">
-                <img src="/images/logo2.png" alt="Sustainable Future" class="absolute inset-0 h-full w-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-tr from-[#0b240a]/95 via-[#0e350b]/85 to-[#1b5017]/35 mix-blend-multiply"></div>
+                <img src="/images/logo2.png" alt="ShareMeal" class="absolute inset-0 h-full w-full object-cover object-center opacity-80">
+                <div class="absolute inset-0 bg-gradient-to-b from-[#f4f7f4]/70 via-[#eef4ee]/55 to-[#e4eee4]/85"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-[#f4f7f4]/45 via-transparent to-transparent"></div>
             </div>
 
-            <!-- Top Header Logo -->
-            <div class="relative z-10">
+            <!-- Aurora Orbs -->
+            <div class="aurora-orb-1" style="top:-80px;left:-60px;"></div>
+            <div class="aurora-orb-2" style="bottom:70px;right:-90px;"></div>
+            <div class="aurora-orb-3" style="top:42%;left:28%;"></div>
+
+            <!-- TOP: Logo -->
+            <div class="relative z-10 flex items-center justify-between">
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-3 group">
-                    <img src="{{ asset('images/logo.png') }}" class="h-12 w-12 object-cover rounded-full transition-transform group-hover:scale-105" alt="ShareMeal Logo">
-                    <span class="text-3xl font-extrabold text-white tracking-tight">ShareMeal</span>
+                    <div class="relative">
+                        <div class="absolute inset-0 rounded-full bg-emerald-600/15 blur-md group-hover:blur-lg transition-all"></div>
+                        <img src="{{ asset('images/logo.png') }}" class="relative h-11 w-11 object-cover rounded-full ring-2 ring-emerald-700/10 transition-transform group-hover:scale-105" alt="ShareMeal Logo">
+                    </div>
+                    <span class="text-2xl font-extrabold text-[#174413] tracking-tight">ShareMeal</span>
                 </a>
-            </div>
-
-            <!-- Main Heading -->
-            <div class="relative z-10 my-auto py-12">
-                <h2 class="text-5xl font-extrabold leading-tight text-white tracking-tight">Bersama Kurangi Limbah, Berbagi Berkah.</h2>
-                <p class="mt-6 max-w-xl text-base text-emerald-100/85 leading-relaxed">Bergabunglah dengan ekosistem pangan berkelanjutan kami. Berikan dampak nyata bagi bumi dan sesama melalui langkah sederhana menyelamatkan surplus makanan.</p>
-            </div>
-
-            <!-- Bottom Floating Stats Grid -->
-            <div class="relative z-10 grid grid-cols-2 gap-8 pt-8 border-t border-white/10">
-                <div class="glass-card-dark p-6 rounded-2xl text-white">
-                    <div class="text-3xl font-extrabold text-emerald-300">15k+</div>
-                    <div class="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200/60">Makanan Terselamatkan</div>
+                
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-600/15 bg-white/40 text-[10px] font-bold text-emerald-800 backdrop-blur-sm">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping inline-block"></span>
+                    <span>200+ Mitra Aktif Terhubung</span>
                 </div>
-                <div class="glass-card-dark p-6 rounded-2xl text-white">
-                    <div class="text-3xl font-extrabold text-emerald-300">200+</div>
-                    <div class="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200/60">Mitra Lokal Aktif</div>
+            </div>
+
+            <!-- MIDDLE: Real-time Rescue Map Radar Mockup -->
+            <div class="relative z-10 my-auto py-6 flex flex-col items-center">
+                <!-- Text Intro -->
+                <div class="w-full max-w-md mb-6 text-left">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-600/20 badge-shimmer mb-3">
+                        <span class="text-[9px] font-bold uppercase tracking-[0.15em] text-emerald-800">Radar Pangan Surplus</span>
+                    </div>
+                    <h2 class="text-[2.2rem] font-extrabold leading-[1.15] text-[#174413] tracking-tight">
+                        Cari Makanan Murah<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 via-teal-700 to-green-700">Di Sekitar Anda!</span>
+                    </h2>
+                </div>
+
+                <!-- Main Floating Card Mockup -->
+                <div class="w-full max-w-md bg-white/90 border border-emerald-100/90 rounded-2xl shadow-2xl p-5 backdrop-blur-md relative animate-float-dashboard">
+                    <!-- Browser Window Control Dots -->
+                    <div class="flex items-center gap-1.5 mb-4">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-400/80"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-yellow-400/80"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-400/80"></span>
+                        <span class="text-[10px] text-[#174413]/40 font-bold ml-2 tracking-wider">radar_penyelamatan.html</span>
+                    </div>
+
+                    <!-- Abstract Map Radar Container -->
+                    <div class="bg-emerald-50/40 rounded-2xl relative w-full h-[230px] overflow-hidden border border-emerald-100/30 shadow-inner z-0">
+                        <!-- Dotted Map Grid Lines -->
+                        <div class="absolute w-px h-full bg-emerald-700/5 left-[33%]"></div>
+                        <div class="absolute w-px h-full bg-emerald-700/5 left-[66%]"></div>
+                        <div class="absolute h-px w-full bg-emerald-700/5 top-[33%]"></div>
+                        <div class="absolute h-px w-full bg-emerald-700/5 top-[66%]"></div>
+
+                        <!-- Center User Location & Radar Pulse -->
+                        <div class="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-10">
+                            <!-- Radar expanding rings -->
+                            <div class="absolute w-12 h-12 rounded-full border border-emerald-400/40 animate-radar-pulse"></div>
+                            <div class="absolute w-24 h-24 rounded-full border border-emerald-400/20 animate-radar-pulse" style="animation-delay: 1s;"></div>
+                            <div class="absolute w-36 h-36 rounded-full border border-emerald-400/10 animate-radar-pulse" style="animation-delay: 2s;"></div>
+                            
+                            <!-- User Beacon Dot -->
+                            <div class="h-4.5 w-4.5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center shadow-lg relative z-20">
+                                <span class="h-2 w-2 rounded-full bg-white animate-ping"></span>
+                            </div>
+                        </div>
+
+                        <!-- Merchant Pins with Pulse Glow -->
+                        <!-- Pin 1 (Top Left) -->
+                        <div class="absolute top-8 left-16 z-10">
+                            <div class="h-3 w-3 rounded-full bg-emerald-500 border border-white animate-pin-glow"></div>
+                        </div>
+
+                        <!-- Pin 2 (Bottom Right) -->
+                        <div class="absolute bottom-12 right-20 z-10">
+                            <div class="h-3 w-3 rounded-full bg-emerald-500 border border-white animate-pin-glow"></div>
+                        </div>
+
+                        <!-- Pin 3 (Top Right - Active target) -->
+                        <div class="absolute top-14 right-24 z-10 flex items-center justify-center">
+                            <div class="h-3.5 w-3.5 rounded-full bg-emerald-600 border-2 border-white animate-pin-glow shadow-md"></div>
+                            
+                            <!-- Connecting light path to active pin -->
+                            <div class="absolute top-[50%] left-[50%] w-[120px] h-px bg-gradient-to-r from-blue-400/10 to-emerald-500/80 -rotate-12 transform origin-left z-0 pointer-events-none"></div>
+                        </div>
+
+                        <!-- Active Pin Map Tooltip Popup -->
+                        <div class="absolute top-5 right-4 bg-white/95 border border-emerald-100 shadow-xl rounded-xl p-2.5 w-[145px] text-left z-20 backdrop-blur-sm pointer-events-none transition-all duration-300">
+                            <div class="flex items-center justify-between gap-1">
+                                <span class="text-[10px] font-black text-[#174413] truncate">Bakery Lestari</span>
+                                <span class="text-[8px] font-extrabold px-1 py-0.25 rounded bg-emerald-100 text-emerald-800">-60%</span>
+                            </div>
+                            <p class="text-[9px] text-[#174413]/70 font-semibold mt-0.5">3 Porsi Roti Manis</p>
+                            <div class="flex items-center justify-between mt-2 pt-1 border-t border-emerald-50/50">
+                                <span class="text-[8px] text-emerald-700 font-bold">250m terdekat</span>
+                                <span class="text-[9px] font-extrabold text-emerald-800">Rp 12.000</span>
+                            </div>
+                        </div>
+
+                        <!-- Live searching banner at bottom -->
+                        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/85 border border-emerald-100/50 px-3 py-1 rounded-full text-[9px] font-extrabold text-emerald-800 flex items-center gap-1.5 backdrop-blur-sm shadow-sm">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Mencari surplus di sekitar Anda...</span>
+                        </div>
+                    </div>
+
+                    <!-- Floating Badge: Nearby Stores Count -->
+                    <div class="absolute -right-10 -bottom-6 bg-white border border-emerald-100 rounded-2xl p-3 shadow-xl flex items-center gap-3 animate-float-badge-up backdrop-blur-md">
+                        <!-- Radar / Compass Icon -->
+                        <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md flex-shrink-0">
+                            <svg class="w-5 h-5 animate-spin" style="animation-duration: 20s" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3L16.5 16.5 9 9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l-4.5 4.5m4.5-4.5V3"/></svg>
+                        </div>
+                        <div>
+                            <span class="block text-[8px] font-extrabold uppercase tracking-wider text-emerald-800/50">Radius Penyelamatan</span>
+                            <span class="block text-xs font-black text-[#174413] tracking-tight">12 Mitra Aktif</span>
+                            <span class="text-[8px] font-bold text-emerald-700">Ditemukan</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTTOM: Info Card -->
+            <div class="relative z-10 w-full max-w-md mx-auto">
+                <div class="glass-card rounded-[1.5rem] p-4 text-center">
+                    <p class="text-xs text-[#174413]/80 leading-relaxed font-semibold">
+                        🤝 Jadilah bagian dari jaringan kebaikan kami hari ini.
+                    </p>
                 </div>
             </div>
         </div>

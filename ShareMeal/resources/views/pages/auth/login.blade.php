@@ -52,14 +52,14 @@
         }
         .aurora-orb-2 {
             position:absolute; width:360px; height:360px; border-radius:50%;
-            background: radial-gradient(circle, rgba(251,191,36,.5) 0%, rgba(245,158,11,.15) 50%, transparent 75%);
+            background: radial-gradient(circle, rgba(52,211,153,.35) 0%, rgba(16,185,129,.1) 50%, transparent 75%);
             filter: blur(70px);
             animation: aurora-2 22s infinite ease-in-out;
             pointer-events:none;
         }
         .aurora-orb-3 {
             position:absolute; width:280px; height:280px; border-radius:50%;
-            background: radial-gradient(circle, rgba(110,231,183,.4) 0%, rgba(52,211,153,.1) 55%, transparent 75%);
+            background: radial-gradient(circle, rgba(110,231,183,.3) 0%, rgba(52,211,153,.08) 55%, transparent 75%);
             filter: blur(50px);
             animation: aurora-3 26s infinite ease-in-out;
             pointer-events:none;
@@ -71,9 +71,27 @@
             100% { background-position:  200% center; }
         }
         .badge-shimmer {
-            background: linear-gradient(90deg, rgba(52,211,153,.15) 0%, rgba(52,211,153,.4) 40%, rgba(251,191,36,.45) 55%, rgba(52,211,153,.4) 70%, rgba(52,211,153,.15) 100%);
+            background: linear-gradient(90deg, rgba(52,211,153,.15) 0%, rgba(52,211,153,.35) 40%, rgba(52,211,153,.45) 55%, rgba(52,211,153,.35) 70%, rgba(52,211,153,.15) 100%);
             background-size: 200% auto;
             animation: shimmer-badge 4s linear infinite;
+        }
+
+        /* Dashboard Float Animations */
+        @keyframes float-dashboard {
+            0% { transform: translateY(0px) rotate(0.2deg); }
+            50% { transform: translateY(-10px) rotate(-0.2deg); }
+            100% { transform: translateY(0px) rotate(0.2deg); }
+        }
+        @keyframes float-badge-up {
+            0% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-14px) translateX(4px); }
+            100% { transform: translateY(0px) translateX(0px); }
+        }
+        .animate-float-dashboard {
+            animation: float-dashboard 7s infinite ease-in-out;
+        }
+        .animate-float-badge-up {
+            animation: float-badge-up 6s infinite ease-in-out;
         }
     </style>
 
@@ -90,14 +108,13 @@
         <x-falling-leaves />
 
         <!-- Left Column: Cinematic Hero Panel (Desktop) -->
-        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-14 z-10">
+        <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-12 z-10">
 
-            <!-- Base image + lighter cinematic gradient (Opsi 2) -->
+            <!-- Base image + light green transparent overlay -->
             <div class="absolute inset-0 z-0">
-                <img src="/images/logo2.png" alt="ShareMeal" class="absolute inset-0 h-full w-full object-cover object-center">
-                <!-- Lighter gradient so image breathes more -->
-                <div class="absolute inset-0 bg-gradient-to-b from-[#041404]/50 via-[#071e07]/35 to-[#030e03]/70"></div>
-                <div class="absolute inset-0 bg-gradient-to-r from-[#041404]/55 via-transparent to-transparent"></div>
+                <img src="/images/logo2.png" alt="ShareMeal" class="absolute inset-0 h-full w-full object-cover object-center opacity-80">
+                <div class="absolute inset-0 bg-gradient-to-b from-[#f4f7f4]/70 via-[#eef4ee]/55 to-[#e4eee4]/85"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-[#f4f7f4]/45 via-transparent to-transparent"></div>
             </div>
 
             <!-- Aurora Orbs -->
@@ -105,74 +122,128 @@
             <div class="aurora-orb-2" style="bottom:70px;right:-90px;"></div>
             <div class="aurora-orb-3" style="top:42%;left:28%;"></div>
 
-            <!-- TOP: Logo -->
-            <div class="relative z-10">
+            <!-- TOP: Logo & Slogan -->
+            <div class="relative z-10 flex items-center justify-between">
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-3 group">
                     <div class="relative">
-                        <div class="absolute inset-0 rounded-full bg-emerald-400/30 blur-md group-hover:blur-lg transition-all"></div>
-                        <img src="{{ asset('images/logo.png') }}" class="relative h-11 w-11 object-cover rounded-full ring-2 ring-white/20 transition-transform group-hover:scale-105" alt="ShareMeal Logo">
+                        <div class="absolute inset-0 rounded-full bg-emerald-600/15 blur-md group-hover:blur-lg transition-all"></div>
+                        <img src="{{ asset('images/logo.png') }}" class="relative h-11 w-11 object-cover rounded-full ring-2 ring-emerald-700/10 transition-transform group-hover:scale-105" alt="ShareMeal Logo">
                     </div>
-                    <span class="text-2xl font-extrabold text-white tracking-tight">ShareMeal</span>
+                    <span class="text-2xl font-extrabold text-[#174413] tracking-tight">ShareMeal</span>
                 </a>
+                
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-600/15 bg-white/40 text-[10px] font-bold text-emerald-800 backdrop-blur-sm">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping inline-block"></span>
+                    <span>1,240 Ton Penyelamatan Pangan</span>
+                </div>
             </div>
 
-            <!-- MIDDLE: Storytelling -->
-            <div class="relative z-10 space-y-6">
-                <!-- Shimmer badge -->
-                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-400/30 badge-shimmer">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping inline-block"></span>
-                    <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-200">Platform Pangan Berkelanjutan</span>
-                </div>
-
-                <!-- Big headline -->
-                <div>
-                    <h2 class="text-[2.6rem] font-extrabold leading-[1.12] text-white tracking-tight">
-                        Bersama Kurangi<br>
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300">Limbah, Berbagi</span><br>
-                        Berkah.
+            <!-- MIDDLE: Live Dashboard Mockup Preview -->
+            <div class="relative z-10 my-auto py-6 flex flex-col items-center">
+                <!-- Text Intro -->
+                <div class="w-full max-w-md mb-6 text-left">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-600/20 badge-shimmer mb-3">
+                        <span class="text-[9px] font-bold uppercase tracking-[0.15em] text-emerald-800">Dampak Nyata Komunitas</span>
+                    </div>
+                    <h2 class="text-[2.2rem] font-extrabold leading-[1.15] text-[#174413] tracking-tight">
+                        Pantau &amp; Bagikan<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 via-teal-700 to-green-700">Surplus Makanan Anda</span>
                     </h2>
-                    <p class="mt-4 text-sm text-emerald-100/65 leading-relaxed max-w-xs">
-                        Bergabunglah dengan ribuan komunitas yang aktif menyelamatkan surplus makanan dan membangun ekosistem pangan yang adil.
-                    </p>
                 </div>
 
-                <!-- Micro stats -->
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="glass-card-dark rounded-2xl p-4 text-center">
-                        <div class="text-2xl font-extrabold text-emerald-300">15k+</div>
-                        <div class="mt-1 text-[10px] font-semibold text-emerald-100/50 uppercase tracking-wider leading-tight">Makanan<br>Terselamatkan</div>
+                <!-- Main Floating Dashboard Card Mockup -->
+                <div class="w-full max-w-md bg-white/90 border border-emerald-100/90 rounded-2xl shadow-2xl p-5 backdrop-blur-md relative animate-float-dashboard">
+                    <!-- Browser Window Control Dots -->
+                    <div class="flex items-center gap-1.5 mb-4">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-400/80"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-yellow-400/80"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-400/80"></span>
+                        <span class="text-[10px] text-[#174413]/40 font-bold ml-2 tracking-wider">dashboard_berbagi.html</span>
                     </div>
-                    <div class="glass-card-dark rounded-2xl p-4 text-center">
-                        <div class="text-2xl font-extrabold text-amber-300">200+</div>
-                        <div class="mt-1 text-[10px] font-semibold text-emerald-100/50 uppercase tracking-wider leading-tight">Mitra<br>Aktif</div>
-                    </div>
-                    <div class="glass-card-dark rounded-2xl p-4 text-center">
-                        <div class="text-2xl font-extrabold text-teal-300">50+</div>
-                        <div class="mt-1 text-[10px] font-semibold text-emerald-100/50 uppercase tracking-wider leading-tight">Lembaga<br>Sosial</div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- BOTTOM: Testimonial card -->
-            <div class="relative z-10">
-                <div class="glass-card-dark rounded-[1.5rem] p-5">
-                    <div class="flex items-start gap-4">
-                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow-lg">A</div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs text-emerald-100/80 leading-relaxed italic">&ldquo;ShareMeal membantu restoran saya mengurangi limbah makanan hingga 60%. Luar biasa!&rdquo;</p>
-                            <div class="mt-2.5 flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs font-bold text-white">Andi Prasetyo</span>
-                                    <span class="text-[10px] text-emerald-300/70 ml-1.5">· Mitra, Jakarta</span>
+                    <!-- Profile and Impact Widget -->
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-emerald-100/50">
+                        <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md">
+                                M
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-extrabold text-[#174413]">Mitra Toko Hijau</h4>
+                                <p class="text-[9px] text-emerald-700 font-semibold uppercase tracking-wider">Level 3 Penyelamat</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-850">Aktif</span>
+                    </div>
+
+                    <!-- Stats Row -->
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border border-emerald-500/15 rounded-xl p-3">
+                            <div class="flex items-center justify-between text-emerald-800">
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-800/60">Dampak CO₂</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+                            </div>
+                            <div class="mt-1 text-lg font-black text-[#174413] tracking-tight">124.5 kg</div>
+                            <div class="text-[9px] font-semibold text-emerald-700/80 mt-0.5">Setara 8 Pohon Tumbuh</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-teal-500/5 to-teal-500/10 border border-teal-500/15 rounded-xl p-3">
+                            <div class="flex items-center justify-between text-teal-800">
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-teal-800/60">Porsi Berbagi</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"/></svg>
+                            </div>
+                            <div class="mt-1 text-lg font-black text-[#174413] tracking-tight">87 Porsi</div>
+                            <div class="text-[9px] font-semibold text-teal-700/80 mt-0.5">Diselamatkan Bulan Ini</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Feed / Recent Activity -->
+                    <div>
+                        <h5 class="text-[10px] font-extrabold text-[#174413] uppercase tracking-wider mb-2.5 flex items-center justify-between">
+                            <span>Aktivitas Surplus Terbaru</span>
+                            <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        </h5>
+                        <div class="space-y-2">
+                            <!-- Item 1 -->
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-50/40 border border-emerald-100/30 text-xs">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <div>
+                                        <span class="font-extrabold text-[#174413]">Roti Manis Cokelat</span>
+                                        <span class="text-[9px] text-[#174413]/50 block">5 Porsi · Bakery Delight</span>
+                                    </div>
                                 </div>
-                                <div class="flex gap-0.5">
-                                    @for($s=0;$s<5;$s++)
-                                        <svg class="w-3 h-3 fill-amber-400" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                    @endfor
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">Menunggu Kurir</span>
+                            </div>
+                            <!-- Item 2 -->
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-50/40 border border-emerald-100/30 text-xs">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <div>
+                                        <span class="font-extrabold text-[#174413]">Surplus Buffet Makan Siang</span>
+                                        <span class="text-[9px] text-[#174413]/50 block">12 Porsi · Hotel Nusantara</span>
+                                    </div>
                                 </div>
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800">Selesai Disalurkan</span>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Floating Reward Badge decoration -->
+                    <div class="absolute -right-10 -bottom-6 bg-gradient-to-r from-emerald-600 to-teal-600 text-white border border-emerald-400/20 px-3.5 py-2 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-black animate-float-badge-up backdrop-blur-md">
+                        <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26 6.91.97-5 4.89 1.18 6.88L12 17.77l-6.18 3.25L7 14.12 2 9.23l6.91-.97L12 2z"/></svg>
+                        <div>
+                            <span class="block text-[8px] uppercase tracking-wider text-emerald-200">Bonus Keberlanjutan</span>
+                            <span>+10 Poin Hijau</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTTOM: Dynamic micro banner -->
+            <div class="relative z-10 w-full max-w-md mx-auto">
+                <div class="glass-card rounded-[1.5rem] p-4 text-center">
+                    <p class="text-xs text-[#174413]/80 leading-relaxed font-semibold">
+                        🌱 Bergabunglah untuk melihat dampak ekologi Anda secara langsung.
+                    </p>
                 </div>
             </div>
 
