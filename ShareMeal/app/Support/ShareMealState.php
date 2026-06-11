@@ -36,7 +36,12 @@ class ShareMealState
     {
         self::boot();
 
-        $user = User::query()->find(Session::get('sharemeal.current_user_id'))
+        $userId = Session::get('sharemeal.current_user_id') ?? auth()->id();
+        if ($userId && !Session::has('sharemeal.current_user_id')) {
+            Session::put('sharemeal.current_user_id', $userId);
+        }
+
+        $user = User::query()->find($userId)
             ?? User::query()->where('role', 'consumer')->first();
 
         return [

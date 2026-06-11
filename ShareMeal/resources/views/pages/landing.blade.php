@@ -147,7 +147,7 @@
                         ShareMeal menghubungkan bisnis pangan dengan konsumen dan lembaga sosial untuk mengurangi food waste dan membangun ekosistem pangan yang berkelanjutan.
                     </p>
                     <div class="mt-10 flex flex-wrap gap-4">
-                        <a class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-tr from-[#174413] to-[#25661e] px-7 py-4 text-base font-bold text-white shadow-lg shadow-emerald-950/20 hover:shadow-xl hover:shadow-emerald-900/25 hover:brightness-110 active:scale-[0.98] transition-all duration-300" href="{{ route('register') }}">
+                        <a class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-tr from-[#174413] to-[#25661e] px-7 py-4 text-base font-bold text-white shadow-lg shadow-emerald-950/20 hover:shadow-xl hover:shadow-emerald-900/25 hover:brightness-110 active:scale-[0.98] transition-all duration-300" href="{{ route('login') }}">
                             Mulai Sekarang
                             <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />

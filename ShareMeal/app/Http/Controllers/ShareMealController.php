@@ -119,7 +119,7 @@ class ShareMealController extends Controller
             return back()->with('error', 'Email, password, atau tipe pengguna tidak sesuai.');
         }
 
-        Auth::login($user);
+        Auth::login($user, $request->boolean('remember'));
         ShareMealState::login($user->id);
 
         // Reset rate limiter on successful login
