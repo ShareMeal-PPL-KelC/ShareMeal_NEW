@@ -13,10 +13,10 @@ Dokumen ini berisi panduan langkah demi langkah untuk men-deploy aplikasi Larave
    * Di dashboard Railway, klik **New Project** -> **Provision PostgreSQL** atau **Provision MySQL** (pilih salah satu sesuai kebutuhan database Anda).
 
 3. **Tambahkan Layanan Aplikasi**:
-   * Klik **+ Add** -> **GitHub Repo** -> pilih repositori `ShareMeal_NEW`.
+   * Klik **+ Add** -> **GitHub Repo** -> pilih repositori `ShareMeal_Deployment`.
 
 4. **Konfigurasi Variabel Lingkungan (Variables)**:
-   * Klik pada layanan aplikasi `ShareMeal_NEW` Anda, masuk ke tab **Variables**, lalu klik **New Variable** untuk menambahkan variabel berikut:
+   * Klik pada layanan aplikasi `ShareMeal_Deployment` Anda, masuk ke tab **Variables**, lalu klik **New Variable** untuk menambahkan variabel berikut:
      * `APP_ENV`: `production`
      * `APP_DEBUG`: `false`
      * `APP_KEY`: *(Dapatkan kunci ini dengan menjalankan `php artisan key:generate --show` di terminal lokal Anda)*
