@@ -77,7 +77,7 @@
                                 @endif
                                 
                                 @if(isset($notification->data['action_url']))
-                                    <a href="{{ $notification->data['action_url'] }}" class="text-xs font-black text-luxury-forest hover:text-luxury-gold flex items-center gap-1 transition-colors uppercase tracking-wider">
+                                    <a href="{{ $notification->data['action_url'] }}" dusk="notification-link" class="text-xs font-black text-luxury-forest hover:text-luxury-gold flex items-center gap-1 transition-colors uppercase tracking-wider">
                                         Lihat Detail
                                         <i data-lucide="arrow-right" class="w-3.5 h-3.5 stroke-[2.5]"></i>
                                     </a>

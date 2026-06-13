@@ -28,7 +28,8 @@ class FlashSaleNotification extends Notification
             'store_name' => $this->storeName,
             'item_name' => $this->itemName,
             'icon' => '🔥',
-            'status' => 'flash-sale'
+            'status' => 'flash-sale',
+            'action_url' => route('consumer.search', ['q' => $this->storeName])
         ];
     }
 }
