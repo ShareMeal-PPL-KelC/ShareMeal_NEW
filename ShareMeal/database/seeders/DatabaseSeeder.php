@@ -182,7 +182,7 @@ class DatabaseSeeder extends Seeder
         // Toko Roti Makmur
         $p1 = Product::create([
             'user_id' => $mitra1->id,
-            'name' => 'Roti Tawar Gandum',
+            'name' => 'Roti Gandum Spesial',
             'category' => 'Bakery',
             'price' => 20000,
             'discount_price' => 14000,
