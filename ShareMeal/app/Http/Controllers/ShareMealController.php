@@ -772,21 +772,20 @@ class ShareMealController extends Controller
         $userId = Auth::id() ?? \App\Models\User::where('role', 'mitra')->value('id');
         app(AutoDonationService::class)->processProducts($userId);
 
-        $products = Product::where('user_id', $userId)->get();
         $donationsCount = Donation::where('mitra_id', $userId)->count();
-        $orders = \App\Models\Order::where('mitra_id', $userId)->get();
-        $reviews = Review::where('mitra_id', $userId)->get();
 
         $stats = (object) [
-            'totalProducts' => $products->count(),
-            'activeFlashSale' => $products->where('status', 'flash-sale')->count(),
-            'expiredProducts' => $products->where('status', 'expired')->count(),
-            'pendingOrders' => $orders->where('status', 'pending')->count(),
-            'totalRevenue' => $orders->where('status', 'completed')->sum('total_amount'),
-            'foodSaved' => \App\Models\OrderItem::whereIn('order_id', $orders->where('status', 'completed')->pluck('id'))->sum('quantity'),
+            'totalProducts' => Product::where('user_id', $userId)->count(),
+            'activeFlashSale' => Product::where('user_id', $userId)->where('status', 'flash-sale')->count(),
+            'expiredProducts' => Product::where('user_id', $userId)->where('status', 'expired')->count(),
+            'pendingOrders' => \App\Models\Order::where('mitra_id', $userId)->where('status', 'pending')->count(),
+            'totalRevenue' => \App\Models\Order::where('mitra_id', $userId)->where('status', 'completed')->sum('total_amount'),
+            'foodSaved' => (int) \App\Models\OrderItem::whereHas('order', function ($query) use ($userId) {
+                $query->where('mitra_id', $userId)->where('status', 'completed');
+            })->sum('quantity'),
             'donationsGiven' => $donationsCount,
-            'averageRating' => round($reviews->avg('rating') ?? 0, 1),
-            'totalReviews' => $reviews->count(),
+            'averageRating' => round(Review::where('mitra_id', $userId)->avg('rating') ?? 0, 1),
+            'totalReviews' => Review::where('mitra_id', $userId)->count(),
         ];
 
         $recentOrders = \App\Models\Order::with(['customer', 'items.product'])
@@ -1010,12 +1009,7 @@ class ShareMealController extends Controller
         }
         $defaultPickupEnd = $shopClose;
 
-        $products = Product::with(['user' => function($q) {
-                $q->withAvg('reviewsAsMitra', 'rating')
-                  ->withCount('reviewsAsMitra')
-                  ->with('profile');
-            }])
-            ->where('user_id', $userId)
+        $products = Product::where('user_id', $userId)
             ->get()
             ->map(function (Product $product) {
                 $expiresAt = $product->expires_at?->copy()->timezone(config('app.timezone'));
@@ -1330,7 +1324,7 @@ class ShareMealController extends Controller
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id') ?? \App\Models\User::where('role', 'mitra')->value('id');
         app(AutoDonationService::class)->processProducts($userId);
         
-        $donations = Donation::with('lembaga')
+        $donations = Donation::with(['lembaga', 'mitra.profile'])
             ->where('mitra_id', $userId)
             ->where(function ($query) {
                 $query->whereNull('expires_at')
@@ -1496,15 +1490,20 @@ class ShareMealController extends Controller
 
     public function lembagaDashboard(): View
     {
-        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $userId = \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id') ?? Auth::id();
         $userObj = User::query()->find($userId);
         
-        $allDonations = ShareMealState::get('donations');
-        
-        // Filter donations: show available ones, and only show claimed/completed if claimed by this user
-        $donations = collect($allDonations)->filter(function ($donation) use ($userObj) {
-            return $donation['status'] === 'available' || $donation['lembaga_id'] == $userObj->id;
-        })->values()->all();
+        $donationsQuery = \App\Models\Donation::query()
+            ->where(function ($q) {
+                $q->where('status', 'pending')
+                  ->where(function ($q2) {
+                      $q2->whereNull('expires_at')
+                         ->orWhere('expires_at', '>', now());
+                  });
+            })
+            ->orWhere('lembaga_id', $userId);
+
+        $donations = ShareMealState::getDonationsQuery($donationsQuery);
 
         // PBI #45: Add critical alert for active claimed donations
         $criticalAlerts = [];
@@ -1521,7 +1520,12 @@ class ShareMealController extends Controller
         session()->flash('critical_alerts', $criticalAlerts);
 
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
-            'stats' => (object) ['totalDonations' => 156, 'activeDonations' => 8, 'beneficiaries' => 120, 'thisMonth' => 45],
+            'stats' => (object) [
+                'totalDonations' => \App\Models\Donation::where('lembaga_id', $userId)->where('status', 'completed')->count(),
+                'activeDonations' => \App\Models\Donation::where('lembaga_id', $userId)->where('status', 'claimed')->count(),
+                'beneficiaries' => $userObj?->profile?->beneficiaries_count ?? 120,
+                'thisMonth' => \App\Models\Donation::where('lembaga_id', $userId)->where('status', 'completed')->where('delivered_at', '>=', now()->startOfMonth())->count()
+            ],
             'donations' => $donations,
             'availableDonations' => collect($donations)->where('status', 'available')->all(),
             'recentDonations' => collect($donations)->whereIn('status', ['claimed', 'completed'])->sortByDesc('claimed_at')->take(5)->all(),
@@ -1532,12 +1536,18 @@ class ShareMealController extends Controller
     public function lembagaDonations(): View
     {
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
-        $allDonations = ShareMealState::get('donations');
+        
+        $donationsQuery = \App\Models\Donation::query()
+            ->where(function ($q) {
+                $q->where('status', 'pending')
+                  ->where(function ($q2) {
+                      $q2->whereNull('expires_at')
+                         ->orWhere('expires_at', '>', now());
+                  });
+            })
+            ->orWhere('lembaga_id', $userId);
 
-        // Filter donations: show available ones, and only show claimed/completed if claimed by this user
-        $donations = collect($allDonations)->filter(function ($donation) use ($userId) {
-            return $donation['status'] === 'available' || $donation['lembaga_id'] == $userId;
-        })->values()->all();
+        $donations = ShareMealState::getDonationsQuery($donationsQuery);
 
         return view('pages.lembaga.donations', $this->dashboardData('lembaga', 'Kelola Donasi', 'Klaim & tracking donasi makanan') + [
             'donations' => $donations,
@@ -1548,12 +1558,12 @@ class ShareMealController extends Controller
     public function lembagaHistory(): View
     {
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
-        $allDonations = ShareMealState::get('donations');
+        
+        $completedDonationsQuery = \App\Models\Donation::query()
+            ->where('lembaga_id', $userId)
+            ->where('status', 'completed');
 
-        // Filter donations: only show completed donations for this user (lembaga_id == $userId && status == 'completed')
-        $completedDonations = collect($allDonations)->filter(function ($donation) use ($userId) {
-            return $donation['lembaga_id'] == $userId && $donation['status'] === 'completed';
-        })->values()->all();
+        $completedDonations = ShareMealState::getDonationsQuery($completedDonationsQuery);
 
         return view('pages.lembaga.history', $this->dashboardData('lembaga', 'Riwayat Penerimaan Donasi', 'Daftar donasi makanan yang berhasil diterima') + [
             'completedDonations' => $completedDonations,
@@ -1803,7 +1813,6 @@ class ShareMealController extends Controller
 
         return view('pages.admin.dashboard', $this->dashboardData('admin', 'Dashboard Admin', 'Kelola sistem, verifikasi akun, dan moderasi platform') + [
             'applications' => $applications,
-            'users' => ShareMealState::get('users'),
             'activities' => $activities,
             'stats' => [
                 'total_user' => $totalUser,
@@ -1866,16 +1875,39 @@ class ShareMealController extends Controller
         $search = (string) $request->query('search', '');
         $type = (string) $request->query('type', 'all');
         $status = (string) $request->query('status', 'all');
-        $users = collect(ShareMealState::get('users'))->filter(function ($user) use ($search, $type, $status) {
-            $matchesSearch = $search === '' || str_contains(strtolower($user['name']), strtolower($search)) || str_contains(strtolower($user['email']), strtolower($search));
-            $matchesType = $type === 'all' || $user['type'] === $type;
-            $matchesStatus = $status === 'all' || $user['status'] === $status;
-            return $matchesSearch && $matchesType && $matchesStatus;
-        })->values();
+
+        $query = User::query();
+
+        if ($search !== '') {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($type !== 'all') {
+            $query->where('role', $type);
+        }
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        $users = $query->orderBy('id')->get()->map(fn (User $user) => ShareMealState::transformUser($user))->all();
+
+        $stats = [
+            'totalUsers' => User::count(),
+            'totalKonsumen' => User::where('role', 'consumer')->count(),
+            'totalMitra' => User::where('role', 'mitra')->count(),
+            'totalLembaga' => User::where('role', 'lembaga')->count(),
+            'totalAktif' => User::where('status', 'active')->count(),
+            'totalWarning' => User::where('status', 'warned')->orWhere('warnings_count', '>', 0)->count(),
+            'totalBlocked' => User::where('status', 'blocked')->count(),
+        ];
 
         return view('pages.admin.users', $this->dashboardData('admin', 'Manajemen Data User', 'Kelola akun & moderasi pelanggaran') + [
             'users' => $users,
-            'allUsers' => ShareMealState::get('users'),
+            'stats' => $stats,
             'search' => $search,
             'type' => $type,
             'status' => $status,
