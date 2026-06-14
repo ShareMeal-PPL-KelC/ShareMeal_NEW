@@ -2482,6 +2482,8 @@ class ShareMealController extends Controller
                 $query->whereIn('action', ['education_create', 'education_update', 'education_delete']);
             } elseif ($actionType === 'report') {
                 $query->whereIn('action', ['report_dismiss', 'report_warn', 'report_block']);
+            } elseif ($actionType === 'feedback') {
+                $query->whereIn('action', ['feedback_delete', 'feedback_update']);
             } else {
                 $query->where('action', $actionType);
             }

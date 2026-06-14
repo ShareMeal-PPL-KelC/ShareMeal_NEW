@@ -124,6 +124,14 @@ class FeedbackController extends Controller
             }
         }
 
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'feedback_delete',
+            'target_id' => $feedback->id,
+            'details' => 'Menghapus feedback "' . $feedback->subject . '" dari ' . ($feedback->user->name ?? 'Unknown') . '.',
+            'ip_address' => request()->ip(),
+        ]);
+
         $feedback->delete();
 
         return back()->with('success', 'Feedback berhasil dihapus dari sistem.');
@@ -136,6 +144,14 @@ class FeedbackController extends Controller
     {
         $newStatus = $feedback->status === 'resolved' ? 'pending' : 'resolved';
         $feedback->update(['status' => $newStatus]);
+
+        \App\Models\AdminLog::create([
+            'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
+            'action' => 'feedback_update',
+            'target_id' => $feedback->id,
+            'details' => 'Mengubah status feedback "' . $feedback->subject . '" menjadi ' . ($newStatus === 'resolved' ? 'Selesai' : 'Belum Selesai') . '.',
+            'ip_address' => request()->ip(),
+        ]);
 
         $message = $newStatus === 'resolved' 
             ? 'Feedback berhasil ditandai sebagai SELESAI / DI-ACC.' 

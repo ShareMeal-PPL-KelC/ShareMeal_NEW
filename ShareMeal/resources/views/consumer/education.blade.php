@@ -69,20 +69,25 @@
 
     <!-- Categories Filter -->
     <div class="flex gap-3 overflow-x-auto pb-4 no-scrollbar reveal">
-        @foreach($categories as $category)
-        <button
-            @click="activeCategory = '{{ addslashes($category) }}'"
-            :class="activeCategory === '{{ addslashes($category) }}' ? 'bg-[#174413] text-white shadow-md' : 'bg-white/60 text-gray-600 border border-luxury-alabas/80 hover:bg-white hover:text-[#174413]'"
-            class="px-8 py-3 rounded-2xl font-black text-sm transition-all flex-shrink-0">
-            {{ $category }}
-        </button>
-        @endforeach
+        <template x-for="cat in categories" :key="cat">
+            <button
+                @click="setCategory(cat)"
+                :class="activeCategory === cat ? 'bg-[#174413] text-white shadow-md' : 'bg-white/60 text-gray-600 border border-luxury-alabas/80 hover:bg-white hover:text-[#174413]'"
+                class="px-8 py-3 rounded-2xl font-black text-sm transition-all flex-shrink-0"
+                x-text="cat">
+            </button>
+        </template>
     </div>
 
     <!-- Article Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <template x-for="(article, index) in filteredArticles" :key="article.id">
-            <div class="glass-card glass-card-hover rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300 group reveal">
+            <div 
+                x-show="true"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                class="glass-card glass-card-hover rounded-3xl overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300 group">
                 <div class="h-56 relative overflow-hidden">
                     <img :src="article.image" :alt="article.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                     <div class="absolute top-4 left-4">
@@ -118,14 +123,18 @@
     </div>
 
     <!-- Empty State -->
-    <div x-show="filteredArticles.length === 0" class="glass-card p-20 text-center" style="display: none;">
+    <div x-show="filteredArticles.length === 0"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         class="glass-card p-20 text-center" style="display: none;">
         <div class="bg-white/80 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-luxury-alabas/70 luxury-shadow">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-gray-300"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
         </div>
         <h3 class="text-xl font-serif font-bold text-luxury-forest mb-2">Tidak ada edukasi ditemukan</h3>
         <p class="text-luxury-slate font-medium">Coba gunakan kata kunci lain atau reset filter Anda.</p>
         <button 
-            @click="searchQuery = ''; activeCategory = 'Semua'"
+            @click="searchQuery = ''; setCategory('Semua')"
             class="mt-6 bg-[#174413] text-white px-8 py-3 rounded-2xl font-bold shadow-md hover:bg-luxury-gold transition"
         >
             Reset Pencarian
@@ -141,6 +150,7 @@
 <script>
 function educationPage() {
     var source = @json($articles);
+    var cats = @json($categories);
 
     function doFilter(articles, query, category) {
         var q   = query.trim().toLowerCase();
@@ -159,6 +169,7 @@ function educationPage() {
     return {
         searchQuery:      '',
         activeCategory:   'Semua',
+        categories:       cats,
         allArticles:      source,
         filteredArticles: source.slice(),
 
@@ -167,9 +178,11 @@ function educationPage() {
             this.$watch('searchQuery', function() {
                 self.filteredArticles = doFilter(self.allArticles, self.searchQuery, self.activeCategory);
             });
-            this.$watch('activeCategory', function() {
-                self.filteredArticles = doFilter(self.allArticles, self.searchQuery, self.activeCategory);
-            });
+        },
+
+        setCategory: function(cat) {
+            this.activeCategory = cat;
+            this.filteredArticles = doFilter(this.allArticles, this.searchQuery, this.activeCategory);
         },
 
         handleShare: function(title) {

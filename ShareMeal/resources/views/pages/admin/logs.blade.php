@@ -15,6 +15,8 @@
             'report_dismiss' => ['label' => 'Laporan Diabaikan', 'class' => 'bg-gray-100 text-gray-750 border-gray-300/50', 'icon' => 'eye-off'],
             'report_warn' => ['label' => 'Peringatan Laporan', 'class' => 'bg-orange-50 text-orange-700 border-orange-200/50', 'icon' => 'alert-circle'],
             'report_block' => ['label' => 'Blokir Laporan', 'class' => 'bg-red-50 text-red-700 border-red-200/50', 'icon' => 'shield-alert'],
+            'feedback_delete' => ['label' => 'Hapus Feedback', 'class' => 'bg-red-50 text-red-700 border-red-200/50', 'icon' => 'trash-2'],
+            'feedback_update' => ['label' => 'Update Feedback', 'class' => 'bg-indigo-50 text-indigo-700 border-indigo-200/50', 'icon' => 'edit-3'],
             default => ['label' => ucwords(str_replace('_', ' ', $action)), 'class' => 'bg-gray-50 text-gray-700 border-gray-200/50', 'icon' => 'info']
         };
     }
@@ -53,6 +55,7 @@
                     <option value="user" {{ $actionType === 'user' ? 'selected' : '' }}>Moderasi User</option>
                     <option value="education" {{ $actionType === 'education' ? 'selected' : '' }}>Kelola Edukasi</option>
                     <option value="report" {{ $actionType === 'report' ? 'selected' : '' }}>Laporan Masalah</option>
+                    <option value="feedback" {{ $actionType === 'feedback' ? 'selected' : '' }}>Feedback Pengguna</option>
                 </select>
             </div>
         </form>

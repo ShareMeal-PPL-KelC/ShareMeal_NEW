@@ -444,7 +444,7 @@ class ShareMealState
         ];
     }
 
-    protected static function transformUser(User $user): array
+    public static function transformUser(User $user): array
     {
         return [
             'id' => $user->id,

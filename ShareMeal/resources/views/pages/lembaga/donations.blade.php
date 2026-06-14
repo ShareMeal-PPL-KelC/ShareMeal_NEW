@@ -412,7 +412,7 @@
                 </button>
             </div>
             
-            <form :action="'{{ route('lembaga.donations.claim', 'DONATION_ID') }}'.replace('DONATION_ID', selectedDonation?.id)" method="POST" class="space-y-8">
+            <form @submit.prevent="handleClaimSubmit($event)" :action="'{{ route('lembaga.donations.claim', 'DONATION_ID') }}'.replace('DONATION_ID', selectedDonation?.id)" method="POST" class="space-y-8">
                 @csrf
                 <div class="flex items-center gap-4 p-5 bg-purple-50 rounded-2xl border border-purple-100/50">
                     <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 shrink-0 shadow-sm">
@@ -439,7 +439,7 @@
                                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                                      <template x-for="slot in todaySlots()" :key="slot.value">
                                          <label class="relative group cursor-pointer">
-                                             <input type="radio" name="pickup_time" :value="slot.value" class="sr-only peer" required>
+                                             <input type="radio" name="pickup_time" :value="slot.value" class="sr-only peer">
                                              <div class="py-2 px-1 text-center rounded-xl border border-gray-200 peer-checked:border-purple-600 peer-checked:bg-purple-50 group-hover:border-purple-100 transition-all font-bold text-xs text-gray-600 peer-checked:text-purple-700 shadow-sm active:scale-95">
                                                  <span x-text="slot.time"></span>
                                              </div>
@@ -456,13 +456,22 @@
                                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                                      <template x-for="slot in tomorrowSlots()" :key="slot.value">
                                          <label class="relative group cursor-pointer">
-                                             <input type="radio" name="pickup_time" :value="slot.value" class="sr-only peer" required>
+                                             <input type="radio" name="pickup_time" :value="slot.value" class="sr-only peer">
                                              <div class="py-2 px-1 text-center rounded-xl border border-gray-200 peer-checked:border-purple-600 peer-checked:bg-purple-50 group-hover:border-purple-100 transition-all font-bold text-xs text-gray-600 peer-checked:text-purple-700 shadow-sm active:scale-95">
                                                  <span x-text="slot.time"></span>
                                              </div>
                                          </label>
                                      </template>
                                 </div>
+                            </div>
+                        </template>
+
+                        <!-- Empty State Jadwal Penjemputan -->
+                        <template x-if="todaySlots().length === 0 && tomorrowSlots().length === 0">
+                            <div class="p-6 bg-red-50/60 rounded-2xl border border-red-100/50 flex flex-col items-center text-center">
+                                <i data-lucide="clock" class="w-10 h-10 text-red-500 mb-2"></i>
+                                <span class="font-bold text-red-900 text-sm">Di Luar Jam Operasional</span>
+                                <span class="text-xs text-red-700/90 mt-1 max-w-sm leading-relaxed">Jadwal penjemputan tidak tersedia karena saat ini berada di luar jam operasional toko mitra.<br>Silakan coba lagi besok.</span>
                             </div>
                         </template>
                     </div>
@@ -826,6 +835,28 @@
                 setTimeout(() => {
                     if (window.lucide) window.lucide.createIcons();
                 }, 50);
+            },
+
+            handleClaimSubmit(e) {
+                if (this.todaySlots().length === 0 && this.tomorrowSlots().length === 0) {
+                    e.preventDefault();
+                    this.showClaimModal = false;
+                    this.warningTitle = 'Di Luar Jam Operasional';
+                    this.warningMessage = 'Maaf, donasi tidak dapat diklaim saat ini karena sudah di luar jam operasional toko mitra.\nPilihan jam penjemputan sudah tidak tersedia untuk hari ini maupun besok.\n\nSilakan coba lagi besok!';
+                    this.isWarningDialogOpen = true;
+                    return;
+                }
+                
+                const selectedTime = new FormData(e.target).get('pickup_time');
+                if (!selectedTime) {
+                    e.preventDefault();
+                    this.warningTitle = 'Pilih Waktu Penjemputan';
+                    this.warningMessage = 'Silakan pilih salah satu jadwal penjemputan yang tersedia terlebih dahulu.';
+                    this.isWarningDialogOpen = true;
+                    return;
+                }
+                
+                e.target.submit();
             },
 
             generateSlots(start, end, expiresAtStr) {
