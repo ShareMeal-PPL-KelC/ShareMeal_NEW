@@ -6,114 +6,27 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 
 class Pbi4VerifikasiAdminTest extends DuskTestCase
 {
-    public function createApplication()
+    use DatabaseMigrations;
+
+    protected function setUp(): void
     {
-        $basePath = dirname(__DIR__, 2);
-        $sqliteDatabase = str_replace('\\', '/', $basePath . '/database/testing.sqlite');
+        parent::setUp();
 
-        if (! file_exists($sqliteDatabase)) {
-            @touch($sqliteDatabase);
-        }
-
-        // Dynamically override the .env file on disk. This is necessary because the web server
-        // (started separately, e.g. via php artisan serve) reads the .env file on every request,
-        // and we need it to use the SQLite configuration and file-based sessions so it does not
-        // attempt to connect to a MySQL database that might not be running or accessible.
-        $envPath = $basePath . '/.env';
-        if (file_exists($envPath)) {
-            $envContent = file_get_contents($envPath);
-            
-            $replacements = [
-                'DB_CONNECTION' => 'sqlite',
-                'DB_DATABASE' => '"' . $sqliteDatabase . '"',
-                'SESSION_DRIVER' => 'file',
-                'CACHE_STORE' => 'array',
-                'DB_HOST' => '',
-                'DB_PORT' => '',
-                'DB_USERNAME' => '',
-                'DB_PASSWORD' => '',
-            ];
-
-            foreach ($replacements as $key => $value) {
-                if (preg_match("/^{$key}=/m", $envContent)) {
-                    $envContent = preg_replace("/^{$key}=.*$/m", "{$key}={$value}", $envContent);
-                } else {
-                    $envContent .= "\n{$key}={$value}";
-                }
-            }
-            
-            file_put_contents($envPath, $envContent);
-        }
-
-        $envOverrides = [
-            'APP_ENV' => 'testing',
-            'DB_CONNECTION' => 'sqlite',
-            'DB_DATABASE' => $sqliteDatabase,
-            'CACHE_DRIVER' => 'array',
-            'SESSION_DRIVER' => 'file',
-            'QUEUE_CONNECTION' => 'sync',
-        ];
-
-        foreach ($envOverrides as $key => $value) {
-            putenv("{$key}={$value}");
-            $_ENV[$key] = $value;
-            $_SERVER[$key] = $value;
-        }
-
-        $app = parent::createApplication();
-
-        $app['config']->set('app.env', 'testing');
-        $app['config']->set('database.default', 'sqlite');
-        $app['config']->set('database.connections.sqlite.database', $sqliteDatabase);
-        $app['config']->set('cache.default', 'array');
-        $app['config']->set('session.driver', 'file');
-        $app['config']->set('queue.default', 'sync');
-
-        // Configure sqlite_main connection to point to database.sqlite
-        $mainDbPath = $basePath . '/database/database.sqlite';
-        $app['config']->set('database.connections.sqlite_main', [
-            'driver' => 'sqlite',
-            'database' => $mainDbPath,
-            'prefix' => '',
-        ]);
-
-        try {
-            // Run migrations on testing database
-            $app->make(\Illuminate\Contracts\Console\Kernel::class)->call('migrate', ['--force' => true]);
-
-            // Seed Admin User in testing database
-            User::updateOrCreate(
-                ['email' => 'admin@sharemeal.id'],
-                [
-                    'name' => 'Admin ShareMeal',
-                    'password' => Hash::make('password123'),
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'is_verified' => true,
-                    'joined_at' => now(),
-                ]
-            );
-
-            // Seed Admin User in main database.sqlite database
-            User::on('sqlite_main')->updateOrCreate(
-                ['email' => 'admin@sharemeal.id'],
-                [
-                    'name' => 'Admin ShareMeal',
-                    'password' => Hash::make('password123'),
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'is_verified' => true,
-                    'joined_at' => now(),
-                ]
-            );
-        } catch (\Throwable $e) {
-            // Ignore if migration or seeding fails
-        }
-
-        return $app;
+        User::updateOrCreate(
+            ['email' => 'admin@sharemeal.id'],
+            [
+                'name' => 'Admin ShareMeal',
+                'password' => Hash::make('password123'),
+                'role' => 'admin',
+                'status' => 'active',
+                'is_verified' => true,
+                'joined_at' => now(),
+            ]
+        );
     }
 
     private function registerLembaga(Browser $browser, string $email): void
@@ -146,6 +59,7 @@ class Pbi4VerifikasiAdminTest extends DuskTestCase
     public function test_admin_can_approve_pending_lembaga(): void
     {
         $this->browse(function (Browser $browser) {
+            $browser->driver->manage()->deleteAllCookies();
             $email = 'lembaga_approve_' . time() . '_' . rand(1000, 9999) . '@example.com';
             
             // 1. Register a pending Lembaga
@@ -196,12 +110,14 @@ class Pbi4VerifikasiAdminTest extends DuskTestCase
             }
             $this->assertNotNull($verifiedUser);
             $this->assertEquals(1, $verifiedUser->is_verified);
+            $browser->blank();
         });
     }
 
     public function test_admin_can_reject_pending_lembaga(): void
     {
         $this->browse(function (Browser $browser) {
+            $browser->driver->manage()->deleteAllCookies();
             $email = 'lembaga_reject_' . time() . '_' . rand(1000, 9999) . '@example.com';
             
             // 1. Register another pending Lembaga
@@ -256,6 +172,7 @@ class Pbi4VerifikasiAdminTest extends DuskTestCase
             $this->assertNotNull($rejectedUser);
             $this->assertEquals(0, $rejectedUser->is_verified);
             $this->assertEquals('Dokumen Legalitas tidak sesuai dengan identitas organisasi.', $rejectedUser->verification_rejection_reason);
+            $browser->blank();
         });
     }
 }
