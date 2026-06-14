@@ -8,6 +8,9 @@ use Tests\DuskTestCase;
 
 class Pbi35PilihMetodePenerimaanMakanan extends DuskTestCase
 {
+    use DatabaseMigrations;
+    protected $seed = true;
+
     /**
      * Test PBI-35: Pemilihan Metode Penerimaan Makanan.
      *
