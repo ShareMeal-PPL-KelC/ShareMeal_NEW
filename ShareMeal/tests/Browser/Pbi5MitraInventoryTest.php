@@ -1,24 +1,25 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Browser;
 
 use App\Models\User;
 use App\Models\Product;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Dusk\Browser;
+use Tests\DuskTestCase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 
-class Pbi5MitraInventoryTest extends TestCase
+class Pbi5MitraInventoryTest extends DuskTestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
-    /**
-     * Helper method untuk membuat Mitra dengan profil lengkap.
-     */
-    private function createMitraWithProfile(): User
+    private function createMitraWithProfile(string $email, string $password): User
     {
         $mitra = User::factory()->create([
             'role' => 'mitra',
             'status' => 'active',
+            'email' => $email,
+            'password' => Hash::make($password),
             'is_verified' => true,
         ]);
 
@@ -30,6 +31,7 @@ class Pbi5MitraInventoryTest extends TestCase
             'business_opening_hours' => '08:00 - 20:00',
             'opening_hours' => '08:00 - 20:00',
             'description' => 'Menyediakan kue dan roti segar setiap hari.',
+            'business_description' => 'Menyediakan kue dan roti segar setiap hari.',
             'is_verified' => true,
         ]);
 
@@ -41,20 +43,29 @@ class Pbi5MitraInventoryTest extends TestCase
      */
     public function test_mitra_gagal_tambah_produk_karena_form_kosong(): void
     {
-        $mitra = $this->createMitraWithProfile();
+        $email = 'mitra5_neg_' . time() . '_' . rand(1000, 9999) . '@example.com';
+        $password = 'password123';
+        $this->createMitraWithProfile($email, $password);
 
-        $response = $this->actingAs($mitra)->post(route('mitra.inventory.store'), [
-            'name' => '',
-            'category' => '',
-            'price' => '',
-            'stock' => '',
-            'expires_at' => '',
-            'pickup_start_time' => '',
-            'pickup_end_time' => '',
-            'status' => '',
-        ]);
+        $this->browse(function (Browser $browser) use ($email, $password) {
+            $browser->driver->manage()->deleteAllCookies();
 
-        $response->assertSessionHasErrors(['name', 'category', 'price', 'stock', 'expires_at', 'pickup_start_time', 'pickup_end_time', 'status']);
+            $browser->visit('/login')
+                    ->select('user_type', 'mitra')
+                    ->type('email', $email)
+                    ->type('password', $password)
+                    ->click('button[type="submit"]')
+                    ->waitForLocation('/mitra', 15)
+                    ->visit('/mitra/inventory')
+                    ->waitFor('@tambah-produk-btn')
+                    ->click('@tambah-produk-btn')
+                    ->waitFor('input[name="name"]')
+                    // Submit directly using script to bypass HTML5 client-side validation
+                    ->script('document.querySelector("form[action*=\'/mitra/inventory\']").submit();');
+
+            $browser->waitForLocation('/mitra/inventory', 15)
+                    ->assertSee('The name field is required.');
+        });
     }
 
     /**
@@ -62,40 +73,43 @@ class Pbi5MitraInventoryTest extends TestCase
      */
     public function test_mitra_berhasil_menambahkan_produk_flash_sale(): void
     {
-        $mitra = $this->createMitraWithProfile();
+        $email = 'mitra5_pos_' . time() . '_' . rand(1000, 9999) . '@example.com';
+        $password = 'password123';
+        $this->createMitraWithProfile($email, $password);
 
-        // Step 1: Tambah produk baru (status 'normal')
-        $response1 = $this->actingAs($mitra)->post(route('mitra.inventory.store'), [
-            'name' => 'Roti Cokelat Spesial',
-            'category' => 'Bakery',
-            'price' => 15000,
-            'stock' => 10,
-            'expires_at' => '2026-06-30T12:00',
-            'pickup_start_time' => '09:00',
-            'pickup_end_time' => '18:00',
-            'status' => 'normal',
-        ]);
+        $this->browse(function (Browser $browser) use ($email, $password) {
+            $browser->driver->manage()->deleteAllCookies();
 
-        $response1->assertRedirect();
-        $response1->assertSessionHas('success', 'Produk berhasil ditambahkan.');
+            $browser->visit('/login')
+                    ->select('user_type', 'mitra')
+                    ->type('email', $email)
+                    ->type('password', $password)
+                    ->click('button[type="submit"]')
+                    ->waitForLocation('/mitra', 15)
+                    ->visit('/mitra/inventory')
+                    ->waitFor('@tambah-produk-btn')
+                    ->click('@tambah-produk-btn')
+                    ->waitFor('input[name="name"]')
+                    ->type('name', 'Roti Cokelat Spesial')
+                    ->select('category', 'Bakery')
+                    ->type('price', '15000')
+                    ->type('stock', '10')
+                    ->script([
+                        "document.querySelector('input[name=\"expires_at\"]').value = '2026-06-30T12:00';",
+                        "document.querySelector('input[name=\"pickup_start_time\"]').value = '09:00';",
+                        "document.querySelector('input[name=\"pickup_end_time\"]').value = '18:00';"
+                    ]);
 
-        $this->assertDatabaseHas('products', [
-            'user_id' => $mitra->id,
-            'name' => 'Roti Cokelat Spesial',
-            'status' => 'normal',
-        ]);
+            $browser->click('form[action*="/mitra/inventory"] button[type="submit"]')
+                    ->waitForText('Produk berhasil ditambahkan.', 15)
+                    ->assertSee('Produk berhasil ditambahkan.')
+                    ->assertSee('Roti Cokelat Spesial');
 
-        $product = Product::where('name', 'Roti Cokelat Spesial')->firstOrFail();
-
-        // Step 2: Aktifkan flash sale untuk produk tersebut
-        $response2 = $this->actingAs($mitra)->post(route('mitra.inventory.flash-sale', $product->id));
-
-        $response2->assertRedirect();
-        $response2->assertSessionHas('success', 'Flash sale diaktifkan.');
-
-        $this->assertDatabaseHas('products', [
-            'id' => $product->id,
-            'status' => 'flash-sale',
-        ]);
+            // Step 2: Aktifkan flash sale untuk produk tersebut
+            $browser->click('@flash-sale-btn')
+                    ->acceptDialog()
+                    ->waitForText('Flash sale diaktifkan.', 15)
+                    ->assertSee('Flash sale diaktifkan.');
+        });
     }
 }

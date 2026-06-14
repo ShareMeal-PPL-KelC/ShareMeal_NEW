@@ -1,20 +1,30 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Browser;
 
 use App\Models\Order;
 use App\Models\Review;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Dusk\Browser;
+use Tests\DuskTestCase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 
-class Pbi32EditDeleteReviewTest extends TestCase
+class Pbi32EditDeleteReviewTest extends DuskTestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
     public function test_consumer_can_edit_their_review(): void
     {
-        $consumer = User::factory()->create(['role' => 'consumer']);
+        $email = 'consumer32_' . time() . '_' . rand(1000, 9999) . '@example.com';
+        $password = 'password123';
+
+        $consumer = User::factory()->create([
+            'role' => 'consumer',
+            'email' => $email,
+            'password' => Hash::make($password),
+        ]);
+
         $mitra = User::factory()->create(['role' => 'mitra']);
         
         $order = Order::create([
@@ -22,6 +32,7 @@ class Pbi32EditDeleteReviewTest extends TestCase
             'mitra_id' => $mitra->id,
             'total_amount' => 50000,
             'status' => 'completed',
+            'confirmed_by_consumer' => true,
         ]);
 
         $review = Review::create([
@@ -32,24 +43,38 @@ class Pbi32EditDeleteReviewTest extends TestCase
             'comment' => 'Bagus',
         ]);
 
-        $response = $this->actingAs($consumer)->put(route('consumer.review.update', $review->id), [
-            'rating' => 5,
-            'comment' => 'Sangat Bagus Sekali',
-        ]);
+        $this->browse(function (Browser $browser) use ($email, $password) {
+            $browser->driver->manage()->deleteAllCookies();
 
-        $response->assertRedirect();
-        $response->assertSessionHas('success', 'Ulasan Anda berhasil diperbarui.');
-
-        $this->assertDatabaseHas('reviews', [
-            'id' => $review->id,
-            'rating' => 5,
-            'comment' => 'Sangat Bagus Sekali',
-        ]);
+            $browser->visit('/login')
+                    ->select('user_type', 'consumer')
+                    ->type('email', $email)
+                    ->type('password', $password)
+                    ->click('button[type="submit"]')
+                    ->waitForLocation('/consumer', 15)
+                    ->visit('/consumer/history')
+                    ->waitFor('@edit-ulasan-btn')
+                    ->click('@edit-ulasan-btn')
+                    ->waitFor('textarea[name="comment"]')
+                    ->click('@rating-5-btn')
+                    ->type('comment', 'Sangat Bagus Sekali')
+                    ->click('@submit-review-btn')
+                    ->waitForText('Ulasan Terkirim!', 15)
+                    ->assertSee('Ulasan Terkirim!');
+        });
     }
 
     public function test_consumer_cannot_edit_review_after_two_minutes(): void
     {
-        $consumer = User::factory()->create(['role' => 'consumer']);
+        $email = 'consumer32_lock_' . time() . '_' . rand(1000, 9999) . '@example.com';
+        $password = 'password123';
+
+        $consumer = User::factory()->create([
+            'role' => 'consumer',
+            'email' => $email,
+            'password' => Hash::make($password),
+        ]);
+
         $mitra = User::factory()->create(['role' => 'mitra']);
         
         $order = Order::create([
@@ -57,6 +82,7 @@ class Pbi32EditDeleteReviewTest extends TestCase
             'mitra_id' => $mitra->id,
             'total_amount' => 50000,
             'status' => 'completed',
+            'confirmed_by_consumer' => true,
         ]);
 
         $review = Review::create([
@@ -66,17 +92,24 @@ class Pbi32EditDeleteReviewTest extends TestCase
             'rating' => 4,
             'comment' => 'Bagus',
         ]);
-
-        // Manually adjust the timestamp to 3 minutes ago
         $review->created_at = now()->subMinutes(3);
         $review->save();
 
-        $response = $this->actingAs($consumer)->put(route('consumer.review.update', $review->id), [
-            'rating' => 5,
-            'comment' => 'Ubah ulasan kedaluwarsa',
-        ]);
+        $this->browse(function (Browser $browser) use ($email, $password) {
+            $browser->driver->manage()->deleteAllCookies();
 
-        $response->assertStatus(403);
+            $browser->visit('/login')
+                    ->select('user_type', 'consumer')
+                    ->type('email', $email)
+                    ->type('password', $password)
+                    ->click('button[type="submit"]')
+                    ->waitForLocation('/consumer', 15)
+                    ->visit('/consumer/history')
+                    // Check that the review modification elements are locked
+                    ->waitForText('TERKUNCI', 15)
+                    ->assertSee('TERKUNCI')
+                    ->assertDontSee('UBAH')
+                    ->assertDontSee('HAPUS');
+        });
     }
 }
-

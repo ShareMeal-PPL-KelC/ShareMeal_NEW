@@ -145,7 +145,7 @@
                         <!-- Action Buttons -->
                         <div class="flex gap-2">
                             <template x-if="product.status === 'normal' && product.stock > 0">
-                                <button @click="setFlashSale(product.id)" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition flex items-center justify-center gap-1.5 border border-orange-200/30">
+                                <button dusk="flash-sale-btn" @click="setFlashSale(product.id)" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-widest transition flex items-center justify-center gap-1.5 border border-orange-200/30">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                                     Flash Sale
                                 </button>
@@ -176,7 +176,7 @@
                             </template>
 
                             <!-- Donatable Auto Toggle -->
-                            <button @click="toggleDonation(product.id)" 
+                            <button dusk="toggle-donation-btn" @click="toggleDonation(product.id)" 
                                     :class="product.status === 'expired' || product.stock <= 0 ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed opacity-50' : (product.donatable ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-400 border-gray-200')" 
                                     :disabled="product.status === 'expired' || product.stock <= 0"
                                     class="w-12 h-12 rounded-xl flex items-center justify-center border transition" 
@@ -192,7 +192,7 @@
                             </button>
 
                             <!-- Delete Button -->
-                            <button @click="deleteProduct(product.id)" class="w-12 h-12 bg-gray-50 text-gray-400 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition">
+                            <button dusk="delete-produk-btn" @click="deleteProduct(product.id)" class="w-12 h-12 bg-gray-50 text-gray-400 border border-gray-200 rounded-xl flex items-center justify-center hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                             </button>
                         </div>

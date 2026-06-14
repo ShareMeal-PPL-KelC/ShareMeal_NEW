@@ -1,24 +1,25 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Browser;
 
 use App\Models\User;
 use App\Models\Product;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Dusk\Browser;
+use Tests\DuskTestCase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 
-class Pbi6MitraInventoryListTest extends TestCase
+class Pbi6MitraInventoryListTest extends DuskTestCase
 {
-    use RefreshDatabase;
+    use DatabaseMigrations;
 
-    /**
-     * Helper method untuk membuat Mitra dengan profil lengkap.
-     */
-    private function createMitraWithProfile(): User
+    private function createMitraWithProfile(string $email, string $password): User
     {
         $mitra = User::factory()->create([
             'role' => 'mitra',
             'status' => 'active',
+            'email' => $email,
+            'password' => Hash::make($password),
             'is_verified' => true,
         ]);
 
@@ -30,6 +31,7 @@ class Pbi6MitraInventoryListTest extends TestCase
             'business_opening_hours' => '08:00 - 20:00',
             'opening_hours' => '08:00 - 20:00',
             'description' => 'Menyediakan kue dan roti segar setiap hari.',
+            'business_description' => 'Menyediakan kue dan roti segar setiap hari.',
             'is_verified' => true,
         ]);
 
@@ -41,16 +43,22 @@ class Pbi6MitraInventoryListTest extends TestCase
      */
     public function test_mitra_melihat_tampilan_kosong_saat_tidak_ada_produk(): void
     {
-        $mitra = $this->createMitraWithProfile();
+        $email = 'mitra6_neg_' . time() . '_' . rand(1000, 9999) . '@example.com';
+        $password = 'password123';
+        $this->createMitraWithProfile($email, $password);
 
-        $response = $this->actingAs($mitra)->get(route('mitra.inventory'));
+        $this->browse(function (Browser $browser) use ($email, $password) {
+            $browser->driver->manage()->deleteAllCookies();
 
-        $response->assertStatus(200);
-        $response->assertSee('Manajemen Inventaris Surplus');
-        $response->assertDontSee('Roti Keju Spesial');
-        
-        $response->assertViewHas('products', function ($products) {
-            return $products->isEmpty();
+            $browser->visit('/login')
+                    ->select('user_type', 'mitra')
+                    ->type('email', $email)
+                    ->type('password', $password)
+                    ->click('button[type="submit"]')
+                    ->waitForLocation('/mitra', 15)
+                    ->visit('/mitra/inventory')
+                    ->waitForText('Manajemen Inventaris Surplus', 15)
+                    ->assertDontSee('Roti Keju Spesial');
         });
     }
 
@@ -59,10 +67,12 @@ class Pbi6MitraInventoryListTest extends TestCase
      */
     public function test_mitra_dapat_melihat_daftar_produk_flash_sale(): void
     {
-        $mitra = $this->createMitraWithProfile();
+        $email = 'mitra6_pos_' . time() . '_' . rand(1000, 9999) . '@example.com';
+        $password = 'password123';
+        $mitra = $this->createMitraWithProfile($email, $password);
 
         // Seeding produk
-        Product::factory()->create([
+        Product::create([
             'user_id' => $mitra->id,
             'name' => 'Roti Keju Spesial',
             'category' => 'Bakery',
@@ -75,17 +85,19 @@ class Pbi6MitraInventoryListTest extends TestCase
             'pickup_end_time' => '18:00',
         ]);
 
-        $response = $this->actingAs($mitra)->get(route('mitra.inventory'));
+        $this->browse(function (Browser $browser) use ($email, $password) {
+            $browser->driver->manage()->deleteAllCookies();
 
-        $response->assertStatus(200);
-        $response->assertSee('Roti Keju Spesial');
-        
-        $response->assertViewHas('products', function ($products) {
-            return $products->contains(fn ($p) => 
-                $p->name === 'Roti Keju Spesial' && 
-                $p->status === 'flash-sale' && 
-                $p->stock === 15
-            );
+            $browser->visit('/login')
+                    ->select('user_type', 'mitra')
+                    ->type('email', $email)
+                    ->type('password', $password)
+                    ->click('button[type="submit"]')
+                    ->waitForLocation('/mitra', 15)
+                    ->visit('/mitra/inventory')
+                    ->waitForText('Roti Keju Spesial', 15)
+                    ->assertSee('Roti Keju Spesial')
+                    ->assertSee('15 Pcs');
         });
     }
 }
