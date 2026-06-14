@@ -180,6 +180,20 @@
                                 </div>
                             </div>
 
+                            @php
+                                $earliestExpiry = $t->items
+                                    ->filter(fn($i) => $i->product && $i->product->expires_at)
+                                    ->map(fn($i) => $i->product->expires_at)
+                                    ->sort()
+                                    ->first();
+                            @endphp
+                            @if($earliestExpiry)
+                                <div class="flex items-center gap-2 text-orange-500">
+                                    <i data-lucide="clock" class="w-4 h-4 shrink-0"></i>
+                                    <span class="text-sm font-medium">Layak Konsumsi s/d: {{ \Carbon\Carbon::parse($earliestExpiry)->format('d M Y, H:i') }}</span>
+                                </div>
+                            @endif
+
                             <div class="grid grid-cols-2 gap-4 pt-3 border-t border-luxury-alabas/40">
                                 <div>
                                     <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1">Total Pembayaran</span>

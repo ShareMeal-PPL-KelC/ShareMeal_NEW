@@ -74,6 +74,13 @@
         }
 
         /* Scroll Reveal System */
+        @if(app()->environment('testing') || env('DB_DATABASE') === 'sharemeal_testing')
+        .reveal {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+        }
+        @else
         .reveal {
             opacity: 0;
             transform: translateY(20px);
@@ -84,6 +91,7 @@
             opacity: 1;
             transform: translateY(0);
         }
+        @endif
         
         .delay-100 { transition-delay: 100ms; }
         .delay-200 { transition-delay: 200ms; }

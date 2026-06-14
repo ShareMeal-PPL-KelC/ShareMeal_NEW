@@ -21,15 +21,20 @@ class AutoDonationService
             return ['status' => 'skipped', 'message' => 'Recently processed'];
         }
 
-        $results = [
-            'expired' => $this->markExpiredProducts($mitraId),
-            'donated' => $this->moveDueProducts($mitraId),
-        ];
+        try {
+            $results = [
+                'expired' => $this->markExpiredProducts($mitraId),
+                'donated' => $this->moveDueProducts($mitraId),
+            ];
 
-        // Set throttle for 5 minutes
-        Cache::put($cacheKey, true, now()->addMinutes(5));
+            // Set throttle for 5 minutes
+            Cache::put($cacheKey, true, now()->addMinutes(5));
 
-        return $results;
+            return $results;
+        } catch (\Exception $e) {
+            \Log::error('Error in AutoDonationService processProducts: ' . $e->getMessage());
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
     }
 
     public function markExpiredProducts(?int $mitraId = null): int

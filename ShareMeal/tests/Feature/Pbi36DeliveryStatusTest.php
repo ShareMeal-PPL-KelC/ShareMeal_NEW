@@ -1,74 +1,134 @@
 <?php
 
-namespace Tests\Browser;
+namespace Tests\Feature;
 
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Laravel\Dusk\Browser;
-use Tests\DuskTestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-class Pbi12MelihatPesananMasukTest extends DuskTestCase
+class Pbi36DeliveryStatusTest extends TestCase
 {
-    use DatabaseMigrations;
+    use RefreshDatabase;
 
-    /**
-     * [POSITIF] Mitra bisa melihat pesanan yang sudah ada di database.
-     */
-    public function test_mitra_berhasil_melihat_pesanan_masuk(): void
+    public function test_mitra_can_update_order_to_ready(): void
     {
-        $this->browse(function (Browser $browser) {
-            // --- LANGKAH 1: SIAPKAN DATA (Tanpa Browser) ---
-            // Buat Mitra
-            $mitra = User::factory()->create([
-                'role' => 'mitra',
-                'email' => 'mitra@example.com'
-            ]);
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'pending',
+            'receiving_method' => 'delivery'
+        ]);
 
-            // Buat Konsumen
-            $consumer = User::factory()->create([
-                'role' => 'consumer',
-                'name' => 'Budi Santoso'
-            ]);
+        $response = $this->actingAs($mitra)->post(route('mitra.orders.update-status', $order->id), [
+            'status' => 'ready'
+        ]);
 
-            // Buat Produk
-            $product = Product::factory()->create([
-                'user_id' => $mitra->id,
-                'name' => 'Roti Gandum'
-            ]);
+        $response->assertSessionHas('success');
+        $this->assertEquals('ready', $order->fresh()->status);
+    }
 
-            // Buat Pesanan Langsung di Database
-            $order = Order::create([
-                'customer_id' => $consumer->id,
-                'mitra_id' => $mitra->id,
-                'total_amount' => 15000,
-                'status' => 'pending',
-                'payment_method' => 'qris',
-                'receiving_method' => 'pickup'
-            ]);
+    public function test_mitra_can_update_delivery_order_to_shipping(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'ready',
+            'receiving_method' => 'delivery'
+        ]);
 
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $product->id,
-                'quantity' => 1,
-                'price' => 15000
-            ]);
+        $response = $this->actingAs($mitra)->post(route('mitra.orders.update-status', $order->id), [
+            'status' => 'shipping'
+        ]);
 
-            // --- LANGKAH 2: TEST UI (Pakai Dusk) ---
-            $browser->visit('/login')
-                ->select('user_type', 'mitra')
-                ->type('email', 'mitra@example.com')
-                ->type('password', 'password') // pastikan factory passwordnya 'password'
-                ->press('Masuk')
-                ->waitForLocation('/mitra'); // dashboard mitra
+        $this->assertEquals('shipping', $order->fresh()->status);
+    }
 
-            $browser->visit('/mitra/orders')
-                ->waitForText('Daftar Pesanan')
-                ->assertSee('Budi Santoso')
-                ->assertSee('Roti Gandum')
-                ->assertSee('pending');
-        });
+    public function test_mitra_can_cancel_order(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'pending'
+        ]);
+
+        $response = $this->actingAs($mitra)->post(route('mitra.orders.update-status', $order->id), [
+            'status' => 'cancelled',
+            'cancel_reason' => 'Stok habis'
+        ]);
+
+        $this->assertEquals('cancelled', $order->fresh()->status);
+        $this->assertEquals('Stok habis', $order->fresh()->cancel_reason);
+    }
+
+    public function test_mitra_cannot_update_others_order(): void
+    {
+        $mitra1 = User::factory()->create(['role' => 'mitra']);
+        $mitra2 = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra1->id,
+            'total_amount' => 50000,
+            'status' => 'pending'
+        ]);
+
+        $response = $this->actingAs($mitra2)->post(route('mitra.orders.update-status', $order->id), [
+            'status' => 'ready'
+        ]);
+
+        $response->assertStatus(404);
+        $this->assertEquals('pending', $order->fresh()->status);
+    }
+
+    public function test_notification_sent_when_status_updated(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'pending'
+        ]);
+
+        $this->actingAs($mitra)->post(route('mitra.orders.update-status', $order->id), [
+            'status' => 'ready'
+        ]);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $consumer,
+            \App\Notifications\OrderStatusUpdated::class
+        );
+    }
+
+    public function test_consumer_can_confirm_delivery_order_completion(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $consumer = User::factory()->create(['role' => 'consumer']);
+        $order = Order::create([
+            'customer_id' => $consumer->id,
+            'mitra_id' => $mitra->id,
+            'total_amount' => 50000,
+            'status' => 'completed',
+            'receiving_method' => 'delivery',
+            'confirmed_by_consumer' => false
+        ]);
+
+        $response = $this->actingAs($consumer)->post(route('consumer.orders.confirm-complete', $order->id));
+
+        $response->assertRedirect();
+        $this->assertTrue((bool)$order->fresh()->confirmed_by_consumer);
     }
 }

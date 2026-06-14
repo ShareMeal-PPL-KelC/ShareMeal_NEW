@@ -105,6 +105,20 @@
                                 </template>
                             </div>
                             <p class="text-sm text-gray-400 font-medium mt-2" x-text="'Waktu Pesan: ' + order.orderTime"></p>
+                            <template x-if="order.items && order.items.some(i => i.product && i.product.expires_at)">
+                                <p class="text-sm text-orange-500 font-medium flex items-center gap-1 mt-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    <span x-text="'Layak Konsumsi s/d: ' + (() => {
+                                        const dates = order.items
+                                            .filter(i => i.product && i.product.expires_at)
+                                            .map(i => new Date(i.product.expires_at));
+                                        if (!dates.length) return '-';
+                                        const earliest = new Date(Math.min(...dates));
+                                        return earliest.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                                            + ', ' + earliest.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                                    })()"></span>
+                                </p>
+                            </template>
                         </div>
                         <div class="text-right">
                             <div class="text-3xl font-black text-green-600 leading-none" x-text="'Rp ' + parseInt(order.total).toLocaleString('id-ID')"></div>

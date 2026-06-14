@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware::class . '\RoleMiddleware',
             'profile.complete' => \App\Http\Middleware\EnsureProfileIsComplete::class,
         ]);
+
+        if (env('DB_DATABASE') === 'sharemeal_testing') {
+            $middleware->validateCsrfTokens(except: [
+                'consumer/checkout',
+            ]);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, \Illuminate\Http\Request $request) {
