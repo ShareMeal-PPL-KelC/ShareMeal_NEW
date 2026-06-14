@@ -262,9 +262,15 @@
                             @else
                                 @if($t->status === 'shipping' && $t->receiving_method === 'delivery')
                                     <!-- Live Map Tracking -->
-                                    <div class="space-y-3 pt-4 border-t border-luxury-alabas/40">
-                                        <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block">Lokasi Kurir (Live Map)</span>
-                                        <div class="relative w-full h-40 rounded-2xl border border-luxury-alabas/40 bg-slate-50 overflow-hidden shadow-inner flex items-center justify-center">
+                                    <div class="space-y-3 pt-4 border-t border-luxury-alabas/40" x-data="{ showModal: false }">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block">Lokasi Kurir (Live Map)</span>
+                                            <button @click="showModal = true" class="text-[8px] font-black text-luxury-forest hover:text-luxury-gold uppercase tracking-wider flex items-center gap-1 transition-all duration-300">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                                Perbesar Peta
+                                            </button>
+                                        </div>
+                                        <div @click="showModal = true" class="relative w-full h-40 rounded-2xl border border-luxury-alabas/40 bg-slate-50 overflow-hidden shadow-inner flex items-center justify-center cursor-pointer hover:border-luxury-gold/50 hover:shadow-md transition-all duration-500 group">
                                             <!-- Simulated Map Grid & Streets -->
                                             <div class="absolute inset-0 opacity-[0.07] pointer-events-none" style="background-image: radial-gradient(circle, #0f172a 1.5px, transparent 1.5px); background-size: 16px 16px;"></div>
                                             
@@ -307,6 +313,14 @@
                                             <div class="absolute right-2.5 bottom-2.5 bg-white/95 backdrop-blur-sm border border-slate-100 px-2 py-0.5 rounded text-[8px] font-black text-red-800 shadow-sm flex items-center gap-1">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Rumah Anda
                                             </div>
+
+                                            <!-- Hover Overlay -->
+                                            <div class="absolute inset-0 bg-luxury-forest/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                                <span class="bg-white/95 backdrop-blur-sm px-3.5 py-2 rounded-xl text-[10px] font-black text-luxury-forest shadow-md border border-slate-100 flex items-center gap-1.5 transform scale-90 group-hover:scale-100 transition-all duration-300">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                                    Perbesar Peta
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <!-- Driver Info Card -->
@@ -326,10 +340,160 @@
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                                 </a>
                                                 <a href="https://wa.me/628123456789" target="_blank" class="p-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-250/30 rounded-lg text-emerald-700 transition" title="Kirim WhatsApp">
-                                                    <svg xmlns="http://www.w3.org/250/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                                    <svg xmlns="http://www.w2.50/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                                                 </a>
                                             </div>
                                         </div>
+
+                                        <!-- Zoom Map Modal -->
+                                        <template x-teleport="body">
+                                            <div x-show="showModal" 
+                                                 class="fixed inset-0 z-[999] flex items-center justify-center p-4 md:p-6"
+                                                 x-transition:enter="transition ease-out duration-300"
+                                                 x-transition:enter-start="opacity-0"
+                                                 x-transition:enter-end="opacity-100"
+                                                 x-transition:leave="transition ease-in duration-200"
+                                                 x-transition:leave-start="opacity-100"
+                                                 x-transition:leave-end="opacity-0"
+                                                 style="display: none;">
+                                                
+                                                <!-- Backdrop -->
+                                                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-md" @click="showModal = false"></div>
+                                                
+                                                <!-- Modal Content -->
+                                                <div class="relative w-full max-w-4xl bg-white rounded-[2.5rem] border border-luxury-alabas/40 shadow-2xl overflow-hidden flex flex-col md:flex-row h-[80vh] md:h-[550px] transform transition-all"
+                                                     x-show="showModal"
+                                                     x-transition:enter="transition ease-out duration-300"
+                                                     x-transition:enter-start="scale-95 translate-y-4"
+                                                     x-transition:enter-end="scale-100 translate-y-0"
+                                                     x-transition:leave="transition ease-in duration-200"
+                                                     x-transition:leave-start="scale-100 translate-y-0"
+                                                     x-transition:leave-end="scale-95 translate-y-4">
+                                                    
+                                                    <!-- Close button -->
+                                                    <button @click="showModal = false" class="absolute top-4 right-4 z-50 p-2.5 bg-white/95 hover:bg-white text-luxury-forest hover:text-luxury-gold rounded-full shadow-md transition-all duration-300 border border-slate-100 active:scale-95">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                    </button>
+                                                    
+                                                    <!-- Left Side: Interactive Map Grid (60%) -->
+                                                    <div class="relative flex-1 bg-slate-50 overflow-hidden flex items-center justify-center h-[45%] md:h-full">
+                                                        <!-- Map Grid background -->
+                                                        <div class="absolute inset-0 opacity-[0.08]" style="background-image: radial-gradient(circle, #0f172a 1.5px, transparent 1.5px); background-size: 20px 20px;"></div>
+                                                        
+                                                        <!-- Animated Radar Scan Ring -->
+                                                        <div class="absolute w-[450px] h-[450px] border border-emerald-500/10 rounded-full animate-ping pointer-events-none" style="animation-duration: 4s;"></div>
+                                                        <div class="absolute w-[200px] h-[200px] border border-emerald-500/20 rounded-full animate-ping pointer-events-none" style="animation-duration: 2.5s;"></div>
+                                                        
+                                                        <!-- Detailed Custom SVG Road Network -->
+                                                        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="none">
+                                                            <!-- Roads -->
+                                                            <path d="M -50 250 Q 250 80, 500 350 T 850 150" fill="none" stroke="#cbd5e1" stroke-width="24" stroke-linecap="round" opacity="0.6" />
+                                                            <path d="M 150 -50 V 650" fill="none" stroke="#cbd5e1" stroke-width="20" stroke-linecap="round" opacity="0.6" />
+                                                            <path d="M 600 -50 V 650" fill="none" stroke="#cbd5e1" stroke-width="20" stroke-linecap="round" opacity="0.6" />
+                                                            <path d="M -50 450 H 850" fill="none" stroke="#cbd5e1" stroke-width="18" stroke-linecap="round" opacity="0.6" />
+                                                            <path d="M 150 200 H 600" fill="none" stroke="#cbd5e1" stroke-width="14" stroke-linecap="round" opacity="0.6" />
+                                                            
+                                                            <!-- Emerald Route Line -->
+                                                            <path d="M 150 160 Q 250 80, 500 350 T 600 450" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="16 12" class="delivery-route-line" />
+                                                            
+                                                            <!-- Store/Mitra Pin -->
+                                                            <circle cx="150" cy="160" r="14" fill="#10b981" />
+                                                            <circle cx="150" cy="160" r="14" fill="#10b981" fill-opacity="0.3">
+                                                                <animate attributeName="r" values="14;30" dur="1.8s" repeatCount="indefinite" />
+                                                                <animate attributeName="fill-opacity" values="0.3;0" dur="1.8s" repeatCount="indefinite" />
+                                                            </circle>
+                                                            
+                                                            <!-- User House Pin -->
+                                                            <circle cx="600" cy="450" r="14" fill="#ef4444" />
+                                                            <circle cx="600" cy="450" r="14" fill="#ef4444" fill-opacity="0.3">
+                                                                <animate attributeName="r" values="14;30" dur="1.8s" repeatCount="indefinite" />
+                                                                <animate attributeName="fill-opacity" values="0.3;0" dur="1.8s" repeatCount="indefinite" />
+                                                            </circle>
+                                                        </svg>
+                                                        
+                                                        <!-- Moving Courier Icon on Larger Path -->
+                                                        <div class="absolute w-14 h-14 rounded-full bg-luxury-forest text-white border-4 border-white shadow-xl flex items-center justify-center animate-[courier-travel_12s_linear_infinite]" 
+                                                             style="left: 0; top: 0; offset-path: path('M 150 160 Q 250 80, 500 350 T 600 450'); offset-rotate: auto; z-index: 20;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><rect x="1" y="3" width="15" height="13" rx="2" ry="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                                                        </div>
+                                                        
+                                                        <!-- Live Pins Overlaying labels -->
+                                                        <div class="absolute" style="left: 20%; top: 25%;">
+                                                            <div class="bg-emerald-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1.5 whitespace-nowrap">
+                                                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                                                                <span>{{ $t->store }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="absolute" style="left: 70%; top: 78%;">
+                                                            <div class="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-md flex items-center gap-1.5 whitespace-nowrap">
+                                                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                                                                <span>Rumah Anda</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Right Side: Courier Detail & Telemetry (40%) -->
+                                                    <div class="w-full md:w-[320px] bg-slate-950 text-white p-6 md:p-8 flex flex-col justify-between h-[55%] md:h-full border-t md:border-t-0 md:border-l border-slate-800/80">
+                                                        <div class="space-y-6">
+                                                            <!-- Header -->
+                                                            <div>
+                                                                <span class="text-[9px] font-black text-luxury-gold uppercase tracking-[0.3em] block mb-1">Status Pengiriman</span>
+                                                                <h4 class="text-xl font-serif font-black text-white flex items-center gap-2">
+                                                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                                    Dalam Perjalanan
+                                                                </h4>
+                                                            </div>
+                                                            
+                                                            <!-- Courier Profile -->
+                                                            <div class="flex items-center gap-4 p-4 bg-slate-900/60 rounded-2xl border border-slate-850">
+                                                                <div class="w-12 h-12 rounded-xl bg-luxury-gold text-slate-950 flex items-center justify-center font-serif font-black text-lg shadow-md">
+                                                                    RH
+                                                                </div>
+                                                                <div>
+                                                                    <div class="text-xs font-black text-slate-400 uppercase tracking-wider">Kurir Pengirim</div>
+                                                                    <div class="text-base font-bold text-white">Rian Hidayat</div>
+                                                                    <div class="text-[10px] font-semibold text-luxury-gold">Honda Beat • D 3192 ACJ</div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Live Telemetry Stats -->
+                                                            <div class="grid grid-cols-2 gap-3">
+                                                                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+                                                                    <div class="text-[9px] font-bold text-slate-400 uppercase">Sisa Jarak</div>
+                                                                    <div class="text-sm font-black text-emerald-400 mt-1">1.2 KM</div>
+                                                                </div>
+                                                                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+                                                                    <div class="text-[9px] font-bold text-slate-400 uppercase">Estimasi Tiba</div>
+                                                                    <div class="text-sm font-black text-luxury-gold mt-1">5 Menit</div>
+                                                                </div>
+                                                                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+                                                                    <div class="text-[9px] font-bold text-slate-400 uppercase">Kecepatan</div>
+                                                                    <div class="text-sm font-black text-blue-400 mt-1">24 KM/H</div>
+                                                                </div>
+                                                                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+                                                                    <div class="text-[9px] font-bold text-slate-400 uppercase">Suhu Box</div>
+                                                                    <div class="text-sm font-black text-orange-400 mt-1">62 °C</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Interactive Chat Mockup -->
+                                                        <div class="pt-4 border-t border-slate-800/80">
+                                                            <div class="flex gap-2">
+                                                                <a href="tel:08123456789" class="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-2 rounded-xl text-[10px] uppercase tracking-wider transition-all shadow-md active:scale-95">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                                                    Telepon
+                                                                </a>
+                                                                <a href="https://wa.me/628123456789" target="_blank" class="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-2 rounded-xl text-[10px] uppercase tracking-wider transition-all border border-slate-700 shadow-md active:scale-95">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                                                    Chat
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                 @endif
 

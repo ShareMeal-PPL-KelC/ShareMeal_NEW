@@ -10,6 +10,17 @@ class Product extends Model
 {
     use HasFactory;
 
+    protected static function booted()
+    {
+        static::updated(function (Product $product) {
+            if ($product->wasChanged('stock') && $product->stock < 5 && $product->getOriginal('stock') >= 5) {
+                if ($product->user) {
+                    $product->user->notify(new \App\Notifications\LowStockNotification($product));
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'name',

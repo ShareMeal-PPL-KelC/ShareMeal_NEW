@@ -25,7 +25,7 @@ class NewProblemReportNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     /**
@@ -55,6 +55,7 @@ class NewProblemReportNotification extends Notification
             'message' => "Laporan baru dari {$reporterName} mengenai '{$issueText}'. Silakan tinjau laporan ini segera.",
             'type' => 'error',
             'report_id' => $this->report->id,
+            'action_url' => route('admin.problem-reports.index'),
         ];
     }
 }

@@ -106,6 +106,12 @@
                             HABIS
                         </span>
                     </template>
+                    <template x-if="product.status !== 'expired' && product.stock > 0 && product.stock < 5">
+                        <span class="absolute top-4 left-4 bg-amber-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1 animate-pulse">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="stroke-[3]"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                            Stok Menipis
+                        </span>
+                    </template>
                 </div>
 
                 <!-- Product Details -->
@@ -138,7 +144,12 @@
                             </div>
                             <div class="text-right">
                                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Stok Tersedia</div>
-                                <div class="text-xl font-black text-gray-900 mt-1" x-text="product.stock + ' Pcs'"></div>
+                                <div class="text-xl font-black mt-1 flex items-center justify-end gap-1" :class="product.stock > 0 && product.stock < 5 ? 'text-amber-600' : 'text-gray-900'">
+                                    <template x-if="product.stock > 0 && product.stock < 5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500 animate-bounce stroke-[3]"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+                                    </template>
+                                    <span x-text="product.stock + ' Pcs'"></span>
+                                </div>
                             </div>
                         </div>
 

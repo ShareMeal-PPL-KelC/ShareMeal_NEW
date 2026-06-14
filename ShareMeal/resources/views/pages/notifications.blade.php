@@ -47,8 +47,8 @@
                                 <div class="w-12 h-12 bg-emerald-100/70 border border-emerald-200 rounded-2xl flex items-center justify-center text-[#10B981] shadow-sm">
                                     <i data-lucide="check-circle" class="w-6 h-6 stroke-[2]"></i>
                                 </div>
-                            @elseif(($notification->data['status'] ?? '') == 'cancelled')
-                                <div class="w-12 h-12 bg-red-100/70 border border-red-200 rounded-2xl flex items-center justify-center text-red-600 shadow-sm">
+                            @elseif(($notification->data['status'] ?? '') == 'cancelled' || ($notification->data['status'] ?? '') == 'expired' || ($notification->data['type'] ?? '') == 'error')
+                                <div class="w-12 h-12 bg-red-100/70 border border-red-200 rounded-2xl flex items-center justify-center text-red-600 shadow-sm animate-pulse">
                                     <i data-lucide="x-circle" class="w-6 h-6 stroke-[2]"></i>
                                 </div>
                             @elseif(($notification->data['type'] ?? '') == 'warning')
