@@ -112,4 +112,20 @@ class Pbi45NotifikasiPeringatanDanPembatalanTest extends DuskTestCase
                     ->assertDontSee('Tandai Dibaca');
         });
     }
+
+    public function test_negative_banner_tidak_muncul_untuk_user_aktif(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $user = User::factory()->create([
+                'role' => 'consumer',
+                'status' => 'active'
+            ]);
+
+            $browser->loginAs($user)
+                    ->visit('/consumer')
+                    ->assertDontSee('Peringatan: Akun Anda mendapatkan peringatan')
+                    ->assertDontSee('AKSES DIBATASI: Akun Anda telah diblokir');
+        });
+    }
 }
+

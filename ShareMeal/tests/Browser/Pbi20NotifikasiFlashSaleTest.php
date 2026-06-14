@@ -99,4 +99,74 @@ class Pbi20NotifikasiFlashSaleTest extends DuskTestCase
                     ->assertSee('Roti Manis PBI 20');
         });
     }
+
+    public function test_negative_konsumen_tidak_menerima_notifikasi_jika_produk_bukan_flash_sale(): void
+    {
+        $this->browse(function (Browser $browser) {
+            // Setup Mitra
+            $mitra = User::factory()->create([
+                'role' => 'mitra',
+                'name' => 'Resto Berkah PBI 20 Neg',
+                'is_verified' => true,
+            ]);
+
+            UserProfile::create([
+                'user_id' => $mitra->id,
+                'business_name' => 'Resto Berkah PBI 20 Neg',
+                'business_type' => 'Bakery',
+                'business_address' => 'Jl. Testing No. 789',
+                'business_contact' => '08123456781',
+                'business_opening_hours' => '08:00 - 20:00',
+                'business_description' => 'Toko roti normal.',
+                'phone' => '08123456781',
+                'address' => 'Jl. Testing No. 789',
+                'opening_hours' => '08:00 - 20:00'
+            ]);
+
+            $store = Store::create([
+                'owner_user_id' => $mitra->id,
+                'name' => 'Resto Berkah PBI 20 Neg',
+                'category' => 'Bakery',
+                'address' => 'Jl. Testing No. 789',
+                'rating' => 4.0,
+                'reviews_count' => 0
+            ]);
+            
+            $consumer = User::factory()->create([
+                'role' => 'consumer',
+                'name' => 'Budi Konsumen Neg'
+            ]);
+
+            // Hubungkan sebagai favorite store (seperti skenario positif)
+            DB::table('favorite_stores')->insert([
+                'user_id' => $consumer->id,
+                'store_id' => $store->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Mitra buat produk normal (bukan flash sale)
+            $browser->loginAs($mitra)
+                    ->visit('/mitra/inventory');
+            
+            Product::create([
+                'user_id' => $mitra->id,
+                'name' => 'Roti Normal PBI 20 Neg',
+                'category' => 'Bakery',
+                'price' => 12000,
+                'stock' => 10,
+                'status' => 'normal', // status normal, bukan flash-sale
+                'expires_at' => now()->addHours(24),
+                'pickup_start_time' => '08:00',
+                'pickup_end_time' => '20:00'
+            ]);
+
+            // Konsumen cek notifikasi (tidak boleh ada notif flash sale untuk produk ini)
+            $browser->loginAs($consumer)
+                    ->visitRoute('notifications.index')
+                    ->assertDontSee('Promo flash sale')
+                    ->assertDontSee('Roti Normal PBI 20 Neg');
+        });
+    }
 }
+

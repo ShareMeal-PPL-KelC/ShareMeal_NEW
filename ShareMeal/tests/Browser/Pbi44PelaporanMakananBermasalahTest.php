@@ -61,4 +61,38 @@ class Pbi44PelaporanMakananBermasalahTest extends DuskTestCase
             $browser->assertPathIs('/consumer/history');
         });
     }
+
+    public function test_negative_konsumen_tidak_bisa_melaporkan_makanan_pesanan_orang_lain(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $mitra = User::factory()->create(['role' => 'mitra', 'is_verified' => true]);
+            $consumerA = User::factory()->create(['role' => 'consumer']);
+            $consumerB = User::factory()->create(['role' => 'consumer']);
+
+            $order = Order::create([
+                'customer_id' => $consumerB->id, // Pesanan milik Consumer B
+                'mitra_id' => $mitra->id,
+                'total_amount' => 50000,
+                'status' => 'completed',
+                'confirmed_by_consumer' => true,
+                'receiving_method' => 'pickup',
+                'pickup_start_time' => '08:00',
+                'pickup_end_time' => '20:00'
+            ]);
+
+            $browser->loginAs($consumerA)
+                    ->visit('/consumer/history');
+
+            // Coba panggil submit pelaporan masalah untuk order_id milik orang lain
+            $response = $this->actingAs($consumerA)->post(route('consumer.report.submit'), [
+                'order_id' => $order->id,
+                'issue_type' => 'expired',
+                'description' => 'Mencoba melaporkan pesanan orang lain.'
+            ]);
+
+            // Harus mendapatkan status error 404 (ModelNotFoundException) karena database mencocokkan customer_id
+            $response->assertStatus(404);
+        });
+    }
 }
+

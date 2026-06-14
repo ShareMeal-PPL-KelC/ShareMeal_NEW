@@ -103,4 +103,32 @@ class Pbi43NotifikasiPerubahanStatusPesananTest extends DuskTestCase
                     ->assertSee('Pesanan Anda sedang diproses.');
         });
     }
+
+    public function test_negative_konsumen_tidak_menerima_notifikasi_status_pesanan_orang_lain(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $mitra = User::factory()->create(['role' => 'mitra', 'is_verified' => true]);
+            $consumerA = User::factory()->create(['role' => 'consumer']);
+            $consumerB = User::factory()->create(['role' => 'consumer']);
+
+            $order = Order::create([
+                'customer_id' => $consumerB->id,
+                'mitra_id' => $mitra->id,
+                'total_amount' => 45000,
+                'status' => 'pending',
+                'receiving_method' => 'pickup',
+                'pickup_start_time' => '08:00',
+                'pickup_end_time' => '20:00'
+            ]);
+
+            // Status B diupdate, tapi Consumer A yang cek notifikasi
+            $order->update(['status' => 'ready']);
+
+            $browser->loginAs($consumerA)
+                    ->visitRoute('notifications.index')
+                    ->assertDontSee('Update Status Pesanan')
+                    ->assertDontSee('Pesanan Anda sudah siap diambil!');
+        });
+    }
 }
+

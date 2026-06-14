@@ -84,4 +84,31 @@ class Pbi21NotifikasiStatusPesananTest extends DuskTestCase
                     ->assertSee('Pesanan Anda sudah siap diambil');
         });
     }
+
+    public function test_negative_konsumen_tidak_menerima_notifikasi_pesanan_orang_lain(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $mitra = User::factory()->create(['role' => 'mitra', 'is_verified' => true]);
+            $consumerA = User::factory()->create(['role' => 'consumer', 'name' => 'Konsumen A']);
+            $consumerB = User::factory()->create(['role' => 'consumer', 'name' => 'Konsumen B']);
+
+            // Buat pesanan untuk Konsumen B
+            Order::create([
+                'customer_id' => $consumerB->id,
+                'mitra_id' => $mitra->id,
+                'total_amount' => 30000,
+                'status' => 'pending',
+                'receiving_method' => 'pickup',
+                'pickup_start_time' => '08:00',
+                'pickup_end_time' => '20:00'
+            ]);
+
+            // Login sebagai Konsumen A dan pastikan tidak melihat notifikasi pesanan Konsumen B
+            $browser->loginAs($consumerA)
+                    ->visitRoute('notifications.index')
+                    ->assertDontSee('Update Status Pesanan')
+                    ->assertDontSee('Pesanan Anda sedang menunggu konfirmasi');
+        });
+    }
 }
+

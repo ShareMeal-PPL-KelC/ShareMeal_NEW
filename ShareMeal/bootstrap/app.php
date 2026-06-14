@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         if (env('DB_DATABASE') === 'sharemeal_testing') {
             $middleware->validateCsrfTokens(except: [
                 'consumer/checkout',
+                'consumer/report',
             ]);
         }
     })

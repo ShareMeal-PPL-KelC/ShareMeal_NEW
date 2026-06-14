@@ -81,4 +81,46 @@ class Pbi23NotifikasiKetersediaanDonasiLembagaTest extends DuskTestCase
                     ->assertSee('Nasi Kotak Ayam Bakar');
         });
     }
+
+    public function test_negative_non_lembaga_tidak_menerima_notifikasi_ketersediaan_donasi(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $mitra = User::factory()->create([
+                'role' => 'mitra',
+                'name' => 'Resto Berkah',
+                'is_verified' => true
+            ]);
+
+            $consumer = User::factory()->create([
+                'role' => 'consumer',
+                'name' => 'Budi Konsumen'
+            ]);
+
+            $donation = Donation::create([
+                'mitra_id' => $mitra->id,
+                'title' => 'Sayur Sop Donasi',
+                'quantity' => 15,
+                'unit' => 'box',
+                'status' => 'pending',
+                'expires_at' => now()->addHours(5),
+                'pickup_start_time' => '10:00',
+                'pickup_end_time' => '15:00'
+            ]);
+
+            // Kirim notifikasi ke semua Lembaga (seperti biasa)
+            $lembagas = User::where('role', 'lembaga')->get();
+            Notification::send($lembagas, new DonationAvailableNotification(
+                $mitra->name, 
+                $donation->title, 
+                $donation->quantity . ' ' . $donation->unit
+            ));
+
+            // Login sebagai Consumer (non-lembaga) dan pastikan tidak ada notif donasi
+            $browser->loginAs($consumer)
+                    ->visitRoute('notifications.index')
+                    ->assertDontSee('Donasi Baru Tersedia!')
+                    ->assertDontSee('Resto Berkah baru saja mendonasikan');
+        });
+    }
 }
+
