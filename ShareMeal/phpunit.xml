@@ -12,7 +12,9 @@
             <directory>tests/Feature</directory>
         </testsuite>
     <testsuite name="Browser">
-        <directory>tests/Browser</directory>
+        <directory suffix="Test.php">tests/Browser</directory>
+        <file>tests/Browser/Pbi46MelihatDaftarRatingUlasanTest1.php</file>
+        <file>tests/Browser/Pbi47MelihatLaporanMakananBermasalahTest1.php</file>
     </testsuite>
     </testsuites>
     <source>
