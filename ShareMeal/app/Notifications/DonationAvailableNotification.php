@@ -33,7 +33,8 @@ class DonationAvailableNotification extends Notification
             'mitra_name' => $this->mitraName,
             'donation_title' => $this->donationTitle,
             'icon' => '❤️',
-            'status' => 'info'
+            'status' => 'info',
+            'action_url' => route('lembaga.donations')
         ];
     }
 }
