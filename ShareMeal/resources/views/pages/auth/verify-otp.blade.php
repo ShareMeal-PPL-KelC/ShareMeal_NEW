@@ -105,7 +105,7 @@
         <div class="relative hidden overflow-hidden lg:flex flex-col justify-between p-12 z-10">
             <!-- Base image + light green transparent overlay -->
             <div class="absolute inset-0 z-0">
-                <img src="/images/logo2.png" alt="ShareMeal" class="absolute inset-0 h-full w-full object-cover object-center opacity-80">
+                <img src="/images/logo2.jpg" alt="ShareMeal" class="absolute inset-0 h-full w-full object-cover object-center opacity-80">
                 <div class="absolute inset-0 bg-gradient-to-b from-[#f4f7f4]/70 via-[#eef4ee]/55 to-[#e4eee4]/85"></div>
                 <div class="absolute inset-0 bg-gradient-to-r from-[#f4f7f4]/45 via-transparent to-transparent"></div>
             </div>

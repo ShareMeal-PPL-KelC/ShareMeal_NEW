@@ -76,6 +76,7 @@ Route::prefix('mitra')->name('mitra.')->middleware(['role:mitra', 'profile.compl
     Route::get('/history', [ShareMealController::class, 'mitraHistory'])->name('history');
     Route::get('/donations', [ShareMealController::class, 'mitraDonations'])->name('donations');
     Route::post('/donations', [ShareMealController::class, 'mitraDonationStore'])->name('donations.store');
+    Route::post('/donations/{donationId}/prepare', [ShareMealController::class, 'mitraDonationPrepare'])->name('donations.prepare');
     Route::post('/donations/{donationId}/complete', [ShareMealController::class, 'mitraDonationComplete'])->name('donations.complete');
     Route::post('/donations/{donationId}/cancel', [ShareMealController::class, 'mitraDonationCancel'])->name('donations.cancel');
     Route::get('/feedback', [FeedbackController::class, 'create'])->name('feedback');
