@@ -6,8 +6,11 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
-class Pbi9KonsumenMelihatDetailProduk extends DuskTestCase
+class Pbi9KonsumenMelihatDetailProdukTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+    protected $seed = true;
+
     /**
      * Test PBI-09: Konsumen Melihat Detail Produk.
      *

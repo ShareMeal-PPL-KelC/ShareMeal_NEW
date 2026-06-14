@@ -6,8 +6,11 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
-class Pbi34PengaturanLayananAntarMakanan extends DuskTestCase
+class Pbi34PengaturanLayananAntarMakananTest extends DuskTestCase
 {
+    use DatabaseMigrations;
+    protected $seed = true;
+
     /**
      * Test PBI-34: Pengaturan Layanan Antar Makanan oleh Mitra.
      *

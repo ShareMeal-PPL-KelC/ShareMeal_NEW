@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
-class Pbi35PilihMetodePenerimaanMakanan extends DuskTestCase
+class Pbi35PilihMetodePenerimaanMakananTest extends DuskTestCase
 {
     use DatabaseMigrations;
     protected $seed = true;
