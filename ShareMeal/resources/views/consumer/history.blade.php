@@ -419,7 +419,7 @@
                                 <div class="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold">Penilaian & Ulasan Anda</div>
                                 @if($canModifyReview)
                                     <div class="flex items-center gap-6">
-                                        <button @click="openEditReviewModal(@js($t->reviewRelation->id), @js($t->rating), @js($t->review))" class="text-luxury-forest hover:text-luxury-gold text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-colors">
+                                        <button dusk="edit-ulasan-btn" @click="openEditReviewModal(@js($t->reviewRelation->id), @js($t->rating), @js($t->review))" class="text-luxury-forest hover:text-luxury-gold text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
                                                 <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
                                             </svg>
@@ -453,7 +453,7 @@
                 </div>
                 @elseif($t->status === 'completed')
                 <div class="mt-10 pt-10 border-t border-luxury-alabas/50">
-                    <button @click="openReviewModal('{{ $t->id }}')" class="w-full flex items-center justify-center gap-3 border-2 border-dashed border-luxury-alabas py-5 rounded-[2rem] text-luxury-slate font-black text-[10px] uppercase tracking-[0.3em] hover:border-luxury-gold hover:text-luxury-gold transition-all duration-500 group bg-white/20">
+                    <button dusk="tulis-ulasan-btn" @click="openReviewModal('{{ $t->id }}')" class="w-full flex items-center justify-center gap-3 border-2 border-dashed border-luxury-alabas py-5 rounded-[2rem] text-luxury-slate font-black text-[10px] uppercase tracking-[0.3em] hover:border-luxury-gold hover:text-luxury-gold transition-all duration-500 group bg-white/20">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 transition-transform group-hover:rotate-12">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                         </svg>
@@ -619,7 +619,7 @@
                 <div class="text-center">
                     <div class="flex justify-center gap-3 bg-amber-50/50 py-4 px-6 rounded-2xl border border-amber-100/40">
                         <template x-for="i in 5">
-                            <button type="button" @click="rating = i" class="transition-all duration-300 transform hover:scale-125 active:scale-95 focus:outline-none">
+                            <button type="button" :dusk="'rating-' + i + '-btn'" @click="rating = i" class="transition-all duration-300 transform hover:scale-125 active:scale-95 focus:outline-none">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-10 h-10 transition-all duration-300" :class="i <= rating ? 'text-amber-500 fill-amber-400 filter drop-shadow-sm' : 'text-gray-300 fill-transparent stroke-current'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                 </svg>
@@ -636,7 +636,7 @@
                 </div>
 
                 <div class="pt-2 flex flex-col gap-3">
-                    <button type="submit" :disabled="rating === 0 || isReviewSubmitting" 
+                    <button type="submit" dusk="submit-review-btn" :disabled="rating === 0 || isReviewSubmitting" 
                             class="w-full bg-[#174413] hover:bg-[#0f2d0c] text-white py-4 rounded-xl font-bold uppercase tracking-wider text-xs shadow-lg shadow-green-900/20 transition disabled:opacity-40 disabled:cursor-not-allowed" 
                             x-text="isReviewSubmitting ? 'Mengirim...' : (isEditMode ? 'Simpan Perubahan' : 'Kirim Apresiasi')"></button>
                     <button type="button" @click="isReviewDialogOpen = false" :disabled="isReviewSubmitting"

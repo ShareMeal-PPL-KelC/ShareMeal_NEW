@@ -2,13 +2,13 @@
 
 @section('content')
 @php
-$totalUsers = count($allUsers);
-$totalKonsumen = count(array_filter($allUsers, fn($u) => $u['type'] === 'consumer'));
-$totalMitra = count(array_filter($allUsers, fn($u) => $u['type'] === 'mitra'));
-$totalLembaga = count(array_filter($allUsers, fn($u) => $u['type'] === 'lembaga'));
-$totalAktif = count(array_filter($allUsers, fn($u) => $u['status'] === 'active'));
-$totalWarning = count(array_filter($allUsers, fn($u) => $u['status'] === 'warned' || $u['warnings'] > 0));
-$totalBlocked = count(array_filter($allUsers, fn($u) => $u['status'] === 'blocked'));
+$totalUsers = $stats['totalUsers'];
+$totalKonsumen = $stats['totalKonsumen'];
+$totalMitra = $stats['totalMitra'];
+$totalLembaga = $stats['totalLembaga'];
+$totalAktif = $stats['totalAktif'];
+$totalWarning = $stats['totalWarning'];
+$totalBlocked = $stats['totalBlocked'];
 @endphp
 <div class="space-y-8" x-data="{ 
     isActionDialogOpen: false,

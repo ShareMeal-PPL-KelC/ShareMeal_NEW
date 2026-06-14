@@ -71,38 +71,7 @@ class ShareMealState
             'orders' => [],
             'inventory_products' => [],
             'transactions' => [],
-            'donations' => \App\Models\Donation::query()->get()->map(function ($donation) {
-                $openingHours = $donation->mitra?->profile?->business_opening_hours ?? $donation->mitra?->profile?->opening_hours ?? '08:00 - 20:00';
-                $parts = explode('-', $openingHours);
-                $fallbackStart = trim($parts[0] ?? '');
-                $fallbackStart = (empty($fallbackStart) || strlen($fallbackStart) < 5) ? '08:00' : $fallbackStart;
-                $fallbackEnd = trim($parts[1] ?? '');
-                $fallbackEnd = (empty($fallbackEnd) || strlen($fallbackEnd) < 5) ? '20:00' : $fallbackEnd;
-
-                return [
-                    'id' => $donation->id,
-                    'mitra_id' => $donation->mitra_id,
-                    'lembaga_id' => $donation->lembaga_id,
-                    'store' => [
-                        'name' => $donation->mitra?->displayName ?? 'Mitra Default',
-                        'address' => $donation->mitra?->profile?->business_address ?? $donation->mitra?->profile?->address ?? 'Jl. Pahlawan No. 10, Jakarta',
-                        'phone' => $donation->mitra?->profile?->business_contact ?? $donation->mitra?->profile?->phone ?? $donation->mitra?->phone ?? '081234567890',
-                    ],
-                    'distance' => '1.5 km',
-                    'items' => [
-                        ['name' => $donation->title, 'quantity' => $donation->quantity, 'unit' => $donation->unit]
-                    ],
-                    'available_until' => $donation->expires_at ? \Carbon\Carbon::parse($donation->expires_at)->format('d M, H:i') : '18:00',
-                    'expires_at' => $donation->expires_at ? $donation->expires_at->toIso8601String() : null,
-                    'pickup_start' => $donation->pickup_start_time ?: $fallbackStart,
-                    'pickup_end' => $donation->pickup_end_time ?: $fallbackEnd,
-                    'pickup_time' => $donation->pickup_time ? $donation->pickup_time->format('H:i') : null,
-                    'pickup_time_window' => $donation->pickup_time_window,
-                    'claimed_at' => $donation->claimed_at ? \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') : null,
-                    'delivered_at' => $donation->delivered_at ? \Carbon\Carbon::parse($donation->delivered_at)->format('d M, H:i') : null,
-                    'status' => ($donation->status === 'pending' && $donation->expires_at && \Carbon\Carbon::parse($donation->expires_at)->isPast()) ? 'expired' : ($donation->status === 'pending' ? 'available' : $donation->status),
-                ];
-            })->all(),
+            'donations' => self::getDonationsQuery(\App\Models\Donation::query()),
             'applications' => User::query()->whereIn('role', ['mitra', 'lembaga'])->where('is_verified', false)->whereNull('verification_rejection_reason')->orderBy('id')->get()->map(fn (User $user) => self::transformApplication($user))->all(),
             'users' => User::query()->orderBy('id')->get()->map(fn (User $user) => self::transformUser($user))->all(),
             'articles' => \App\Models\Article::query()->orderByDesc('id')->get()->map(fn (\App\Models\Article $article) => self::transformArticle($article))->all(),
@@ -514,5 +483,41 @@ class ShareMealState
             'image'     => $image,
             'read_time' => $article->read_time,
         ];
+    }
+
+    public static function getDonationsQuery(\Illuminate\Database\Eloquent\Builder $query): array
+    {
+        return $query->with(['mitra.profile'])->get()->map(function ($donation) {
+            $openingHours = $donation->mitra?->profile?->business_opening_hours ?? $donation->mitra?->profile?->opening_hours ?? '08:00 - 20:00';
+            $parts = explode('-', $openingHours);
+            $fallbackStart = trim($parts[0] ?? '');
+            $fallbackStart = (empty($fallbackStart) || strlen($fallbackStart) < 5) ? '08:05' : $fallbackStart;
+            $fallbackEnd = trim($parts[1] ?? '');
+            $fallbackEnd = (empty($fallbackEnd) || strlen($fallbackEnd) < 5) ? '20:05' : $fallbackEnd;
+
+            return [
+                'id' => $donation->id,
+                'mitra_id' => $donation->mitra_id,
+                'lembaga_id' => $donation->lembaga_id,
+                'store' => [
+                    'name' => $donation->mitra?->displayName ?? 'Mitra Default',
+                    'address' => $donation->mitra?->profile?->business_address ?? $donation->mitra?->profile?->address ?? 'Jl. Pahlawan No. 10, Jakarta',
+                    'phone' => $donation->mitra?->profile?->business_contact ?? $donation->mitra?->profile?->phone ?? $donation->mitra?->phone ?? '081234567890',
+                ],
+                'distance' => '1.5 km',
+                'items' => [
+                    ['name' => $donation->title, 'quantity' => $donation->quantity, 'unit' => $donation->unit]
+                ],
+                'available_until' => $donation->expires_at ? \Carbon\Carbon::parse($donation->expires_at)->format('d M, H:i') : '18:00',
+                'expires_at' => $donation->expires_at ? $donation->expires_at->toIso8601String() : null,
+                'pickup_start' => $donation->pickup_start_time ?: $fallbackStart,
+                'pickup_end' => $donation->pickup_end_time ?: $fallbackEnd,
+                'pickup_time' => $donation->pickup_time ? $donation->pickup_time->format('H:i') : null,
+                'pickup_time_window' => $donation->pickup_time_window,
+                'claimed_at' => $donation->claimed_at ? \Carbon\Carbon::parse($donation->claimed_at)->format('d M, H:i') : null,
+                'delivered_at' => $donation->delivered_at ? \Carbon\Carbon::parse($donation->delivered_at)->format('d M, H:i') : null,
+                'status' => ($donation->status === 'pending' && $donation->expires_at && \Carbon\Carbon::parse($donation->expires_at)->isPast()) ? 'expired' : ($donation->status === 'pending' ? 'available' : $donation->status),
+            ];
+        })->all();
     }
 }
