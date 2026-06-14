@@ -64,9 +64,10 @@
                                 <h3 class="text-2xl font-black text-gray-900">{{ $donation->title }}</h3>
                                 <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
                                     {{ $donation->status === 'claimed' ? 'bg-blue-100 text-blue-700 border-blue-200' : 
+                                       ($donation->status === 'prepared' ? 'bg-purple-100 text-purple-700 border-purple-200' : 
                                        ($donation->status === 'completed' ? 'bg-green-100 text-green-700 border-green-200' : 
-                                       'bg-yellow-100 text-yellow-700 border-yellow-200') }}">
-                                    {{ $donation->status === 'claimed' ? 'Terklaim' : ($donation->status === 'completed' ? 'Selesai' : 'Menunggu Klaim') }}
+                                       'bg-yellow-100 text-yellow-700 border-yellow-200')) }}">
+                                    {{ $donation->status === 'claimed' ? 'Terklaim' : ($donation->status === 'prepared' ? 'Siap Diambil' : ($donation->status === 'completed' ? 'Selesai' : 'Menunggu Klaim')) }}
                                 </span>
                             </div>
                             <div class="flex flex-wrap items-center gap-4 mt-2">
@@ -94,6 +95,15 @@
                                 @endif
 
                                 @if($donation->status === 'claimed')
+                                    <form action="{{ route('mitra.donations.prepare', $donation->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100 transition shadow-sm">
+                                            <i data-lucide="package" class="w-3.5 h-3.5"></i> Siapkan Donasi
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if($donation->status === 'prepared')
                                     <form action="{{ route('mitra.donations.complete', $donation->id) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="text-xs font-bold text-green-600 hover:text-green-700 flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100 transition shadow-sm">
@@ -115,7 +125,7 @@
                         <!-- Lembaga Info -->
                         <div>
                             <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Informasi Lembaga & Penjemputan</p>
-                            @if($donation->status === 'claimed' || $donation->status === 'completed')
+                            @if(in_array($donation->status, ['claimed', 'prepared', 'completed']))
                                 @if($donation->lembaga)
                                     <div class="space-y-4">
                                         <div class="flex items-center gap-3">
@@ -140,6 +150,10 @@
                                             <div class="h-px bg-gray-50"></div>
                                             <div class="flex flex-col gap-2 text-sm text-gray-600">
                                                 <div class="flex items-center gap-2">
+                                                    <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
+                                                    {{ $donation->lembaga->email ?: 'Tidak ada email' }}
+                                                </div>
+                                                <div class="flex items-center gap-2">
                                                     <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i>
                                                     {{ $donation->lembaga->phone ?: 'Tidak ada nomor telepon' }}
                                                 </div>
@@ -152,7 +166,7 @@
                                                     @endif
                                                 </div>
                                             </div>
-                                            @if($donation->status === 'claimed')
+                                            @if(in_array($donation->status, ['claimed', 'prepared']))
                                                 <a href="https://wa.me/{{ $donation->lembaga->phone }}" target="_blank" class="flex items-center justify-center gap-2 w-full py-2 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 transition mt-2">
                                                     <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Hubungi Lembaga
                                                 </a>

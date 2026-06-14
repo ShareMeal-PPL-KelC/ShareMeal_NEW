@@ -1284,13 +1284,30 @@ class ShareMealController extends Controller
         return back()->with('success', 'Donasi berhasil didaftarkan.');
     }
 
-    public function mitraDonationComplete(int $donationId): RedirectResponse
+    public function mitraDonationPrepare(int $donationId): RedirectResponse
     {
         $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
         $donation = Donation::where('mitra_id', $userId)->findOrFail($donationId);
 
         if ($donation->status !== 'claimed') {
-            return back()->with('error', 'Hanya donasi yang sudah diklaim yang bisa diselesaikan.');
+            return back()->with('error', 'Hanya donasi yang sudah diklaim yang bisa disiapkan.');
+        }
+
+        $donation->update([
+            'status' => 'prepared',
+            'tracking_status' => 'prepared',
+        ]);
+
+        return back()->with('success', 'Donasi berhasil ditandai sebagai siap diambil.');
+    }
+
+    public function mitraDonationComplete(int $donationId): RedirectResponse
+    {
+        $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+        $donation = Donation::where('mitra_id', $userId)->findOrFail($donationId);
+
+        if (!in_array($donation->status, ['claimed', 'prepared'])) {
+            return back()->with('error', 'Hanya donasi yang sudah diklaim atau disiapkan yang bisa diselesaikan.');
         }
 
         $donation->update([
@@ -1505,10 +1522,19 @@ class ShareMealController extends Controller
 
         $donations = ShareMealState::getDonationsQuery($donationsQuery);
 
-        // PBI #45: Add critical alert for active claimed donations
+        // PBI #45: Add critical alert for active claimed/prepared donations
         $criticalAlerts = [];
         $activeClaimedCount = collect($donations)->where('status', 'claimed')->count();
-        if ($activeClaimedCount > 0) {
+        $activePreparedCount = collect($donations)->where('status', 'prepared')->count();
+        if ($activePreparedCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'warning',
+                'title' => 'Donasi Siap Diambil',
+                'message' => "Ada $activePreparedCount donasi yang sudah SIAP DIAMBIL. Segera lakukan penjemputan.",
+                'link' => route('lembaga.donations', ['tab' => 'prepared']),
+                'link_text' => 'Lihat Donasi'
+            ];
+        } elseif ($activeClaimedCount > 0) {
             $criticalAlerts[] = [
                 'type' => 'info',
                 'title' => 'Status Klaim Donasi',
@@ -1522,13 +1548,13 @@ class ShareMealController extends Controller
         return view('pages.lembaga.dashboard', $this->dashboardData('lembaga', 'Dashboard Lembaga Sosial', 'Kelola penerimaan donasi makanan') + [
             'stats' => (object) [
                 'totalDonations' => \App\Models\Donation::where('lembaga_id', $userId)->where('status', 'completed')->count(),
-                'activeDonations' => \App\Models\Donation::where('lembaga_id', $userId)->where('status', 'claimed')->count(),
+                'activeDonations' => \App\Models\Donation::where('lembaga_id', $userId)->whereIn('status', ['claimed', 'prepared'])->count(),
                 'beneficiaries' => $userObj?->profile?->beneficiaries_count ?? 120,
                 'thisMonth' => \App\Models\Donation::where('lembaga_id', $userId)->where('status', 'completed')->where('delivered_at', '>=', now()->startOfMonth())->count()
             ],
             'donations' => $donations,
             'availableDonations' => collect($donations)->where('status', 'available')->all(),
-            'recentDonations' => collect($donations)->whereIn('status', ['claimed', 'completed'])->sortByDesc('claimed_at')->take(5)->all(),
+            'recentDonations' => collect($donations)->whereIn('status', ['claimed', 'prepared', 'completed'])->sortByDesc('claimed_at')->take(5)->all(),
             'userObj' => $userObj,
         ]);
     }
@@ -1630,8 +1656,8 @@ class ShareMealController extends Controller
     {
         $donation = Donation::findOrFail($donationId);
 
-        if ($donation->status !== 'claimed') {
-            return back()->with('error', 'Hanya donasi yang sudah diklaim yang bisa diselesaikan.');
+        if ($donation->status !== 'prepared') {
+            return back()->with('error', 'Hanya donasi yang sudah disiapkan yang bisa diselesaikan.');
         }
 
         $donation->update([

@@ -65,19 +65,25 @@
     <div class="space-y-6">
         <!-- Tabs List -->
         <div class="flex space-x-2 border-b border-luxury-alabas/60 mb-10 bg-white/20 p-2 rounded-2xl">
-            <button @click="activeTab = 'available'"
+            <button id="tab-available" @click="activeTab = 'available'"
                     :class="{'bg-green-55 text-green-700 border-green-200 shadow-sm': activeTab === 'available', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'available'}" 
                     class="px-6 py-3 font-bold text-xs flex items-center gap-2 border border-transparent rounded-xl transition-all duration-300 uppercase tracking-widest">
                 <i data-lucide="package" class="w-4 h-4"></i>
                 TERSEDIA (<span x-text="availableDonations().length"></span>)
             </button>
-            <button @click="activeTab = 'claimed'"
-                    :class="{'bg-purple-55 text-purple-700 border-purple-200 shadow-sm': activeTab === 'claimed', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'claimed'}" 
+            <button id="tab-claimed" @click="activeTab = 'claimed'"
+                    :class="{'bg-blue-50 text-blue-700 border-blue-200 shadow-sm': activeTab === 'claimed', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'claimed'}" 
                     class="px-6 py-3 font-bold text-xs flex items-center gap-2 border border-transparent rounded-xl transition-all duration-300 uppercase tracking-widest">
                 <i data-lucide="truck" class="w-4 h-4"></i>
                 DIPROSES (<span x-text="claimedDonations().length"></span>)
             </button>
-            <button @click="activeTab = 'completed'"
+            <button id="tab-prepared" @click="activeTab = 'prepared'"
+                    :class="{'bg-purple-55 text-purple-700 border-purple-200 shadow-sm': activeTab === 'prepared', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'prepared'}" 
+                    class="px-6 py-3 font-bold text-xs flex items-center gap-2 border border-transparent rounded-xl transition-all duration-300 uppercase tracking-widest">
+                <i data-lucide="package-check" class="w-4 h-4"></i>
+                SIAP DIAMBIL (<span x-text="preparedDonations().length"></span>)
+            </button>
+            <button id="tab-completed" @click="activeTab = 'completed'"
                     :class="{'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm': activeTab === 'completed', 'text-gray-500 hover:text-gray-900 hover:bg-white/50': activeTab !== 'completed'}" 
                     class="px-6 py-3 font-bold text-xs flex items-center gap-2 border border-transparent rounded-xl transition-all duration-300 uppercase tracking-widest">
                 <i data-lucide="check-circle" class="w-4 h-4"></i>
@@ -212,6 +218,89 @@
                                 </div>
                                 
                                 <div class="flex flex-col sm:flex-row gap-4 mt-6 pt-6 border-t border-luxury-alabas/50">
+                                    <a :href="'https://wa.me/' + donation.store.phone" class="w-full flex items-center justify-center gap-2 border-2 border-gray-100 text-gray-700 px-4 py-4 rounded-xl hover:bg-gray-50 transition-all font-bold text-xs uppercase tracking-wider">
+                                        <i data-lucide="message-square" class="w-4 h-4"></i>
+                                        Hubungi WA
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <template x-if="claimedDonations().length === 0">
+                <div class="bg-white/40 rounded-[2.5rem] border border-dashed border-gray-200 p-16 text-center shadow-sm">
+                    <i data-lucide="truck" class="w-16 h-16 text-gray-300 mx-auto mb-4 animate-pulse"></i>
+                    <h3 class="text-xl font-serif font-bold text-gray-900 mb-2">Tidak Ada Donasi Diproses</h3>
+                    <p class="text-gray-500 max-w-sm mx-auto text-sm">Semua donasi yang sudah Anda klaim dan sedang dalam proses perjalanan akan muncul di sini.</p>
+                </div>
+            </template>
+        </div>
+
+        <!-- Prepared Tab Content -->
+        <div x-show="activeTab === 'prepared'" class="space-y-6" x-cloak>
+            <template x-if="preparedDonations().length > 0">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500">
+                    <template x-for="donation in preparedDonations()" :key="donation.id">
+                        <div class="glass-card rounded-[2.5rem] overflow-hidden transition-all duration-500 flex flex-col justify-between group">
+                            <div class="p-8 flex-1 flex flex-col justify-between bg-white/10">
+                                <div>
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3">
+                                                <h3 class="font-serif text-2xl font-bold text-luxury-forest group-hover:text-luxury-gold transition-colors" x-text="donation.store.name"></h3>
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-[10px] font-black text-purple-700 uppercase tracking-wider">
+                                                    <i data-lucide="package" class="w-3 h-3"></i> Siap Diambil
+                                                </span>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-3 mt-3 text-[10px] font-bold text-luxury-slate uppercase tracking-wider">
+                                                <span class="flex items-center gap-1">📍 <span x-text="donation.store.address"></span></span>
+                                                <span>• <span x-text="donation.distance"></span></span>
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] font-mono font-black text-luxury-slate tracking-widest" x-text="'#' + donation.id"></span>
+                                    </div>
+
+                                    <div class="border-t border-luxury-alabas/50 mt-6 pt-6">
+                                        <h4 class="text-[10px] font-black text-luxury-gold uppercase tracking-[0.25em] mb-3">Item Donasi</h4>
+                                        <div class="space-y-2">
+                                            <template x-for="(item, index) in donation.items" :key="index">
+                                                <div class="flex items-center justify-between text-xs bg-white/40 p-4 rounded-xl border border-luxury-alabas hover:bg-white/80 hover:shadow-sm transition-all duration-300">
+                                                    <span class="text-luxury-forest font-bold" x-text="item.name"></span>
+                                                    <span class="font-black text-luxury-gold uppercase tracking-wider" x-text="item.quantity + ' ' + (item.unit || 'unit')"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-luxury-alabas/50 mt-6 pt-6">
+                                        <div class="bg-blue-50/70 border border-blue-100 rounded-2xl p-5">
+                                            <div class="flex items-center gap-3 mb-3 text-blue-900 font-bold text-sm">
+                                                <i data-lucide="info" class="w-5 h-5 text-blue-600"></i>
+                                                <span>Tracking Penjemputan</span>
+                                            </div>
+                                            <div class="space-y-3">
+                                                <p class="text-xs text-blue-800 font-medium">
+                                                    Diklaim pada: <span class="font-bold" x-text="donation.claimed_at"></span>
+                                                </p>
+                                                <div class="bg-white rounded-2xl p-4 border border-blue-100 shadow-sm">
+                                                    <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest block mb-1">Jadwal Penjemputan Resmi</span>
+                                                    <div class="flex items-center gap-2 text-blue-900 font-black text-base">
+                                                        <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
+                                                        <span x-text="donation.pickup_time || 'Belum ditentukan'"></span>
+                                                    </div>
+                                                </div>
+                                                <p class="text-[10px] text-blue-600 italic font-medium leading-relaxed">Mohon pastikan armada penjemputan Anda tiba tepat waktu sesuai dengan jadwal yang disepakati.</p>
+                                                <div class="mt-2 bg-purple-55 border border-purple-100 rounded-xl p-3 text-xs text-purple-900 font-bold flex items-center gap-2">
+                                                    <i data-lucide="package" class="w-4 h-4 text-purple-600"></i>
+                                                    <span>Makanan telah disiapkan oleh mitra & siap diambil!</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex flex-col sm:flex-row gap-4 mt-6 pt-6 border-t border-luxury-alabas/50">
                                     <a :href="'https://maps.google.com/?q=' + encodeURIComponent(donation.store.address)" target="_blank" class="flex-1 flex items-center justify-center gap-2 border-2 border-blue-100 text-blue-700 px-4 py-4 rounded-xl hover:bg-blue-50 transition-all font-bold text-xs uppercase tracking-wider">
                                         <i data-lucide="navigation" class="w-4 h-4"></i>
                                         Rute Resto
@@ -233,11 +322,11 @@
                     </template>
                 </div>
             </template>
-            <template x-if="claimedDonations().length === 0">
+            <template x-if="preparedDonations().length === 0">
                 <div class="bg-white/40 rounded-[2.5rem] border border-dashed border-gray-200 p-16 text-center shadow-sm">
-                    <i data-lucide="truck" class="w-16 h-16 text-gray-300 mx-auto mb-4 animate-pulse"></i>
-                    <h3 class="text-xl font-serif font-bold text-gray-900 mb-2">Tidak Ada Donasi Diproses</h3>
-                    <p class="text-gray-500 max-w-sm mx-auto text-sm">Semua donasi yang sudah Anda klaim dan sedang dalam proses perjalanan akan muncul di sini.</p>
+                    <i data-lucide="package" class="w-16 h-16 text-gray-300 mx-auto mb-4 animate-pulse"></i>
+                    <h3 class="text-xl font-serif font-bold text-gray-900 mb-2">Tidak Ada Donasi Siap Diambil</h3>
+                    <p class="text-gray-500 max-w-sm mx-auto text-sm">Donasi yang sudah disiapkan oleh mitra dan siap untuk dijemput oleh armada Anda akan muncul di sini.</p>
                 </div>
             </template>
         </div>
@@ -623,6 +712,9 @@
             },
             claimedDonations() {
                 return this.donations.filter(d => d.status === 'claimed');
+            },
+            preparedDonations() {
+                return this.donations.filter(d => d.status === 'prepared');
             },
             completedDonations() {
                 return this.donations.filter(d => d.status === 'completed');

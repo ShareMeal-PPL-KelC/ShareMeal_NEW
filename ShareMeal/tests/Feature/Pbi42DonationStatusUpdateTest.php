@@ -83,7 +83,7 @@ class Pbi42DonationStatusUpdateTest extends TestCase
             'title' => 'Nasi Bungkus',
             'quantity' => 10,
             'unit' => 'pcs',
-            'status' => 'claimed',
+            'status' => 'prepared',
         ]);
 
         $response = $this->actingAs($lembaga)->post(route('lembaga.donations.complete', $donation->id));
@@ -92,5 +92,24 @@ class Pbi42DonationStatusUpdateTest extends TestCase
         $this->assertEquals('completed', $donation->fresh()->status);
         $this->assertEquals('delivered', $donation->fresh()->tracking_status);
         $this->assertNotNull($donation->fresh()->delivered_at);
+    }
+
+    public function test_lembaga_cannot_complete_claimed_donation(): void
+    {
+        $mitra = User::factory()->create(['role' => 'mitra']);
+        $lembaga = User::factory()->create(['role' => 'lembaga']);
+        $donation = Donation::create([
+            'mitra_id' => $mitra->id,
+            'lembaga_id' => $lembaga->id,
+            'title' => 'Nasi Bungkus',
+            'quantity' => 10,
+            'unit' => 'pcs',
+            'status' => 'claimed',
+        ]);
+
+        $response = $this->actingAs($lembaga)->post(route('lembaga.donations.complete', $donation->id));
+
+        $response->assertSessionHas('error');
+        $this->assertEquals('claimed', $donation->fresh()->status);
     }
 }
