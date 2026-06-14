@@ -173,7 +173,7 @@
 
     </style>
 
-    <div class="landing-font min-h-screen bg-slate-50/40 relative overflow-x-hidden">
+    <div class="landing-font min-h-screen bg-slate-50/40 relative">
         
         <!-- Ambient Glowing Background Blobs -->
         <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
@@ -546,17 +546,19 @@
     <!-- Scroll Interaction & Reveal Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Scroll-Reactive Header (dense glass state)
+            // Header Scroll Effect
             const header = document.getElementById('main-header');
-            const handleScroll = () => {
-                if (window.scrollY > 20) {
-                    header.classList.add('scrolled');
-                } else {
-                    header.classList.remove('scrolled');
-                }
-            };
-            window.addEventListener('scroll', handleScroll);
-            handleScroll(); // Trigger once on load to ensure state correctness
+            if (header) {
+                const handleScroll = () => {
+                    if (window.scrollY > 20) {
+                        header.classList.add('scrolled');
+                    } else {
+                        header.classList.remove('scrolled');
+                    }
+                };
+                window.addEventListener('scroll', handleScroll, { passive: true });
+                handleScroll(); // Trigger once on load to ensure state correctness
+            }
 
             // 2. Parallax Effect for Ambient Background Blobs
             const blob1 = document.getElementById('blob-1');
