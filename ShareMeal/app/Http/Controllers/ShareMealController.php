@@ -194,7 +194,14 @@ class ShareMealController extends Controller
             $userData['document_identitas'] = $request->file('document_identitas_lembaga')->store('documents', 'public');
         }
 
-        User::query()->create($userData);
+        $user = User::query()->create($userData);
+
+        if (in_array($user->role, ['mitra', 'lembaga'], true)) {
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\NewVerificationApplicationNotification($user));
+            }
+        }
 
         $successMessage = $data['user_type'] === 'consumer' 
             ? 'Registrasi berhasil. Silakan masuk menggunakan akun Anda.' 
@@ -602,6 +609,13 @@ class ShareMealController extends Controller
             $updates['status'] = 'active';
 
             $user->update($updates);
+
+            // Notify Admins of the re-submission
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\ReverificationApplicationNotification($user));
+            }
+
             return back()->with('success', 'Semua dokumen berhasil diunggah dan sedang menunggu verifikasi ulang.');
         }
 
@@ -818,6 +832,22 @@ class ShareMealController extends Controller
                 'message' => "Perhatian: Ada $urgentExpiringCount produk yang akan kedaluwarsa dalam kurang dari 4 jam!",
                 'link' => route('mitra.inventory'),
                 'link_text' => 'Kelola Sekarang'
+            ];
+        }
+
+        // Low stock warning (stock < 5 but > 0)
+        $lowStockCount = Product::where('user_id', $userId)
+            ->whereIn('status', ['normal', 'flash-sale'])
+            ->where('stock', '>', 0)
+            ->where('stock', '<', 5)
+            ->count();
+        if ($lowStockCount > 0) {
+            $criticalAlerts[] = [
+                'type' => 'warning',
+                'title' => 'Stok Makanan Menipis',
+                'message' => "Perhatian: Ada $lowStockCount produk dengan stok menipis (di bawah 5 porsi)!",
+                'link' => route('mitra.inventory'),
+                'link_text' => 'Kelola Stok'
             ];
         }
         session()->flash('critical_alerts', $criticalAlerts);
@@ -1087,13 +1117,35 @@ class ShareMealController extends Controller
             'image' => $request->hasFile('image') ? $request->file('image')->store('products', 'public') : 'https://images.unsplash.com/photo-1666114170628-b34b0dcc21aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBicmVhZCUyMHBhc3RyeSUyMHNob3B8ZW58MXx8fHwxNzc0OTc0Mzg5fDA&ixlib=rb-4.1.0&q=80&w=1080',
         ]);
 
-        if ($product->status === 'flash-sale') {
-            $mitra = \App\Models\User::find($product->user_id);
-            if ($mitra) {
-                // Because favorite stores logic is frontend-only (localStorage), we notify all consumers as a mock demo
+        $mitra = \App\Models\User::find($product->user_id);
+        if ($mitra) {
+            if ($product->status === 'flash-sale') {
                 $consumers = \App\Models\User::where('role', 'consumer')->get();
                 if ($consumers->count() > 0) {
                     \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+                }
+            } elseif ($product->status === 'normal') {
+                $consumers = \App\Models\User::where('role', 'consumer')->get();
+                if ($consumers->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\NewMenuAvailableNotification($mitra->name, $product->name, $product->price));
+                }
+            } elseif ($product->status === 'donation') {
+                $donation = Donation::create([
+                    'mitra_id' => $product->user_id,
+                    'title' => $product->name,
+                    'quantity' => $product->stock,
+                    'unit' => 'pcs',
+                    'expires_at' => $product->expires_at,
+                    'pickup_start_time' => $product->pickup_start_time,
+                    'pickup_end_time' => $product->pickup_end_time,
+                    'description' => 'Didonasikan langsung melalui inventaris produk.',
+                    'status' => 'pending',
+                    'image' => $product->getRawOriginal('image'),
+                ]);
+
+                $lembagas = \App\Models\User::where('role', 'lembaga')->get();
+                if ($lembagas->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($lembagas, new \App\Notifications\DonationAvailableNotification($mitra->name, $donation->title, $donation->quantity . ' ' . $donation->unit));
                 }
             }
         }
@@ -1146,6 +1198,9 @@ class ShareMealController extends Controller
         }
 
         $wasNotFlashSale = $product->getOriginal('status') !== 'flash-sale';
+        $wasNotNormal = $product->getOriginal('status') !== 'normal';
+        $wasNotDonation = $product->getOriginal('status') !== 'donation';
+        
         $expiresAt = $this->parseLocalDateTime($data['expires_at']);
 
         $discountPrice = $data['discount_price'] ?? 0;
@@ -1169,12 +1224,35 @@ class ShareMealController extends Controller
             $product->update(['image' => $request->file('image')->store('products', 'public')]);
         }
 
-        if ($product->status === 'flash-sale' && $wasNotFlashSale) {
-            $mitra = \App\Models\User::find($product->user_id);
-            if ($mitra) {
+        $mitra = \App\Models\User::find($product->user_id);
+        if ($mitra) {
+            if ($product->status === 'flash-sale' && $wasNotFlashSale) {
                 $consumers = \App\Models\User::where('role', 'consumer')->get();
                 if ($consumers->count() > 0) {
                     \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\FlashSaleNotification($mitra->name, $product->name, $product->discount_price));
+                }
+            } elseif ($product->status === 'normal' && $wasNotNormal) {
+                $consumers = \App\Models\User::where('role', 'consumer')->get();
+                if ($consumers->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($consumers, new \App\Notifications\NewMenuAvailableNotification($mitra->name, $product->name, $product->price));
+                }
+            } elseif ($product->status === 'donation' && $wasNotDonation) {
+                $donation = Donation::create([
+                    'mitra_id' => $product->user_id,
+                    'title' => $product->name,
+                    'quantity' => $product->stock,
+                    'unit' => 'pcs',
+                    'expires_at' => $product->expires_at,
+                    'pickup_start_time' => $product->pickup_start_time,
+                    'pickup_end_time' => $product->pickup_end_time,
+                    'description' => 'Didonasikan langsung melalui perubahan status inventaris.',
+                    'status' => 'pending',
+                    'image' => $product->getRawOriginal('image'),
+                ]);
+
+                $lembagas = \App\Models\User::where('role', 'lembaga')->get();
+                if ($lembagas->count() > 0) {
+                    \Illuminate\Support\Facades\Notification::send($lembagas, new \App\Notifications\DonationAvailableNotification($mitra->name, $donation->title, $donation->quantity . ' ' . $donation->unit));
                 }
             }
         }
@@ -1298,6 +1376,15 @@ class ShareMealController extends Controller
             'tracking_status' => 'prepared',
         ]);
 
+        // Notify the Lembaga that the donation is prepared/ready for pickup
+        if ($donation->lembaga) {
+            $mitraName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Resto Mitra';
+            \Illuminate\Support\Facades\Notification::send(
+                $donation->lembaga,
+                new \App\Notifications\DonationPreparedNotification($mitraName, $donation->title, $donation->quantity . ' ' . $donation->unit)
+            );
+        }
+
         return back()->with('success', 'Donasi berhasil ditandai sebagai siap diambil.');
     }
 
@@ -1316,6 +1403,15 @@ class ShareMealController extends Controller
             'tracking_status' => 'delivered',
         ]);
 
+        // Notify the Lembaga that the donation has been handed over
+        if ($donation->lembaga) {
+            $mitraName = Auth::user()->name ?? \App\Models\User::find($userId)->name ?? 'Resto Mitra';
+            \Illuminate\Support\Facades\Notification::send(
+                $donation->lembaga,
+                new \App\Notifications\DonationHandedOverNotification($mitraName, $donation->title, $donation->quantity . ' ' . $donation->unit)
+            );
+        }
+
         return back()->with('success', 'Donasi dikonfirmasi telah diserahkan.');
     }
 
@@ -1328,8 +1424,14 @@ class ShareMealController extends Controller
             return back()->with('error', 'Donasi yang sudah selesai tidak bisa dibatalkan.');
         }
 
-        if ($donation->status === 'claimed') {
-            // Optional: notify lembaga if needed
+        if (in_array($donation->status, ['claimed', 'prepared'])) {
+            if ($donation->lembaga) {
+                $mitraName = Auth::user()->name ?? \App\Models\User::find($userId)->name ?? 'Resto Mitra';
+                \Illuminate\Support\Facades\Notification::send(
+                    $donation->lembaga,
+                    new \App\Notifications\DonationCancelledNotification($mitraName, $donation->title, $donation->quantity . ' ' . $donation->unit)
+                );
+            }
         }
 
         $donation->delete();
@@ -1571,7 +1673,8 @@ class ShareMealController extends Controller
                          ->orWhere('expires_at', '>', now());
                   });
             })
-            ->orWhere('lembaga_id', $userId);
+            ->orWhere('lembaga_id', $userId)
+            ->orderBy('created_at', 'desc');
 
         $donations = ShareMealState::getDonationsQuery($donationsQuery);
 
@@ -1587,7 +1690,8 @@ class ShareMealController extends Controller
         
         $completedDonationsQuery = \App\Models\Donation::query()
             ->where('lembaga_id', $userId)
-            ->where('status', 'completed');
+            ->where('status', 'completed')
+            ->orderBy('created_at', 'desc');
 
         $completedDonations = ShareMealState::getDonationsQuery($completedDonationsQuery);
 
@@ -1665,6 +1769,16 @@ class ShareMealController extends Controller
             'delivered_at' => now(),
             'tracking_status' => 'delivered',
         ]);
+
+        // Notify the Mitra that the donation has been successfully picked up / completed
+        if ($donation->mitra) {
+            $userId = Auth::id() ?? \Illuminate\Support\Facades\Session::get('sharemeal.current_user_id');
+            $lembagaName = Auth::user()->name ?? \App\Models\User::find($userId)?->name ?? 'Lembaga Sosial';
+            \Illuminate\Support\Facades\Notification::send(
+                $donation->mitra,
+                new \App\Notifications\DonationCompletedNotification($lembagaName, $donation->title, $donation->quantity . ' ' . $donation->unit)
+            );
+        }
 
         return back()->with('success', 'Donasi dikonfirmasi sudah diterima.');
     }
@@ -1864,8 +1978,13 @@ class ShareMealController extends Controller
     public function adminApproveApplication(int $applicationId): RedirectResponse
     {
         $app = \App\Models\VerificationApplication::find($applicationId);
-        $orgName = $app ? ($app->user?->organization_name ?? $app->user?->name) : 'Aplikasi #' . $applicationId;
+        $user = \App\Models\User::find($applicationId);
+        $orgName = $user ? ($user->organization_name ?? $user->name) : ($app ? ($app->user?->organization_name ?? $app->user?->name) : 'Aplikasi #' . $applicationId);
         ShareMealState::approveApplication($applicationId);
+
+        if ($user) {
+            $user->notify(new \App\Notifications\VerificationApprovedNotification());
+        }
 
         \App\Models\AdminLog::create([
             'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
@@ -1882,8 +2001,13 @@ class ShareMealController extends Controller
     {
         $data = $request->validate(['reason' => ['required']]);
         $app = \App\Models\VerificationApplication::find($applicationId);
-        $orgName = $app ? ($app->user?->organization_name ?? $app->user?->name) : 'Aplikasi #' . $applicationId;
+        $user = \App\Models\User::find($applicationId);
+        $orgName = $user ? ($user->organization_name ?? $user->name) : ($app ? ($app->user?->organization_name ?? $app->user?->name) : 'Aplikasi #' . $applicationId);
         ShareMealState::rejectApplication($applicationId, $data['reason']);
+
+        if ($user) {
+            $user->notify(new \App\Notifications\VerificationRejectedNotification($data['reason']));
+        }
 
         \App\Models\AdminLog::create([
             'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
@@ -2376,6 +2500,10 @@ class ShareMealController extends Controller
         $report = \App\Models\ProblemReport::findOrFail($reportId);
         $report->update(['status' => 'dismissed']);
 
+        if ($report->reporter) {
+            $report->reporter->notify(new \App\Notifications\ProblemReportResolvedNotification($report, 'dismissed'));
+        }
+
         \App\Models\AdminLog::create([
             'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
             'action' => 'report_dismiss',
@@ -2410,6 +2538,10 @@ class ShareMealController extends Controller
 
         $report->update(['status' => 'resolved', 'admin_note' => 'Diberikan peringatan kepada mitra. Alasan: ' . $reason]);
 
+        if ($report->reporter) {
+            $report->reporter->notify(new \App\Notifications\ProblemReportResolvedNotification($report, 'warned'));
+        }
+
         \App\Models\AdminLog::create([
             'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),
             'action' => 'report_warn',
@@ -2442,6 +2574,10 @@ class ShareMealController extends Controller
         }
 
         $report->update(['status' => 'resolved', 'admin_note' => 'Mitra telah diblokir secara permanen. Alasan: ' . $reason]);
+
+        if ($report->reporter) {
+            $report->reporter->notify(new \App\Notifications\ProblemReportResolvedNotification($report, 'blocked'));
+        }
 
         \App\Models\AdminLog::create([
             'admin_id' => Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id'),

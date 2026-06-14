@@ -32,7 +32,7 @@ class DonationClaimedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database']; // Keeping it simple with database notifications since others use database or log
+        return ['database', 'broadcast'];
     }
 
     /**

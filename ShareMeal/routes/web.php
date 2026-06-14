@@ -125,3 +125,8 @@ Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function
     Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'adminDelete'])->name('feedbacks.delete');
     Route::post('/feedbacks/{feedback}/toggle-status', [FeedbackController::class, 'adminToggleStatus'])->name('feedbacks.toggle-status');
 });
+
+Route::get('/test-broadcast', function () {
+    event(new \App\Events\TestBroadcast('Koneksi real-time berhasil!'));
+    return 'Broadcast terkirim ke channel "test-channel"!';
+});

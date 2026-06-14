@@ -53,6 +53,10 @@ class AutoDonationService
                     'status' => 'expired',
                     'stock' => 0,
                 ]);
+
+                if ($product->user) {
+                    $product->user->notify(new \App\Notifications\ProductExpiredNotification($product));
+                }
             }
 
             return $products->count();
@@ -78,6 +82,8 @@ class AutoDonationService
             if ($products->isEmpty()) return 0;
 
             foreach ($products as $product) {
+                $originalStock = $product->stock;
+
                 $donation = Donation::create([
                     'mitra_id' => $product->user_id,
                     'title' => 'Otomatis: ' . $product->name,
@@ -95,6 +101,10 @@ class AutoDonationService
                     'status' => 'donation',
                     'stock' => 0,
                 ]);
+
+                if ($product->user) {
+                    $product->user->notify(new \App\Notifications\AutoDonatedNotification($product, $originalStock));
+                }
 
                 $movedDonations->push($donation);
             }

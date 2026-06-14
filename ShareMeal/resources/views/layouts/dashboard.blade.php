@@ -34,6 +34,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    @vite(['resources/js/app.js'])
     <style>
         [x-cloak] { display: none !important; }
         .luxury-shadow { box-shadow: 0 20px 50px -12px rgba(23, 68, 19, 0.04); }
@@ -279,12 +280,51 @@
                                 }
                             }
                         @endphp
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="relative p-2.5 text-luxury-slate hover:text-luxury-forest hover:bg-white/80 rounded-full transition-all duration-300 focus:outline-none">
+                        <div class="relative" x-data="{ 
+                            open: false,
+                            unreadCount: {{ Auth::check() ? Auth::user()->unreadNotifications->count() + count($dynamicInfoNotifications) : 0 }},
+                            notificationsList: {{ json_encode(Auth::check() ? Auth::user()->notifications()->latest()->take(5)->get()->map(function($n) {
+                                return [
+                                    'id' => $n->id,
+                                    'title' => $n->data['title'] ?? 'Notifikasi',
+                                    'message' => $n->data['message'] ?? '',
+                                    'type' => $n->data['type'] ?? 'info',
+                                    'status' => $n->data['status'] ?? '',
+                                    'created_at_human' => $n->created_at->diffForHumans(),
+                                    'read_at' => $n->read_at,
+                                    'action_url' => $n->data['action_url'] ?? null,
+                                ];
+                            })->toArray() : []) }},
+                            dynamicAlerts: {{ json_encode($dynamicInfoNotifications) }},
+                            
+                            addRealtimeNotification(n) {
+                                this.notificationsList.unshift({
+                                    id: n.id || Date.now(),
+                                    title: n.title || 'Notifikasi Baru',
+                                    message: n.message || '',
+                                    type: n.type || 'info',
+                                    status: n.status || '',
+                                    created_at_human: 'Baru saja',
+                                    read_at: null,
+                                    action_url: n.action_url || null
+                                });
+                                if (this.notificationsList.length > 5) {
+                                    this.notificationsList.pop();
+                                }
+                                this.unreadCount++;
+                                
+                                setTimeout(() => {
+                                    if (window.lucide) window.lucide.createIcons();
+                                }, 50);
+                            }
+                        }" 
+                        @new-notification.window="addRealtimeNotification($event.detail)"
+                        x-cloak>
+                            <button @click="open = !open; if(open) setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 50)" class="relative p-2.5 text-luxury-slate hover:text-luxury-forest hover:bg-white/80 rounded-full transition-all duration-300 focus:outline-none">
                                 <i data-lucide="bell" class="w-6 h-6 stroke-[1.5]"></i>
-                                @if(Auth::check() && (Auth::user()->unreadNotifications->count() > 0 || count($dynamicInfoNotifications) > 0))
+                                <template x-if="unreadCount > 0">
                                     <span class="absolute top-2 right-2 block h-2.5 w-2.5 rounded-full bg-luxury-gold ring-4 ring-white"></span>
-                                @endif
+                                </template>
                             </button>
 
                             <div x-show="open"
@@ -304,12 +344,10 @@
                                     @endif
                                 </div>
                                 <div class="max-h-[32rem] overflow-y-auto custom-scrollbar bg-white/50">
-                                    @if(Auth::check())
-                                        @php
-                                            $dbNotifications = Auth::user()->notifications()->latest()->take(5)->get();
-                                        @endphp
-                                        @if(count($dynamicInfoNotifications) > 0 || $dbNotifications->count() > 0)
-                                            @foreach($dynamicInfoNotifications as $infoAlert)
+                                    <template x-if="notificationsList.length > 0 || dynamicAlerts.length > 0">
+                                        <div>
+                                            <!-- Dynamic Alerts (Session) -->
+                                            <template x-for="alert in dynamicAlerts">
                                                 <div class="px-6 py-5 hover:bg-white/90 transition-colors border-b border-luxury-alabas last:border-0 bg-luxury-gold/10">
                                                     <div class="flex gap-4">
                                                         <div class="mt-1">
@@ -318,54 +356,60 @@
                                                             </div>
                                                         </div>
                                                         <div class="flex-1">
-                                                            <div class="text-sm font-bold text-luxury-charcoal">{{ $infoAlert['title'] ?? 'Status Klaim Donasi' }}</div>
-                                                            <div class="text-xs text-luxury-slate mt-1 leading-relaxed">{{ $infoAlert['message'] }}</div>
-                                                            @if(isset($infoAlert['link']))
-                                                                <a href="{{ $infoAlert['link'] }}" class="inline-block text-xs text-luxury-gold hover:text-luxury-forest font-semibold mt-2 underline">
-                                                                    {{ $infoAlert['link_text'] ?? 'Lihat Detail' }}
-                                                                </a>
-                                                            @endif
+                                                            <div class="text-sm font-bold text-luxury-charcoal" x-text="alert.title || 'Status Klaim Donasi'"></div>
+                                                            <div class="text-xs text-luxury-slate mt-1 leading-relaxed" x-text="alert.message"></div>
+                                                            <template x-if="alert.link">
+                                                                <a :href="alert.link" class="inline-block text-xs text-luxury-gold hover:text-luxury-forest font-semibold mt-2 underline" x-text="alert.link_text || 'Lihat Detail'"></a>
+                                                            </template>
                                                             <div class="text-[10px] text-luxury-gold mt-2 uppercase font-bold tracking-widest">Saat Ini</div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            @endforeach
+                                            </template>
 
-                                            @foreach($dbNotifications as $notification)
-                                                <div class="px-6 py-5 hover:bg-white/90 transition-colors border-b border-luxury-alabas last:border-0 {{ $notification->unread() ? 'bg-luxury-gold/10' : '' }}">
+                                            <!-- Database & Real-time Notifications -->
+                                            <template x-for="n in notificationsList" :key="n.id">
+                                                <div class="px-6 py-5 hover:bg-white/90 transition-colors border-b border-luxury-alabas last:border-0" :class="n.read_at ? '' : 'bg-luxury-gold/10'">
                                                     <div class="flex gap-4">
                                                         <div class="mt-1">
-                                                            @if(($notification->data['status'] ?? '') == 'completed')
-                                                                <div class="bg-luxury-forest/10 p-2 rounded-xl">
-                                                                    <i data-lucide="check-circle" class="w-4 h-4 text-luxury-forest"></i>
+                                                            <template x-if="n.status === 'completed' || n.type === 'success' || n.type === 'Donasi'">
+                                                                <div class="bg-luxury-forest/10 p-2 rounded-xl text-luxury-forest">
+                                                                    <i data-lucide="check-circle" class="w-4 h-4 stroke-[2.5]"></i>
                                                                 </div>
-                                                            @elseif(($notification->data['status'] ?? '') == 'cancelled')
-                                                                <div class="bg-red-50 p-2 rounded-xl">
-                                                                    <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+                                                            </template>
+                                                            <template x-if="n.status === 'cancelled' || n.type === 'error' || n.type === 'warning'">
+                                                                <div class="bg-red-50 p-2 rounded-xl text-red-600">
+                                                                    <i data-lucide="x-circle" class="w-4 h-4 stroke-[2.5]"></i>
                                                                 </div>
-                                                            @else
-                                                                <div class="bg-luxury-gold/10 p-2 rounded-xl">
-                                                                    <i data-lucide="info" class="w-4 h-4 text-luxury-gold"></i>
+                                                            </template>
+                                                            <template x-if="n.status !== 'completed' && n.status !== 'cancelled' && n.type !== 'success' && n.type !== 'error' && n.type !== 'warning' && n.type !== 'Donasi'">
+                                                                <div class="bg-luxury-gold/10 p-2 rounded-xl text-luxury-gold">
+                                                                    <i data-lucide="info" class="w-4 h-4 stroke-[2.5]"></i>
                                                                 </div>
-                                                            @endif
+                                                            </template>
                                                         </div>
                                                         <div class="flex-1">
-                                                            <div class="text-sm font-bold text-luxury-charcoal">{{ $notification->data['title'] ?? 'Notifikasi' }}</div>
-                                                            <div class="text-xs text-luxury-slate mt-1 leading-relaxed">{{ $notification->data['message'] ?? '' }}</div>
-                                                            <div class="text-[10px] text-luxury-gold mt-2 uppercase font-bold tracking-widest">{{ $notification->created_at->diffForHumans() }}</div>
+                                                            <div class="text-sm font-bold text-luxury-charcoal" x-text="n.title"></div>
+                                                            <div class="text-xs text-luxury-slate mt-1 leading-relaxed" x-text="n.message"></div>
+                                                            <template x-if="n.action_url">
+                                                                <a :href="n.action_url" class="inline-block text-xs text-luxury-gold hover:text-luxury-forest font-semibold mt-2 underline">Lihat Detail</a>
+                                                            </template>
+                                                            <div class="text-[10px] text-luxury-gold mt-2 uppercase font-bold tracking-widest" x-text="n.created_at_human"></div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            @endforeach
-                                        @else
-                                            <div class="px-6 py-12 text-center">
-                                                <div class="bg-luxury-ivory w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-luxury-alabas">
-                                                    <i data-lucide="bell-off" class="w-8 h-8 text-luxury-alabas"></i>
-                                                </div>
-                                                <p class="text-sm text-luxury-slate font-medium italic">Belum ada notifikasi baru</p>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    
+                                    <template x-if="notificationsList.length === 0 && dynamicAlerts.length === 0">
+                                        <div class="px-6 py-12 text-center">
+                                            <div class="bg-luxury-ivory w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-luxury-alabas">
+                                                <i data-lucide="bell-off" class="w-8 h-8 text-luxury-alabas"></i>
                                             </div>
-                                        @endif
-                                    @endif
+                                            <p class="text-sm text-luxury-slate font-medium italic">Belum ada notifikasi baru</p>
+                                        </div>
+                                    </template>
                                 </div>
                                 <div class="px-6 py-4 border-t border-luxury-alabas text-center bg-white/80">
                                     <a href="{{ route('notifications.index') }}" class="text-xs font-bold text-luxury-forest hover:text-luxury-gold transition-colors uppercase tracking-widest">Lihat Semua</a>
@@ -499,7 +543,6 @@
         </main>
     </div>
 
-    <!-- PBI #45: Toast Notification System -->
     <div x-data="{ 
             notifications: [],
             add(n) {
@@ -507,11 +550,14 @@
                 this.notifications.push({ id, ...n });
                 setTimeout(() => {
                     this.notifications = this.notifications.filter(item => item.id !== id);
-                }, 5000);
+                }, 6000);
+                if (window.playNotificationChime) {
+                    window.playNotificationChime();
+                }
             }
          }" 
          @notify.window="add($event.detail)"
-         class="fixed top-6 right-6 z-[100] space-y-4 w-96">
+         class="fixed top-24 right-6 z-[100] space-y-4 w-96">
         <template x-for="n in notifications" :key="n.id">
             <div x-show="true"
                  x-transition:enter="transition ease-out duration-500"
@@ -520,7 +566,7 @@
                  x-transition:leave="transition ease-in duration-300"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0 translate-x-4"
-                 class="glass-panel rounded-[1.5rem] luxury-shadow p-5 flex items-start gap-4 ring-1 ring-white/50 relative overflow-hidden group cursor-pointer"
+                 class="bg-white/95 backdrop-blur-xl border border-luxury-alabas rounded-[1.5rem] luxury-shadow p-5 flex items-start gap-4 ring-1 ring-white/50 relative overflow-hidden group cursor-pointer"
                  @click="notifications = notifications.filter(item => item.id !== n.id)">
                 
                 <!-- Accent Line -->
@@ -566,8 +612,100 @@
     </div>
 
     <script>
+        // Global Audio Context Unlocker for real-time notifications
+        let audioCtx = null;
+        function initAudioCtx() {
+            if (audioCtx) return;
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            } catch (e) {
+                console.warn('Web Audio API not supported:', e);
+            }
+        }
+        
+        // Listen for first user gesture to unlock audio context
+        window.addEventListener('click', initAudioCtx, { once: true });
+        window.addEventListener('keydown', initAudioCtx, { once: true });
+        window.addEventListener('touchstart', initAudioCtx, { once: true });
+
+        window.playNotificationChime = function() {
+            try {
+                if (!audioCtx) {
+                    initAudioCtx();
+                }
+                if (audioCtx) {
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                    
+                    const osc = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    osc.type = 'sine';
+                    // Beautiful double-chime chime
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
+                    
+                    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                    
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+                }
+            } catch (e) {
+                console.error('Failed to play chime:', e);
+            }
+        };
+
         // Initialize Lucide Icons
         lucide.createIcons();
+
+        // Laravel Echo Real-time Notifications Listener
+        @if(Auth::check())
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = {{ Auth::id() }};
+            if (window.Echo) {
+                window.Echo.private('App.Models.User.' + userId)
+                    .notification((notification) => {
+                        console.log('Real-time notification received:', notification);
+                        
+                        // Mapping notification type to toast styling
+                        let toastType = 'success';
+                        const nType = (notification.type || '').toLowerCase();
+                        if (nType === 'error' || nType === 'warning' || nType === 'system') {
+                            toastType = 'error';
+                        }
+                        
+                        // 1. Dispatch notify event to trigger Toast Alert popup
+                        window.dispatchEvent(new CustomEvent('notify', {
+                            detail: {
+                                title: notification.title || 'Notifikasi Baru',
+                                message: notification.message || '',
+                                type: toastType
+                            }
+                        }));
+                        
+                        // 2. Dispatch new-notification event to append to Navbar dropdown and update badge
+                        window.dispatchEvent(new CustomEvent('new-notification', {
+                            detail: {
+                                id: notification.id || Date.now(),
+                                title: notification.title || 'Notifikasi Baru',
+                                message: notification.message || '',
+                                type: notification.type || 'info',
+                                status: notification.status || '',
+                                action_url: notification.action_url || null
+                            }
+                        }));
+                    });
+            }
+        });
+        @endif
 
         // PBI #45: Trigger session messages as toasts
         @if(session('success'))

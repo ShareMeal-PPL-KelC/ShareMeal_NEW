@@ -5,14 +5,14 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class FlashSaleNotification extends Notification
+class NewMenuAvailableNotification extends Notification
 {
     use Queueable;
 
     public function __construct(
         protected $storeName,
         protected $itemName,
-        protected $discountPrice
+        protected $price
     ) {}
 
     public function via($notifiable): array
@@ -23,12 +23,12 @@ class FlashSaleNotification extends Notification
     public function toArray($notifiable): array
     {
         return [
-            'title' => 'Toko favorite anda mengeluarkan promo flash sale',
-            'message' => "{$this->storeName} baru saja memulai flash sale untuk {$this->itemName} seharga Rp " . number_format($this->discountPrice, 0, ',', '.'),
+            'title' => 'Menu Baru Ditambahkan!',
+            'message' => "{$this->storeName} baru saja menambahkan menu baru: {$this->itemName} seharga Rp " . number_format($this->price, 0, ',', '.'),
             'store_name' => $this->storeName,
             'item_name' => $this->itemName,
-            'icon' => '🔥',
-            'status' => 'flash-sale',
+            'icon' => 'utensils',
+            'status' => 'success',
             'action_url' => route('consumer.search', ['q' => $this->storeName])
         ];
     }

@@ -53,7 +53,7 @@ class FeedbackController extends Controller
             }
         }
 
-        Feedback::create([
+        $feedback = Feedback::create([
             'user_id' => Auth::id(),
             'category' => $data['category'],
             'subject' => $data['subject'],
@@ -61,6 +61,12 @@ class FeedbackController extends Controller
             'rating' => $data['rating'],
             'screenshots' => $screenshotPaths,
         ]);
+
+        // Notify Admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\NewFeedbackNotification($feedback));
+        }
 
         return back()->with('success', 'Feedback Anda berhasil terkirim ke admin. Terima kasih atas masukan yang diberikan!');
     }
