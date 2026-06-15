@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Hash;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
+/**
+ * PBI-15: Riwayat Pesanan
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi15RiwayatPesananTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -84,6 +89,7 @@ class Pbi15RiwayatPesananTest extends DuskTestCase
 
     private function disableReveal(Browser $browser): void
     {
+        // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
         $browser->script("
             var style = document.createElement('style');
             style.innerHTML = '.reveal { opacity: 1 !important; transform: none !important; transition: none !important; transition-delay: 0s !important; }';
@@ -101,9 +107,13 @@ class Pbi15RiwayatPesananTest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
             $browser->maximize()
+                // Mengunjungi halaman '/login'
                 ->visit('/login')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                 ->script("
                     let select = document.querySelector('select[name=\"user_type\"]');
                     if (select) {
@@ -111,18 +121,28 @@ class Pbi15RiwayatPesananTest extends DuskTestCase
                         select.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 ");
+            // Mengisi input 'email' dengan nilai 'budi@example.com'
             $browser->type('email', 'budi@example.com')
+                // Mengisi input 'password' dengan nilai 'password'
                 ->type('password', 'password')
+                // Menekan tombol dengan teks/properti 'tombol terkait'
                 ->press('button[type="submit"]')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Mengunjungi halaman '/consumer/history'
                 ->visit('/consumer/history');
             
             $this->disableReveal($browser);
             
+            // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(2000)
+                // Memastikan teks 'Riwayat' terlihat pada halaman browser
                 ->assertSee('Riwayat')
+                // Memastikan teks 'Riwayat Pesanan' terlihat pada halaman browser
                 ->assertSee('Riwayat Pesanan')
+                // Memastikan teks 'Toko Roti Makmur' terlihat pada halaman browser
                 ->assertSee('Toko Roti Makmur')
+                // Memastikan teks 'SELESAI' terlihat pada halaman browser
                 ->assertSee('SELESAI');
         });
     }
@@ -134,9 +154,13 @@ class Pbi15RiwayatPesananTest extends DuskTestCase
         $this->browse(function (Browser $browser) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
             $browser->maximize()
+                // Mengunjungi halaman '/login'
                 ->visit('/login')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                 ->script("
                     let select = document.querySelector('select[name=\"user_type\"]');
                     if (select) {
@@ -144,11 +168,17 @@ class Pbi15RiwayatPesananTest extends DuskTestCase
                         select.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 ");
+            // Mengisi input 'email' dengan nilai 'admin@sharemeal.id'
             $browser->type('email', 'admin@sharemeal.id')
+                // Mengisi input 'password' dengan nilai 'password'
                 ->type('password', 'password')
+                // Menekan tombol dengan teks/properti 'tombol terkait'
                 ->press('button[type="submit"]')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Mengunjungi halaman '/consumer/history'
                 ->visit('/consumer/history')
+                // Memastikan teks 'Riwayat Pesanan' TIDAK muncul pada halaman browser
                 ->assertDontSee('Riwayat Pesanan');
         });
     }

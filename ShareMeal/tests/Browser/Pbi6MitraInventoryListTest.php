@@ -9,6 +9,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
+/**
+ * PBI-6: Mitra Inventory List
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi6MitraInventoryListTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -50,14 +55,23 @@ class Pbi6MitraInventoryListTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Mengunjungi halaman '/login'
             $browser->visit('/login')
+                    // Memilih opsi 'mitra' pada dropdown 'user_type'
                     ->select('user_type', 'mitra')
+                    // Mengisi input field 'email'
                     ->type('email', $email)
+                    // Mengisi input field 'password'
                     ->type('password', $password)
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('button[type="submit"]')
+                    // Menunggu halaman berpindah ke rute '/mitra' (batas waktu 15 detik)
                     ->waitForLocation('/mitra', 15)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory')
+                    // Menunggu teks 'Manajemen Inventaris Surplus' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Manajemen Inventaris Surplus', 15)
+                    // Memastikan teks 'Roti Keju Spesial' TIDAK muncul pada halaman browser
                     ->assertDontSee('Roti Keju Spesial');
         });
     }
@@ -88,15 +102,25 @@ class Pbi6MitraInventoryListTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Mengunjungi halaman '/login'
             $browser->visit('/login')
+                    // Memilih opsi 'mitra' pada dropdown 'user_type'
                     ->select('user_type', 'mitra')
+                    // Mengisi input field 'email'
                     ->type('email', $email)
+                    // Mengisi input field 'password'
                     ->type('password', $password)
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('button[type="submit"]')
+                    // Menunggu halaman berpindah ke rute '/mitra' (batas waktu 15 detik)
                     ->waitForLocation('/mitra', 15)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory')
+                    // Menunggu teks 'Roti Keju Spesial' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Roti Keju Spesial', 15)
+                    // Memastikan teks 'Roti Keju Spesial' terlihat pada halaman browser
                     ->assertSee('Roti Keju Spesial')
+                    // Memastikan teks '15 Pcs' terlihat pada halaman browser
                     ->assertSee('15 Pcs');
         });
     }

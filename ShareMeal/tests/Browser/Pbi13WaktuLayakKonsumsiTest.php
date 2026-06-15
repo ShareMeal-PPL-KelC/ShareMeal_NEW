@@ -12,6 +12,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
+/**
+ * PBI-13: Waktu Layak Konsumsi
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi13WaktuLayakKonsumsiTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -86,17 +91,29 @@ class Pbi13WaktuLayakKonsumsiTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
             $browser->maximize()
+                // Mengunjungi halaman '/login'
                 ->visit('/login')
+                // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                 ->waitFor('select[name="user_type"]')
+                // Memilih opsi 'consumer' pada dropdown 'user_type'
                 ->select('user_type', 'consumer')
+                // Mengisi input field 'email'
                 ->type('email', $email)
+                // Mengisi input field 'password'
                 ->type('password', $password)
+                // Mengeklik elemen 'elemen terkait' di halaman
                 ->click('button[type="submit"]')
+                // Menunggu halaman berpindah ke rute '/consumer' (batas waktu 15 detik)
                 ->waitForLocation('/consumer', 15)
+                // Mengunjungi halaman 'halaman terkait'
                 ->visit(route('consumer.orders.active'))
+                // Menunggu halaman berpindah ke rute '/consumer/orders/active' (batas waktu 15 detik)
                 ->waitForLocation('/consumer/orders/active', 15)
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Memastikan teks 'Layak Konsumsi s/d:' terlihat pada halaman browser
                 ->assertSee('Layak Konsumsi s/d:');
         });
     }
@@ -127,17 +144,29 @@ class Pbi13WaktuLayakKonsumsiTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
             $browser->maximize()
+                // Mengunjungi halaman '/login'
                 ->visit('/login')
+                // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                 ->waitFor('select[name="user_type"]')
+                // Memilih opsi 'consumer' pada dropdown 'user_type'
                 ->select('user_type', 'consumer')
+                // Mengisi input field 'email'
                 ->type('email', $email)
+                // Mengisi input field 'password'
                 ->type('password', $password)
+                // Mengeklik elemen 'elemen terkait' di halaman
                 ->click('button[type="submit"]')
+                // Menunggu halaman berpindah ke rute '/consumer' (batas waktu 15 detik)
                 ->waitForLocation('/consumer', 15)
+                // Mengunjungi halaman 'halaman terkait'
                 ->visit(route('consumer.orders.active'))
+                // Menunggu halaman berpindah ke rute '/consumer/orders/active' (batas waktu 15 detik)
                 ->waitForLocation('/consumer/orders/active', 15)
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Memastikan teks 'Layak Konsumsi s/d:' TIDAK muncul pada halaman browser
                 ->assertDontSee('Layak Konsumsi s/d:');
         });
     }

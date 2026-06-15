@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Donation;
 
+/**
+ * PBI-19: Waktu Kelayakan
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi19WaktuKelayakanTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -58,10 +63,14 @@ class Pbi19WaktuKelayakanTest extends DuskTestCase
             ]);
 
             $browser->loginAs($lembaga)
+                    // Mengunjungi halaman '/lembaga/donations'
                     ->visit('/lembaga/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Kotak Layak Konsumsi PBI 19')
+                    // Memastikan teks 'Nasi Kotak Layak Konsumsi PBI 19' terlihat pada halaman browser
                     ->assertSee('Nasi Kotak Layak Konsumsi PBI 19')
                     // Verify uppercase due to CSS transform
+                    // Memastikan teks 'TERSEDIA SAMPAI:' terlihat pada halaman browser
                     ->assertSee('TERSEDIA SAMPAI:');
 
             $browser->blank();
@@ -113,8 +122,10 @@ class Pbi19WaktuKelayakanTest extends DuskTestCase
             ]);
 
             $browser->loginAs($lembaga)
+                    // Mengunjungi halaman '/lembaga/donations'
                     ->visit('/lembaga/donations')
                     // Verify that the expired donation is not visible
+                    // Memastikan teks 'Sayur Basi PBI 19 Neg' TIDAK muncul pada halaman browser
                     ->assertDontSee('Sayur Basi PBI 19 Neg');
 
             $browser->blank();

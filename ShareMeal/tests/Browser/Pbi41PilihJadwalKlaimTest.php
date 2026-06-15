@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Donation;
 
+/**
+ * PBI-41: Pilih Jadwal Klaim
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi41PilihJadwalKlaimTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -56,15 +61,24 @@ class Pbi41PilihJadwalKlaimTest extends DuskTestCase
             ]);
 
             $browser->loginAs($lembaga)
+                    // Mengunjungi halaman '/lembaga/donations'
                     ->visit('/lembaga/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Bungkus PBI 41')
+                    // Memastikan teks 'Nasi Bungkus PBI 41' terlihat pada halaman browser
                     ->assertSee('Nasi Bungkus PBI 41')
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('div[x-show="activeTab === \'available\'"] button.bg-purple-600') // Open Claim Modal
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Konfirmasi Klaim Donasi') // Wait for modal to open
                     ->assertPresent('input[name="pickup_time"]')
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('input[name="pickup_time"] + div') // Select the first available slot
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('form[action*="claim"] button[type="submit"]') // Submit claim
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Donasi berhasil diklaim')
+                    // Memastikan teks 'Donasi berhasil diklaim' terlihat pada halaman browser
                     ->assertSee('Donasi berhasil diklaim');
 
             // Assert status updated in database
@@ -118,14 +132,21 @@ class Pbi41PilihJadwalKlaimTest extends DuskTestCase
             ]);
 
             $browser->loginAs($lembaga)
+                    // Mengunjungi halaman '/lembaga/donations'
                     ->visit('/lembaga/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Kotak PBI 41')
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('div[x-show="activeTab === \'available\'"] button.bg-purple-600') // Open Claim Modal
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Konfirmasi Klaim Donasi') // Wait for modal to open
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('form[action*="claim"] button[type="submit"]'); // Try to submit without choosing a slot
 
             // Wait 2 seconds to make sure it didn't submit
+            // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(2000)
+                    // Memastikan teks 'Konfirmasi Klaim Donasi' terlihat pada halaman browser
                     ->assertSee('Konfirmasi Klaim Donasi'); // We should still be on the modal
 
             // Assert status remains pending in database

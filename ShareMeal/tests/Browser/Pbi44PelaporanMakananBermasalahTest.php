@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\ProblemReport;
 
+/**
+ * PBI-44: Pelaporan Makanan Bermasalah
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi44PelaporanMakananBermasalahTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -38,6 +43,7 @@ class Pbi44PelaporanMakananBermasalahTest extends DuskTestCase
             // Kita memvalidasi fungsionalitas pelaporan ini melalui integrasi Model & Database.
             
             $browser->loginAs($consumer)
+                    // Mengunjungi halaman '/consumer/history'
                     ->visit('/consumer/history');
 
             // Simulasikan aksi pelaporan makanan yang dilakukan oleh user
@@ -58,6 +64,7 @@ class Pbi44PelaporanMakananBermasalahTest extends DuskTestCase
             ]);
 
             // Memastikan browser tetap berjalan tanpa crash
+            // Memastikan sistem berhasil mengarahkan pengguna ke halaman '/consumer/history'
             $browser->assertPathIs('/consumer/history');
         });
     }
@@ -81,6 +88,7 @@ class Pbi44PelaporanMakananBermasalahTest extends DuskTestCase
             ]);
 
             $browser->loginAs($consumerA)
+                    // Mengunjungi halaman '/consumer/history'
                     ->visit('/consumer/history');
 
             // Coba panggil submit pelaporan masalah untuk order_id milik orang lain

@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Donation;
 
+/**
+ * PBI-42: Donation Status Update
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi42DonationStatusUpdateTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -59,16 +64,27 @@ class Pbi42DonationStatusUpdateTest extends DuskTestCase
             ]);
 
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/donations'
                     ->visit('/mitra/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Bungkus PBI 42')
+                    // Memastikan teks 'Nasi Bungkus PBI 42' terlihat pada halaman browser
                     ->assertSee('Nasi Bungkus PBI 42')
+                    // Memastikan teks 'TERKLAIM' terlihat pada halaman browser
                     ->assertSee('TERKLAIM')
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('form[action*="prepare"] button[type="submit"]') // Click "Siapkan Donasi"
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Donasi berhasil ditandai sebagai siap diambil.')
+                    // Memastikan teks 'SIAP DIAMBIL' terlihat pada halaman browser
                     ->assertSee('SIAP DIAMBIL')
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('form[action*="complete"] button[type="submit"]') // Click "Konfirmasi Penyerahan"
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Donasi dikonfirmasi telah diserahkan.')
+                    // Memastikan teks 'Donasi dikonfirmasi telah diserahkan.' terlihat pada halaman browser
                     ->assertSee('Donasi dikonfirmasi telah diserahkan.')
+                    // Memastikan teks 'SELESAI' terlihat pada halaman browser
                     ->assertSee('SELESAI');
 
             // Assert status updated in database
@@ -112,9 +128,13 @@ class Pbi42DonationStatusUpdateTest extends DuskTestCase
             ]);
 
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/donations'
                     ->visit('/mitra/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Kotak PBI 42 Neg')
+                    // Memastikan teks 'Nasi Kotak PBI 42 Neg' terlihat pada halaman browser
                     ->assertSee('Nasi Kotak PBI 42 Neg')
+                    // Memastikan teks 'MENUNGGU KLAIM' terlihat pada halaman browser
                     ->assertSee('MENUNGGU KLAIM')
                     ->assertMissing('form[action*="complete"] button[type="submit"]') // "Konfirmasi Penyerahan" should not exist
                     ->assertPresent('form[action*="cancel"] button[type="submit"]'); // "Batalkan" should exist
@@ -174,11 +194,17 @@ class Pbi42DonationStatusUpdateTest extends DuskTestCase
 
             // 1. Visit as Lembaga, verify DIPROSES tab has Hubungi WA, but no Rute Resto or Konfirmasi
             $browser->loginAs($lembaga)
+                    // Mengunjungi halaman '/lembaga/donations'
                     ->visit('/lembaga/donations')
+                    // Mengeklik elemen '#tab-claimed' di halaman
                     ->click('#tab-claimed') // Click DIPROSES tab button
+                    // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
                     ->pause(1000) // wait for tab switch animation
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Bungkus Lembaga Test')
+                    // Memastikan teks 'HUBUNGI WA' terlihat pada halaman browser
                     ->assertSee('HUBUNGI WA')
+                    // Memastikan teks 'RUTE RESTO' TIDAK muncul pada halaman browser
                     ->assertDontSee('RUTE RESTO')
                     ->assertMissing('form[action*="complete"] button[type="submit"]');
 
@@ -186,15 +212,24 @@ class Pbi42DonationStatusUpdateTest extends DuskTestCase
             $donation->update(['status' => 'prepared', 'tracking_status' => 'prepared']);
 
             // 3. Refresh and check SIAP DIAMBIL tab, verify all actions (Rute Resto, Hubungi WA, Konfirmasi) exist
+            // Mengunjungi halaman '/lembaga/donations'
             $browser->visit('/lembaga/donations')
+                    // Mengeklik elemen '#tab-prepared' di halaman
                     ->click('#tab-prepared') // Click SIAP DIAMBIL tab button
+                    // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
                     ->pause(1000)
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Bungkus Lembaga Test')
+                    // Memastikan teks 'HUBUNGI WA' terlihat pada halaman browser
                     ->assertSee('HUBUNGI WA')
+                    // Memastikan teks 'RUTE RESTO' terlihat pada halaman browser
                     ->assertSee('RUTE RESTO')
                     ->assertPresent('form[action*="complete"] button[type="submit"]')
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('form[action*="complete"] button[type="submit"]') // Complete donation
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Donasi dikonfirmasi sudah diterima.')
+                    // Memastikan teks 'Donasi dikonfirmasi sudah diterima.' terlihat pada halaman browser
                     ->assertSee('Donasi dikonfirmasi sudah diterima.');
 
             $browser->blank();

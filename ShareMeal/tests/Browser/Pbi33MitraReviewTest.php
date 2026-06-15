@@ -10,6 +10,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
+/**
+ * PBI-33: Mitra Review
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi33MitraReviewTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -60,17 +65,29 @@ class Pbi33MitraReviewTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Mengunjungi halaman '/login'
             $browser->visit('/login')
+                    // Memilih opsi 'mitra' pada dropdown 'user_type'
                     ->select('user_type', 'mitra')
+                    // Mengisi input field 'email'
                     ->type('email', $email)
+                    // Mengisi input field 'password'
                     ->type('password', $password)
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('button[type="submit"]')
+                    // Menunggu halaman berpindah ke rute '/mitra' (batas waktu 15 detik)
                     ->waitForLocation('/mitra', 15)
+                    // Mengunjungi halaman '/mitra/reviews'
                     ->visit('/mitra/reviews')
+                    // Menunggu teks 'Ulasan Konsumen' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Ulasan Konsumen', 15)
+                    // Memastikan teks '4.5' terlihat pada halaman browser
                     ->assertSee('4.5') // Average of 5 and 4
+                    // Memastikan teks '2' terlihat pada halaman browser
                     ->assertSee('2')   // Total reviews
+                    // Memastikan teks 'Perfect!' terlihat pada halaman browser
                     ->assertSee('Perfect!')
+                    // Memastikan teks 'Good!' terlihat pada halaman browser
                     ->assertSee('Good!');
         });
     }
@@ -89,15 +106,24 @@ class Pbi33MitraReviewTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Mengunjungi halaman '/login'
             $browser->visit('/login')
+                    // Memilih opsi 'consumer' pada dropdown 'user_type'
                     ->select('user_type', 'consumer')
+                    // Mengisi input field 'email'
                     ->type('email', $email)
+                    // Mengisi input field 'password'
                     ->type('password', $password)
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('button[type="submit"]')
+                    // Menunggu halaman berpindah ke rute '/consumer' (batas waktu 15 detik)
                     ->waitForLocation('/consumer', 15)
+                    // Mengunjungi halaman '/mitra/reviews'
                     ->visit('/mitra/reviews')
                     // Assuming RoleMiddleware redirects unauthorized users to their dashboard
+                    // Menunggu halaman berpindah ke rute '/consumer' (batas waktu 15 detik)
                     ->waitForLocation('/consumer', 15)
+                    // Memastikan sistem berhasil mengarahkan pengguna ke halaman '/consumer'
                     ->assertPathIs('/consumer');
         });
     }

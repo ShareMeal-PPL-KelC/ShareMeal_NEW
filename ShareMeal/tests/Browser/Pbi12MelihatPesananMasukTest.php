@@ -12,6 +12,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
+/**
+ * PBI-12: Melihat Pesanan Masuk
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi12MelihatPesananMasukTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -92,9 +97,13 @@ class Pbi12MelihatPesananMasukTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($mitraEmail, $mitraPassword) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
             $browser->maximize()
+                // Mengunjungi halaman '/login'
                 ->visit('/login')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                 ->script("
                     let select = document.querySelector('select[name=\"user_type\"]');
                     if (select) {
@@ -102,14 +111,23 @@ class Pbi12MelihatPesananMasukTest extends DuskTestCase
                         select.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 ");
+            // Mengisi input field 'email'
             $browser->type('email', $mitraEmail)
+                // Mengisi input field 'password'
                 ->type('password', $mitraPassword)
+                // Menekan tombol dengan teks/properti 'tombol terkait'
                 ->press('button[type="submit"]')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Mengunjungi halaman 'halaman terkait'
                 ->visit(route('mitra.orders'))
+                // Menunggu halaman berpindah ke rute '/mitra/orders' (batas waktu 15 detik)
                 ->waitForLocation('/mitra/orders', 15)
+                // Menunggu teks 'Susu Kurma Segar' muncul di layar (batas waktu 15 detik)
                 ->waitForText('Susu Kurma Segar', 15)
+                // Memastikan teks 'Susu Kurma Segar' terlihat pada halaman browser
                 ->assertSee('Susu Kurma Segar')
+                // Memastikan teks 'Budi Santoso' terlihat pada halaman browser
                 ->assertSee('Budi Santoso');
         });
     }
@@ -216,9 +234,13 @@ class Pbi12MelihatPesananMasukTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($otherMitraEmail, $otherMitraPassword) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
             $browser->maximize()
+                // Mengunjungi halaman '/login'
                 ->visit('/login')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                 ->script("
                     let select = document.querySelector('select[name=\"user_type\"]');
                     if (select) {
@@ -226,13 +248,21 @@ class Pbi12MelihatPesananMasukTest extends DuskTestCase
                         select.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 ");
+            // Mengisi input field 'email'
             $browser->type('email', $otherMitraEmail)
+                // Mengisi input field 'password'
                 ->type('password', $otherMitraPassword)
+                // Menekan tombol dengan teks/properti 'tombol terkait'
                 ->press('button[type="submit"]')
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Mengunjungi halaman 'halaman terkait'
                 ->visit(route('mitra.orders'))
+                // Menunggu halaman berpindah ke rute '/mitra/orders' (batas waktu 15 detik)
                 ->waitForLocation('/mitra/orders', 15)
+                // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                 ->pause(2000)
+                // Memastikan teks 'Susu Kurma Segar' TIDAK muncul pada halaman browser
                 ->assertDontSee('Susu Kurma Segar');
         });
     }

@@ -11,6 +11,11 @@ use App\Models\UserProfile;
 use App\Models\Store;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * PBI-20: Notifikasi Flash Sale
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi20NotifikasiFlashSaleTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -67,6 +72,7 @@ class Pbi20NotifikasiFlashSaleTest extends DuskTestCase
 
             // --- 2. MITRA: AKTIFKAN FLASH SALE ---
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory');
             
             Product::create([
@@ -82,20 +88,30 @@ class Pbi20NotifikasiFlashSaleTest extends DuskTestCase
             ]);
 
             $browser->refresh()
+                    // Menunggu teks 'Roti Manis PBI 20' muncul di layar (batas waktu 10 detik)
                     ->waitForText('Roti Manis PBI 20', 10)
+                    // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                     ->script('window.confirm = function() { return true; };');
             
+            // Mengeklik elemen 'button.bg-orange-50' di halaman
             $browser->click('button.bg-orange-50') 
+                    // Menunggu teks 'Flash sale diaktifkan' muncul di layar (batas waktu 10 detik)
                     ->waitForText('Flash sale diaktifkan', 10);
 
             // --- 3. KONSUMEN: CEK NOTIFIKASI ---
             $browser->loginAs($consumer)
                     ->visitRoute('notifications.index')
+                    // Menunggu teks 'Toko favorite anda mengeluarkan promo flash sale' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Toko favorite anda mengeluarkan promo flash sale', 15)
+                    // Memastikan teks 'Resto Favorit PBI 20 baru saja memulai flash sale untuk Roti Manis PBI 20' terlihat pada halaman browser
                     ->assertSee('Resto Favorit PBI 20 baru saja memulai flash sale untuk Roti Manis PBI 20')
+                    // Mengeklik elemen '@notification-link' di halaman
                     ->click('@notification-link')
+                    // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                     ->pause(2000)
+                    // Memastikan sistem berhasil mengarahkan pengguna ke halaman '/consumer/search'
                     ->assertPathIs('/consumer/search')
+                    // Memastikan teks 'Roti Manis PBI 20' terlihat pada halaman browser
                     ->assertSee('Roti Manis PBI 20');
         });
     }
@@ -147,6 +163,7 @@ class Pbi20NotifikasiFlashSaleTest extends DuskTestCase
 
             // Mitra buat produk normal (bukan flash sale)
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory');
             
             Product::create([
@@ -164,7 +181,9 @@ class Pbi20NotifikasiFlashSaleTest extends DuskTestCase
             // Konsumen cek notifikasi (tidak boleh ada notif flash sale untuk produk ini)
             $browser->loginAs($consumer)
                     ->visitRoute('notifications.index')
+                    // Memastikan teks 'Promo flash sale' TIDAK muncul pada halaman browser
                     ->assertDontSee('Promo flash sale')
+                    // Memastikan teks 'Roti Normal PBI 20 Neg' TIDAK muncul pada halaman browser
                     ->assertDontSee('Roti Normal PBI 20 Neg');
         });
     }

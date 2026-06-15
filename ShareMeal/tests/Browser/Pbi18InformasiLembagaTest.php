@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Donation;
 
+/**
+ * PBI-18: Informasi Lembaga
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi18InformasiLembagaTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -61,11 +66,17 @@ class Pbi18InformasiLembagaTest extends DuskTestCase
             ]);
 
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/donations'
                     ->visit('/mitra/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Bungkus PBI 18')
+                    // Memastikan teks 'Nasi Bungkus PBI 18' terlihat pada halaman browser
                     ->assertSee('Nasi Bungkus PBI 18')
+                    // Memastikan teks 'Yayasan PBI 18' terlihat pada halaman browser
                     ->assertSee('Yayasan PBI 18')
+                    // Memastikan teks 'yayasan_pbi18@example.com' terlihat pada halaman browser
                     ->assertSee('yayasan_pbi18@example.com')
+                    // Memastikan teks '089876543216' terlihat pada halaman browser
                     ->assertSee('089876543216');
 
             $browser->blank();
@@ -104,8 +115,11 @@ class Pbi18InformasiLembagaTest extends DuskTestCase
             ]);
 
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/donations'
                     ->visit('/mitra/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Kotak PBI 18 Neg')
+                    // Memastikan teks 'Belum ada lembaga yang mengklaim donasi ini' terlihat pada halaman browser
                     ->assertSee('Belum ada lembaga yang mengklaim donasi ini');
 
             $browser->blank();

@@ -10,6 +10,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
+/**
+ * PBI-14: Resto Favorit
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi14RestoFavoritTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -70,18 +75,27 @@ class Pbi14RestoFavoritTest extends DuskTestCase
     private function login(Browser $browser, string $email, string $password): void
     {
         $browser->driver->manage()->deleteAllCookies();
+        // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
         $browser->maximize()
+            // Mengunjungi halaman '/login'
             ->visit('/login')
+            // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
             ->waitFor('select[name="user_type"]')
+            // Memilih opsi 'consumer' pada dropdown 'user_type'
             ->select('user_type', 'consumer')
+            // Mengisi input field 'email'
             ->type('email', $email)
+            // Mengisi input field 'password'
             ->type('password', $password)
+            // Mengeklik elemen 'elemen terkait' di halaman
             ->click('button[type="submit"]')
+            // Menunggu halaman berpindah ke rute '/consumer' (batas waktu 15 detik)
             ->waitForLocation('/consumer', 15);
     }
 
     private function disableReveal(Browser $browser): void
     {
+        // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
         $browser->script("
             var style = document.createElement('style');
             style.innerHTML = '.reveal { opacity: 1 !important; transform: none !important; transition: none !important; transition-delay: 0s !important; }';
@@ -104,37 +118,49 @@ class Pbi14RestoFavoritTest extends DuskTestCase
 
             // Bersihkan dulu, lalu simulasikan menambah favorit via localStorage
             // (merefleksikan aksi klik tombol hati di halaman search)
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("localStorage.removeItem('favoriteStores');");
 
             // Buka halaman search agar Alpine init
+            // Mengunjungi halaman 'halaman terkait'
             $browser->visit(route('consumer.search'));
             $this->disableReveal($browser);
+            // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(2000);
 
             // Set localStorage favoriteStores dengan mitra ID (simulasi klik hati)
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 localStorage.setItem('favoriteStores', JSON.stringify([{$mitraId}]));
             ");
 
             // Reload halaman search — pastikan store card muncul dengan hati merah
+            // Mengunjungi halaman 'halaman terkait'
             $browser->visit(route('consumer.search'));
             $this->disableReveal($browser);
+            // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(2000)
+                // Memastikan teks 'Toko Roti Makmur' terlihat pada halaman browser
                 ->assertSee('Toko Roti Makmur');
 
             // Verifikasi localStorage ada 1 favorit
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $favCount = $browser->script(
                 "return JSON.parse(localStorage.getItem('favoriteStores') || '[]').length;"
             )[0];
             $this->assertEquals(1, $favCount, 'Harus ada 1 toko di favorit');
 
             // Buka dashboard — cek section "Toko Favorit" tampil
+            // Mengunjungi halaman 'halaman terkait'
             $browser->visit(route('consumer.dashboard'));
             $this->disableReveal($browser);
+            // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(2000)
+                // Memastikan teks 'Toko Favorit' terlihat pada halaman browser
                 ->assertSee('Toko Favorit');
 
             // Angka favorit di dashboard harus 1
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $dashFav = $browser->script(
                 "return JSON.parse(localStorage.getItem('favoriteStores') || '[]').length;"
             )[0];
@@ -154,13 +180,18 @@ class Pbi14RestoFavoritTest extends DuskTestCase
             $this->login($browser, $email, $password);
 
             // Bersihkan localStorage
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("localStorage.removeItem('favoriteStores');");
 
+            // Mengunjungi halaman 'halaman terkait'
             $browser->visit(route('consumer.dashboard'));
             $this->disableReveal($browser);
+            // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(2000)
+                // Memastikan teks 'Toko Favorit' terlihat pada halaman browser
                 ->assertSee('Toko Favorit');
 
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $favCount = $browser->script(
                 "return JSON.parse(localStorage.getItem('favoriteStores') || '[]').length;"
             )[0];
