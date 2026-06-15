@@ -16,7 +16,7 @@
 ## Tampilan Platform
 
 <p align="center">
-  <img src="ShareMeal/public/images/screen.png" alt="Landing Page ShareMeal" width="800" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"/>
+  <img src="ShareMeal/public/images/LandingPage.png" alt="Landing Page ShareMeal" width="800" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"/>
 </p>
 
 ---
