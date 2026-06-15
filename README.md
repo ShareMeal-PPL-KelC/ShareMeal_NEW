@@ -99,8 +99,8 @@ Pengelola pusat yang memoderasi platform untuk memastikan keamanan dan integrita
 *   **Backend Framework:** Laravel (PHP 8.2+)
 *   **Frontend Library:** TailwindCSS, Alpine.js (Untuk reaktivitas UI instan)
 *   **Database:** MySQL / SQLite
-*   **Bundler & Assets Compiler:** Vite
-*   **Broadcasting/Real-time Engine:** Laravel Event Broadcasting
+*   **Bundler & Assets Compiler:** Vite (versi 8.0.10)
+*   **Broadcasting/Real-time Engine:** Laravel Reverb (WebSocket Server)
 
 ---
 
@@ -123,24 +123,37 @@ Pengelola pusat yang memoderasi platform untuk memastikan keamanan dan integrita
     ```
 
 4.  **Konfigurasi Environment:**
-    Salin file `.env.example` menjadi `.env` dan konfigurasikan koneksi database Anda.
+    Salin file `.env.example` menjadi `.env` dan konfigurasikan koneksi database serta broadcasting Anda.
     ```bash
     cp .env.example .env
     php artisan key:generate
     ```
+    Pastikan parameter penyiaran di `.env` telah disesuaikan (misalnya `BROADCAST_CONNECTION=reverb`).
 
-5.  **Migrasi & Seed Database:**
+5.  **Instalasi Penyiaran (Broadcasting Setup):**
+    Jalankan perintah instalasi penyiaran untuk membuat berkas konfigurasi penyiaran dan mengintegrasikan Laravel Echo:
+    ```bash
+    php artisan install:broadcasting
+    ```
+
+6.  **Migrasi & Seed Database:**
     Jalankan migrasi database beserta data dummy seed awal untuk akun tes.
     ```bash
     php artisan migrate --seed
     ```
 
-6.  **Jalankan Vite Server (Asset compiler):**
+7.  **Jalankan Server Laravel Reverb (WebSocket):**
+    Untuk mengaktifkan fitur real-time broadcasting, jalankan server WebSocket Reverb:
+    ```bash
+    php artisan reverb:start
+    ```
+
+8.  **Jalankan Vite Server (Asset compiler):**
     ```bash
     npm run dev
     ```
 
-7.  **Jalankan Laravel Dev Server:**
+9.  **Jalankan Laravel Dev Server:**
     ```bash
     php artisan serve
     ```
