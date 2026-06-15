@@ -151,7 +151,8 @@
              x-transition:leave="ease-in duration-300"
              x-transition:leave-start="opacity-100 translate-y-0 scale-100"
              x-transition:leave-end="opacity-0 translate-y-12 scale-95"
-             class="relative bg-white/90 backdrop-blur-2xl rounded-[3rem] w-full max-w-5xl shadow-2xl overflow-hidden z-10 border border-white/60 flex flex-col max-h-[90vh]">
+             class="relative bg-white/90 backdrop-blur-2xl rounded-[3rem] shadow-2xl overflow-hidden z-10 border border-white/60 flex flex-col max-h-[90vh] transition-all duration-300"
+             :class="previewUrl.toLowerCase().endsWith('.pdf') ? 'w-full max-w-5xl' : 'w-full max-w-xl md:max-w-2xl mx-4'">
             
             <!-- Close button MUST be the FIRST button inside for Dusk tests to trigger click perfectly -->
             <div class="p-8 border-b border-gray-150 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
@@ -162,7 +163,8 @@
             </div>
             
             <!-- Document Frame Content -->
-            <div class="p-8 bg-gray-50/50 flex justify-center items-center overflow-y-auto flex-1 min-h-[500px] relative">
+            <div class="bg-gray-50/50 flex justify-center items-center overflow-y-auto relative"
+                 :class="previewUrl.toLowerCase().endsWith('.pdf') ? 'p-8 flex-1 min-h-[500px]' : 'p-6 min-h-[200px]'">
                 <!-- Loading Indicator -->
                 <div x-show="isPreviewLoading" 
                      class="absolute inset-0 bg-white/80 backdrop-blur-sm z-25 flex flex-col items-center justify-center p-6 text-center"
@@ -178,7 +180,7 @@
                     <iframe :src="previewUrl" x-on:load="isPreviewLoading = false" class="w-full h-[600px] rounded-2xl shadow-xl border border-luxury-alabas bg-white z-10"></iframe>
                 </template>
                 <template x-if="!previewUrl.toLowerCase().endsWith('.pdf')">
-                    <img :src="previewUrl" x-on:load="isPreviewLoading = false" x-on:error="isPreviewLoading = false" class="max-w-full h-auto rounded-2xl shadow-xl border-4 border-white object-contain max-h-[600px] z-10">
+                    <img :src="previewUrl" x-on:load="isPreviewLoading = false" x-on:error="isPreviewLoading = false" class="max-w-full h-auto rounded-2xl shadow-xl border-4 border-white object-contain max-h-[60vh] z-10">
                 </template>
             </div>
         </div>
