@@ -44,4 +44,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
             return back()->with('error', 'Terlalu banyak percobaan login. Silakan coba lagi dalam 1 menit.')->withInput();
         });
+
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sesi Anda telah berakhir. Silakan muat ulang halaman dan coba lagi.'
+                ], 419);
+            }
+            return redirect()->route('login')->with('error', 'Sesi Anda telah berakhir. Silakan coba lagi.');
+        });
     })->create();
