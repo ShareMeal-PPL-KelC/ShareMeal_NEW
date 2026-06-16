@@ -19,7 +19,7 @@
   <img src="ShareMeal/public/images/LandingPage.png" alt="Landing Page ShareMeal" width="800" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"/>
 </p>
 
-<video src="[https://github.com/user-attachments/assets/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx](https://github.com/user-attachments/assets/6d82f925-3403-4b78-860f-b9b6805d692b)" width="100%" autoplay loop muted playsinline></video>
+<video src="https://github.com/user-attachments/assets/6d82f925-3403-4b78-860f-b9b6805d692b" width="100%" autoplay loop muted playsinline></video>
 
 ---
 
