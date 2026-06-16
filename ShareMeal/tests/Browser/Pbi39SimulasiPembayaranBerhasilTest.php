@@ -10,6 +10,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * PBI-39: Simulasi Pembayaran Berhasil
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -78,6 +83,7 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
 
     private function disableReveal(Browser $browser): void
     {
+        // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
         $browser->script("
             var style = document.createElement('style');
             style.innerHTML = '.reveal { opacity: 1 !important; transform: none !important; transition: none !important; transition-delay: 0s !important; }';
@@ -88,13 +94,21 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
     private function login(Browser $browser, string $email, string $password): void
     {
         $browser->driver->manage()->deleteAllCookies();
+        // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
         $browser->maximize()
+            // Mengunjungi halaman '/login'
             ->visit('/login')
+            // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
             ->waitFor('select[name="user_type"]')
+            // Memilih opsi 'consumer' pada dropdown 'user_type'
             ->select('user_type', 'consumer')
+            // Mengisi input field 'email'
             ->type('email', $email)
+            // Mengisi input field 'password'
             ->type('password', $password)
+            // Mengeklik elemen 'elemen terkait' di halaman
             ->click('button[type="submit"]')
+            // Menunggu halaman berpindah ke rute '/consumer' (batas waktu 15 detik)
             ->waitForLocation('/consumer', 15);
     }
 
@@ -111,11 +125,14 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             $this->login($browser, $consumerEmail, $password);
 
             // 1. Cari Makanan / Search Page
+            // Mengunjungi halaman '/consumer/search'
             $browser->visit('/consumer/search');
             $this->disableReveal($browser);
+            // Menunggu teks 'Roti Coklat' muncul di layar (batas waktu 15 detik)
             $browser->waitForText('Roti Coklat', 15);
 
             // 2. Klik Pesan Sekarang / Add to Cart
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 var targetBtn = null;
                 for (var el of document.querySelectorAll('*')) {
@@ -141,15 +158,21 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             ");
 
             // 3. Masuk ke halaman Cart
+            // Menunggu halaman berpindah ke rute '/consumer/cart' (batas waktu 15 detik)
             $browser->waitForLocation('/consumer/cart', 15)
+                    // Menunggu teks 'Detail Makanan yang Direservasi' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Detail Makanan yang Direservasi', 15)
+                    // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                     ->waitFor('a[href*="checkout"]', 15);
             
             // Scroll ke bawah di Cart
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("window.scrollTo(0, document.body.scrollHeight);");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Klik Lanjutkan ke Checkout
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let checkoutBtn = document.querySelector('a[href*=\"checkout\"]');
                 if (checkoutBtn) {
@@ -160,11 +183,14 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             ");
 
             // 4. Masuk ke Halaman Checkout
+            // Menunggu teks 'Menyelesaikan Pemesanan' muncul di layar (batas waktu 15 detik)
             $browser->waitForText('Menyelesaikan Pemesanan', 15);
             $this->disableReveal($browser);
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Pilih metode pengambilan Ambil Sendiri (pickup) menggunakan JS click
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let radio = document.querySelector('input[name=\"receiving_method_radio\"][value=\"pickup\"]');
                 if (radio) {
@@ -174,9 +200,11 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
                     throw new Error('Ambil Sendiri radio not found');
                 }
             ");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Pilih metode pembayaran QRIS menggunakan JS click
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let radio = document.querySelector('input[name=\"payment_method_radio\"][value=\"qris\"]');
                 if (radio) {
@@ -186,13 +214,17 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
                     throw new Error('QRIS radio not found');
                 }
             ");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
             
             // Scroll ke bawah di Checkout
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("window.scrollTo(0, document.body.scrollHeight);");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Tekan tombol konfirmasi & bayar
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let confirmBtn = document.querySelector('button[x-on\\\\:click*=\"handleConfirmPayment\"], button[\\\\@click*=\"handleConfirmPayment\"]');
                 if (confirmBtn) {
@@ -203,12 +235,17 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             ");
 
             // Cek apakah loading screen QRIS muncul dan menampilkan pesan transisi
+            // Menunggu teks 'Menghasilkan kode QRIS unik...' muncul di layar (batas waktu 15 detik)
             $browser->waitForText('Menghasilkan kode QRIS unik...', 15)
                     
                     // Tunggu hingga simulasi selesai (sekitar 4 detik) dan struk digital muncul
+                    // Menunggu teks 'Pemesanan Berhasil' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Pemesanan Berhasil', 15)
+                    // Memastikan teks 'LUNAS' terlihat pada halaman browser
                     ->assertSee('LUNAS')
+                    // Memastikan teks 'AMBIL SENDIRI' terlihat pada halaman browser
                     ->assertSee('AMBIL SENDIRI')
+                    // Memastikan teks 'QRIS' terlihat pada halaman browser
                     ->assertSee('QRIS');
         });
     }
@@ -225,11 +262,14 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             $this->login($browser, $consumerEmail, $password);
 
             // 1. Cari Makanan / Search Page
+            // Mengunjungi halaman '/consumer/search'
             $browser->visit('/consumer/search');
             $this->disableReveal($browser);
+            // Menunggu teks 'Roti Coklat' muncul di layar (batas waktu 15 detik)
             $browser->waitForText('Roti Coklat', 15);
 
             // 2. Klik Pesan Sekarang / Add to Cart
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 var targetBtn = null;
                 for (var el of document.querySelectorAll('*')) {
@@ -255,15 +295,21 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             ");
 
             // 3. Masuk ke halaman Cart
+            // Menunggu halaman berpindah ke rute '/consumer/cart' (batas waktu 15 detik)
             $browser->waitForLocation('/consumer/cart', 15)
+                    // Menunggu teks 'Detail Makanan yang Direservasi' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Detail Makanan yang Direservasi', 15)
+                    // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                     ->waitFor('a[href*="checkout"]', 15);
             
             // Scroll ke bawah di Cart
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("window.scrollTo(0, document.body.scrollHeight);");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Klik Lanjutkan ke Checkout
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let checkoutBtn = document.querySelector('a[href*=\"checkout\"]');
                 if (checkoutBtn) {
@@ -274,17 +320,21 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             ");
 
             // 4. Masuk ke Halaman Checkout
+            // Menunggu teks 'Menyelesaikan Pemesanan' muncul di layar (batas waktu 15 detik)
             $browser->waitForText('Menyelesaikan Pemesanan', 15);
             $this->disableReveal($browser);
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Mock window.alert untuk memverifikasi pesan kesalahan
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 window.alert_msg = null;
                 window.alert = function(msg) { window.alert_msg = msg; };
             ");
 
             // Pilih metode pengambilan Ambil Sendiri (pickup) menggunakan JS click
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let radio = document.querySelector('input[name=\"receiving_method_radio\"][value=\"pickup\"]');
                 if (radio) {
@@ -294,9 +344,11 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
                     throw new Error('Ambil Sendiri radio not found');
                 }
             ");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Pilih metode pembayaran QRIS menggunakan JS click
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let radio = document.querySelector('input[name=\"payment_method_radio\"][value=\"qris\"]');
                 if (radio) {
@@ -306,12 +358,14 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
                     throw new Error('QRIS radio not found');
                 }
             ");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Kosongkan keranjang belanja di database secara langsung agar transaksi gagal saat disubmit!
             \App\Models\CartItem::truncate();
 
             // Hapus nama input 'product_id' agar controller tidak mere-create cart item dari POST request
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let prodInput = document.querySelector('input[name=\"product_id\"]');
                 if (prodInput) {
@@ -320,10 +374,13 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             ");
 
             // Scroll ke bawah
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("window.scrollTo(0, document.body.scrollHeight);");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Tekan tombol konfirmasi & bayar
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let confirmBtn = document.querySelector('button[x-on\\\\:click*=\"handleConfirmPayment\"], button[\\\\@click*=\"handleConfirmPayment\"]');
                 if (confirmBtn) {
@@ -334,9 +391,11 @@ class Pbi39SimulasiPembayaranBerhasilTest extends DuskTestCase
             ");
             
             // Tunggu 5 detik untuk simulasi QRIS selesai, kemudian AJAX request dibuat, ditangkap, dan alert ditampilkan
+            // Menjeda eksekusi selama 6000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(6000);
 
             // Verifikasi alert pesan kesalahan dari server muncul
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $alertMsg = $browser->script("return window.alert_msg;")[0];
             $this->assertNotNull($alertMsg, "Alert message was not captured!");
             $this->assertStringContainsString('Keranjang kosong atau batas waktu reservasi telah habis', $alertMsg);

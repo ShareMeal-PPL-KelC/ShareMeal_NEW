@@ -11,6 +11,11 @@ use App\Models\UserProfile;
 use App\Notifications\DonationAvailableNotification;
 use Illuminate\Support\Facades\Notification;
 
+/**
+ * PBI-23: Notifikasi Ketersediaan Donasi Lembaga
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi23NotifikasiKetersediaanDonasiLembagaTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -68,16 +73,23 @@ class Pbi23NotifikasiKetersediaanDonasiLembagaTest extends DuskTestCase
                     ->visitRoute('notifications.index')
                     
                     // Step 6: Tunggu elemen notifikasi muncul
+                    // Menunggu teks 'Donasi Baru Tersedia!' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Donasi Baru Tersedia!', 15)
                     
                     // Step 7: Validasi Pesan
+                    // Memastikan teks 'Donasi Baru Tersedia!' terlihat pada halaman browser
                     ->assertSee('Donasi Baru Tersedia!')
+                    // Memastikan teks 'Resto Berkah baru saja mendonasikan 20 box Nasi Kotak Ayam Bakar' terlihat pada halaman browser
                     ->assertSee('Resto Berkah baru saja mendonasikan 20 box Nasi Kotak Ayam Bakar')
                     
                     // Step 8: Klik Notifikasi (Klaim) menggunakan dusk attribute
+                    // Mengeklik elemen '@notification-link' di halaman
                     ->click('@notification-link') 
+                    // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
                     ->pause(2000)
+                    // Memastikan sistem berhasil mengarahkan pengguna ke halaman '/lembaga/donations'
                     ->assertPathIs('/lembaga/donations') 
+                    // Memastikan teks 'Nasi Kotak Ayam Bakar' terlihat pada halaman browser
                     ->assertSee('Nasi Kotak Ayam Bakar');
         });
     }
@@ -118,7 +130,9 @@ class Pbi23NotifikasiKetersediaanDonasiLembagaTest extends DuskTestCase
             // Login sebagai Consumer (non-lembaga) dan pastikan tidak ada notif donasi
             $browser->loginAs($consumer)
                     ->visitRoute('notifications.index')
+                    // Memastikan teks 'Donasi Baru Tersedia!' TIDAK muncul pada halaman browser
                     ->assertDontSee('Donasi Baru Tersedia!')
+                    // Memastikan teks 'Resto Berkah baru saja mendonasikan' TIDAK muncul pada halaman browser
                     ->assertDontSee('Resto Berkah baru saja mendonasikan');
         });
     }

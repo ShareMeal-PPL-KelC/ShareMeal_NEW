@@ -42,8 +42,16 @@ class Pbi38DeliverySlotLimitTest extends TestCase
         $this->assertEquals(5, $mitra->fresh()->profile->delivery_slot_limit);
     }
 
+    protected function tearDown(): void
+    {
+        \Carbon\Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     public function test_consumer_cannot_book_when_slot_is_full(): void
     {
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::today()->setTime(12, 0, 0));
+
         $consumer = User::factory()->create(['role' => 'consumer']);
         $mitra = User::factory()->create(['role' => 'mitra']);
         $mitra->profile()->create([
@@ -92,6 +100,8 @@ class Pbi38DeliverySlotLimitTest extends TestCase
 
     public function test_checkout_page_shows_full_slots_as_disabled(): void
     {
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::today()->setTime(12, 0, 0));
+
         $consumer = User::factory()->create(['role' => 'consumer']);
         $mitra = User::factory()->create(['role' => 'mitra']);
         $mitra->profile()->create([

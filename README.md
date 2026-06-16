@@ -25,16 +25,87 @@
 
 ## Alur Kerja Sistem (System Roles)
 
-Sistem ini didukung oleh 4 tingkatan peran (role-based access control) yang terintegrasi:
+Sistem ini didukung oleh 4 tingkatan peran (role-based access control) yang terintegrasi secara dinamis. Berikut adalah diagram alir komprehensif yang memetakan keterkaitan alur kerja dan aksi dari setiap aktor dalam ekosistem ShareMeal:
 
 ```mermaid
 graph TD
-    Consumer[Konsumen] <-->|Pesan & Review| Mitra[Mitra Usaha]
-    Mitra -->|Donasi Makanan| Lembaga[Lembaga Sosial]
-    Admin[Administrator] -->|Verifikasi & Moderasi| Mitra
-    Admin -->|Verifikasi & Moderasi| Lembaga
-    Admin -->|Kelola Akun & Artikel| Consumer
+  %% Style definitions
+  classDef admin fill:#ff9f43,stroke:#333,stroke-width:2px;
+  classDef mitra fill:#54a0ff,stroke:#333,stroke-width:2px;
+  classDef consumer fill:#f368e0,stroke:#333,stroke-width:2px;
+  classDef lembaga fill:#10ac84,stroke:#333,stroke-width:2px;
+  classDef system fill:#8395a7,stroke:#333,stroke-dasharray: 5 5;
+
+  subgraph Admin ["Peran: Admin"]
+    A1[Menerima Dokumen Verifikasi]:::admin --> A2{Tinjau Kelayakan}:::admin
+    A2 -->|Disetujui| A3[Aktifkan Akun Mitra/Lembaga]:::admin
+    A2 -->|Ditolak| A4[Kirim Alasan Penolakan ke User]:::admin
+    A5[Terima Laporan Makanan Basi / Masalah]:::admin --> A6{Investigasi Mitra}:::admin
+    A6 -->|Terbukti Melanggar| A7[Sanksi / Bekukan Akun Mitra]:::admin
+    A6 -->|Selesai / Clear| A8[Catat Hasil ke Audit Log]:::admin
+  end
+
+  subgraph Mitra ["Peran: Mitra"]
+    M1[Registrasi & Unggah Legalitas Usaha]:::mitra --> A1
+    A3 --> M2[Akun Aktif: Kelola Produk]:::mitra
+    M2 --> M3[Unggah Makanan Surplus]:::mitra
+    M3 --> M4[Tentukan Diskon, Expired & Pickup Window]:::mitra
+    M4 --> M5{Kondisi Waktu}:::mitra
+    M5 -->|Ada Pesanan| M6[Siapkan & Kemas Makanan]:::mitra
+    M6 --> M7[Update Status Pesanan Ready]:::mitra
+    M7 --> M8[Serahkan ke Konsumen/Kurir]:::mitra
+  end
+
+  subgraph Consumer ["Peran: Konsumen"]
+    C1[Registrasi Akun]:::consumer --> C2[Cari Makanan / Donasi Terdekat]:::consumer
+    C2 --> C3[Masukkan Keranjang & Checkout]:::consumer
+    C2 --> C4{Pilih Metode Terima}:::consumer
+    C4 -->|Ambil Sendiri| C5[Datang ke Toko Mitra]:::consumer
+    C4 -->|Pengantaran| C6[Tunggu Pengiriman Kurir]:::consumer
+    C5 & C6 --> C7[Periksa Kelayakan Makanan]:::consumer
+    C7 --> C8{Makanan Baik?}:::consumer
+    C8 -->|Ya| C9[Konfirmasi Selesai & Beri Rating]:::consumer
+    C8 -->|Tidak / Basi| C10[Laporkan Masalah]:::consumer --> A5
+  end
+
+  subgraph Lembaga ["Peran: Lembaga"]
+    L1[Registrasi & Unggah Akta NGO]:::lembaga --> A1
+    A3 --> L2[Akun Aktif: Pantau Donasi Masuk]:::lembaga
+    L2 --> L3[Klaim Kuota Donasi Skala Besar]:::lembaga
+    L3 --> L4[Jemput Donasi ke Lokasi Mitra]:::lembaga
+    L4 --> L5[Salurkan ke Penerima Manfaat]:::lembaga
+    L5 --> L6[Unggah Laporan Bukti Penyaluran]:::lembaga
+  end
+
+  subgraph System ["Otomatisasi Sistem"]
+    S1[Laravel Scheduler Mendeteksi 2 Jam Menjelang Expired]:::system --> S2[Ubah Status Produk ke Donasi Gratis]:::system
+    S2 --> S3[Setel Harga & Stok Jual ke 0]:::system
+    S3 --> S4[Kirim Notifikasi Real-time]:::system
+  end
+
+  M5 -->|2 Jam Sebelum Expired & Belum Terjual| S1
+  S4 --> C2
+  S4 --> L2
+  M8 --> C7
+  M8 --> L4
 ```
+
+### 💡 Penjelasan Detail Interaksi Alur Kerja:
+
+1. **Verifikasi Akun & Validasi Bisnis (KYB):**
+   * **Mitra/Lembaga** melakukan registrasi akun baru dan mengunggah dokumen legalitas mereka (`M1`/`L1`).
+   * **Admin** meninjau data tersebut (`A1` & `A2`). Jika valid, akun akan diaktifkan (`A3`). Jika tidak valid, pengajuan ditolak (`A4`) dengan mencantumkan alasan penolakan agar user dapat memperbaikinya.
+2. **Transaksi Penjualan Makanan Surplus:**
+   * **Mitra** mengunggah makanan surplus berbayar (`M3`), lalu pembeli (**Konsumen**) menjelajahi produk tersebut (`C2`) dan membelinya.
+   * Konsumen mengambil makanan langsung di lokasi toko (`C5`) atau dikirim via kurir (`C6`), lalu melakukan pengecekan kualitas fisik pangan (`C7`).
+3. **Penyelamatan Pangan Otomatis (Laravel Scheduler):**
+   * Jika produk komersial **Mitra** belum laku terjual hingga **2 jam sebelum kedaluwarsa** (`M5`), scheduler sistem (`S1`) otomatis mengonversi produk tersebut menjadi **Donasi** (`S2` & `S3`) dan memicu notifikasi real-time (`S4`).
+   * **Lembaga** (`L2`) atau **Konsumen** (`C2`) terdekat akan segera mendapat pemberitahuan untuk melakukan klaim donasi sebelum makanan basi.
+4. **Penyaluran Donasi Skala Besar (Lembaga):**
+   * **Lembaga** sosial melakukan klaim paket donasi (`L3`), melakukan penjemputan fisik ke lokasi toko (`L4`), menyalurkannya ke masyarakat binaan (`L5`), dan wajib mengunggah bukti transparansi penyaluran (`L6`).
+5. **Pengaduan Kelayakan & Moderasi:**
+   * Jika makanan yang diterima dalam keadaan tidak layak/basi (`C8`), **Konsumen/Lembaga** mengajukan laporan masalah (`C10`).
+   * **Admin** menginvestigasi laporan (`A5` & `A6`) dan berhak memberikan sanksi/pemblokiran terhadap Mitra yang melanggar aturan pangan (`A7`), serta mencatat setiap tindakan di audit log (`A8`).
 
 ---
 

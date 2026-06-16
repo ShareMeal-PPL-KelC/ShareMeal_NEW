@@ -8,14 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Tabel untuk menyimpan resto favorit
-        Schema::create('favorite_stores', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('store_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
-        });
-
         // Tabel notifikasi standar Laravel
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
@@ -29,7 +21,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('favorite_stores');
         Schema::dropIfExists('notifications');
     }
 };

@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\UserProfile;
 
+/**
+ * PBI-45: Notifikasi Peringatan Dan Pembatalan
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi45NotifikasiPeringatanDanPembatalanTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -26,7 +31,9 @@ class Pbi45NotifikasiPeringatanDanPembatalanTest extends DuskTestCase
             ]);
 
             $browser->loginAs($user)
+                    // Mengunjungi halaman '/consumer'
                     ->visit('/consumer')
+                    // Memastikan teks 'Peringatan: Akun Anda mendapatkan peringatan karena pelanggaran kebijakan' terlihat pada halaman browser
                     ->assertSee('Peringatan: Akun Anda mendapatkan peringatan karena pelanggaran kebijakan');
         });
     }
@@ -43,7 +50,9 @@ class Pbi45NotifikasiPeringatanDanPembatalanTest extends DuskTestCase
             ]);
 
             $browser->loginAs($user)
+                    // Mengunjungi halaman '/consumer'
                     ->visit('/consumer')
+                    // Memastikan teks 'AKSES DIBATASI: Akun Anda telah diblokir' terlihat pada halaman browser
                     ->assertSee('AKSES DIBATASI: Akun Anda telah diblokir');
         });
     }
@@ -76,9 +85,13 @@ class Pbi45NotifikasiPeringatanDanPembatalanTest extends DuskTestCase
             ]);
 
             $browser->loginAs($consumer)
+                    // Mengunjungi halaman '/notifications'
                     ->visit('/notifications')
+                    // Menunggu teks 'Update Status Pesanan' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Update Status Pesanan', 15)
+                    // Memastikan teks 'Mohon maaf, pesanan Anda telah dibatalkan' terlihat pada halaman browser
                     ->assertSee('Mohon maaf, pesanan Anda telah dibatalkan')
+                    // Memastikan teks yang diharapkan muncul di layar
                     ->assertSee('Alasan: ' . $reason);
         });
     }
@@ -103,12 +116,17 @@ class Pbi45NotifikasiPeringatanDanPembatalanTest extends DuskTestCase
             ]);
 
             $browser->loginAs($user)
+                    // Mengunjungi halaman '/notifications'
                     ->visit('/notifications')
+                    // Menunggu teks 'Tandai Dibaca' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Tandai Dibaca', 15)
                     // Gunakan clickAtXPath atau script jika tombol sulit ditekan
+                    // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                     ->script("document.querySelector('button[type=\"submit\"]').click();");
 
+            // Menjeda eksekusi selama 2000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(2000)
+                    // Memastikan teks 'Tandai Dibaca' TIDAK muncul pada halaman browser
                     ->assertDontSee('Tandai Dibaca');
         });
     }
@@ -122,8 +140,11 @@ class Pbi45NotifikasiPeringatanDanPembatalanTest extends DuskTestCase
             ]);
 
             $browser->loginAs($user)
+                    // Mengunjungi halaman '/consumer'
                     ->visit('/consumer')
+                    // Memastikan teks 'Peringatan: Akun Anda mendapatkan peringatan' TIDAK muncul pada halaman browser
                     ->assertDontSee('Peringatan: Akun Anda mendapatkan peringatan')
+                    // Memastikan teks 'AKSES DIBATASI: Akun Anda telah diblokir' TIDAK muncul pada halaman browser
                     ->assertDontSee('AKSES DIBATASI: Akun Anda telah diblokir');
         });
     }

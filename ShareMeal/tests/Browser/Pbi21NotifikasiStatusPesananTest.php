@@ -11,6 +11,11 @@ use App\Models\Store;
 use App\Models\UserProfile;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * PBI-21: Notifikasi Status Pesanan
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi21NotifikasiStatusPesananTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -57,8 +62,10 @@ class Pbi21NotifikasiStatusPesananTest extends DuskTestCase
 
             // Step 4 & 5: Buka halaman Notifikasi & Tunggu elemen muncul
             $browser->visitRoute('notifications.index')
+                    // Menunggu teks 'Update Status Pesanan' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Update Status Pesanan', 15)
                     // Step 6: Pastikan melihat notifikasi tahap inisiasi
+                    // Memastikan teks 'Pesanan Anda sedang menunggu konfirmasi' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sedang menunggu konfirmasi');
 
             // Step 7: Simulasikan perubahan status menjadi "processing"
@@ -67,7 +74,9 @@ class Pbi21NotifikasiStatusPesananTest extends DuskTestCase
 
             // Step 8 & 9: Muat ulang & Cek Notifikasi Tahap Konfirmasi
             $browser->refresh()
+                    // Menunggu teks 'Pesanan Anda sedang diproses' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Pesanan Anda sedang diproses', 15)
+                    // Memastikan teks 'Pesanan Anda sedang diproses' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sedang diproses');
 
             // Step 7 b: Simulasikan perubahan status menjadi "ready"
@@ -75,12 +84,17 @@ class Pbi21NotifikasiStatusPesananTest extends DuskTestCase
 
             // Step 8 b & 10: Muat ulang & Cek Notifikasi Tahap Penyelesaian
             $browser->refresh()
+                    // Menunggu teks 'Pesanan Anda sudah siap diambil' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Pesanan Anda sudah siap diambil', 15)
+                    // Memastikan teks 'Pesanan Anda sudah siap diambil' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sudah siap diambil');
 
             // Step 11: Pastikan semua urutan riwayat perubahan status terlihat jelas
+            // Memastikan teks 'Pesanan Anda sedang menunggu konfirmasi' terlihat pada halaman browser
             $browser->assertSee('Pesanan Anda sedang menunggu konfirmasi')
+                    // Memastikan teks 'Pesanan Anda sedang diproses' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sedang diproses')
+                    // Memastikan teks 'Pesanan Anda sudah siap diambil' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sudah siap diambil');
         });
     }
@@ -106,7 +120,9 @@ class Pbi21NotifikasiStatusPesananTest extends DuskTestCase
             // Login sebagai Konsumen A dan pastikan tidak melihat notifikasi pesanan Konsumen B
             $browser->loginAs($consumerA)
                     ->visitRoute('notifications.index')
+                    // Memastikan teks 'Update Status Pesanan' TIDAK muncul pada halaman browser
                     ->assertDontSee('Update Status Pesanan')
+                    // Memastikan teks 'Pesanan Anda sedang menunggu konfirmasi' TIDAK muncul pada halaman browser
                     ->assertDontSee('Pesanan Anda sedang menunggu konfirmasi');
         });
     }

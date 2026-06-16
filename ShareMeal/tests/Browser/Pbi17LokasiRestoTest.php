@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Donation;
 
+/**
+ * PBI-17: Lokasi Resto
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi17LokasiRestoTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -60,11 +65,16 @@ class Pbi17LokasiRestoTest extends DuskTestCase
 
             // Visit as Lembaga and check DIPROSES tab
             $browser->loginAs($lembaga)
+                    // Mengunjungi halaman '/lembaga/donations'
                     ->visit('/lembaga/donations')
+                    // Mengeklik elemen '#tab-claimed' di halaman
                     ->click('#tab-claimed')
+                    // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
                     ->pause(1000)
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Kotak PBI 17 Claimed')
                     // Verify that the restaurant's address is visible (uppercase due to CSS text-transform)
+                    // Memastikan teks 'JL. BERKAH NO. 17' terlihat pada halaman browser
                     ->assertSee('JL. BERKAH NO. 17');
 
             $browser->blank();
@@ -115,7 +125,9 @@ class Pbi17LokasiRestoTest extends DuskTestCase
             ]);
 
             $browser->loginAs($lembaga)
+                    // Mengunjungi halaman '/lembaga/donations'
                     ->visit('/lembaga/donations')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Nasi Kotak PBI 17 Available')
                     // Verify that "Rute Resto" (or specific button) is missing on available donations
                     ->assertMissing('a[href*="maps.google.com"]');

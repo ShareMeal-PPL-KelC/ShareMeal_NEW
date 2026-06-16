@@ -9,6 +9,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
+/**
+ * PBI-7: Mitra Inventory Update
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi7MitraInventoryUpdateTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -67,23 +72,36 @@ class Pbi7MitraInventoryUpdateTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Mengunjungi halaman '/login'
             $browser->visit('/login')
+                    // Memilih opsi 'mitra' pada dropdown 'user_type'
                     ->select('user_type', 'mitra')
+                    // Mengisi input field 'email'
                     ->type('email', $email)
+                    // Mengisi input field 'password'
                     ->type('password', $password)
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('button[type="submit"]')
+                    // Menunggu halaman berpindah ke rute '/mitra' (batas waktu 15 detik)
                     ->waitForLocation('/mitra', 15)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory')
+                    // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                     ->waitFor('@edit-produk-btn')
+                    // Mengeklik elemen '@edit-produk-btn' di halaman
                     ->click('@edit-produk-btn')
+                    // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                     ->waitFor('input[name="name"]')
                     // Clear inputs and submit
+                    // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                     ->script([
                         "document.querySelector('input[name=\"name\"]').value = '';",
                         "document.querySelector('form[action*=\'/mitra/inventory/\']').submit();"
                     ]);
 
+            // Menunggu halaman berpindah ke rute '/mitra/inventory' (batas waktu 15 detik)
             $browser->waitForLocation('/mitra/inventory', 15)
+                    // Memastikan teks 'The name field is required.' terlihat pada halaman browser
                     ->assertSee('The name field is required.');
         });
     }
@@ -114,29 +132,48 @@ class Pbi7MitraInventoryUpdateTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($email, $password) {
             $browser->driver->manage()->deleteAllCookies();
 
+            // Mengunjungi halaman '/login'
             $browser->visit('/login')
+                    // Memilih opsi 'mitra' pada dropdown 'user_type'
                     ->select('user_type', 'mitra')
+                    // Mengisi input field 'email'
                     ->type('email', $email)
+                    // Mengisi input field 'password'
                     ->type('password', $password)
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('button[type="submit"]')
+                    // Menunggu halaman berpindah ke rute '/mitra' (batas waktu 15 detik)
                     ->waitForLocation('/mitra', 15)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory')
+                    // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                     ->waitFor('@edit-produk-btn')
+                    // Mengeklik elemen '@edit-produk-btn' di halaman
                     ->click('@edit-produk-btn')
+                    // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
                     ->waitFor('input[name="name"]')
+                    // Mengisi input 'name' dengan nilai 'Roti Tawar Gandum Baru'
                     ->type('name', 'Roti Tawar Gandum Baru')
+                    // Mengisi input 'price' dengan nilai '15000'
                     ->type('price', '15000')
+                    // Mengisi input 'stock' dengan nilai '25'
                     ->type('stock', '25')
+                    // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                     ->script([
                         "document.querySelector('input[name=\"expires_at\"]').value = '2026-06-30T12:00';",
                         "document.querySelector('input[name=\"pickup_start_time\"]').value = '09:00';",
                         "document.querySelector('input[name=\"pickup_end_time\"]').value = '18:00';"
                     ]);
 
+            // Mengeklik elemen 'elemen terkait' di halaman
             $browser->click('form[action*="/mitra/inventory/"] button[type="submit"]')
+                    // Menunggu teks 'Informasi produk berhasil diperbarui.' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Informasi produk berhasil diperbarui.', 15)
+                    // Memastikan teks 'Informasi produk berhasil diperbarui.' terlihat pada halaman browser
                     ->assertSee('Informasi produk berhasil diperbarui.')
+                    // Memastikan teks 'Roti Tawar Gandum Baru' terlihat pada halaman browser
                     ->assertSee('Roti Tawar Gandum Baru')
+                    // Memastikan teks '25 Pcs' terlihat pada halaman browser
                     ->assertSee('25 Pcs');
         });
     }

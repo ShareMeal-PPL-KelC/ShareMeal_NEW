@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Product;
 
+/**
+ * PBI-40: Toggle Donasi
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi40ToggleDonasiTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -44,11 +49,17 @@ class Pbi40ToggleDonasiTest extends DuskTestCase
             ]);
 
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Roti Tawar Gandum')
+                    // Memastikan teks 'Roti Tawar Gandum' terlihat pada halaman browser
                     ->assertSee('Roti Tawar Gandum')
+                    // Mengeklik elemen 'elemen terkait' di halaman
                     ->click('button[title="Aktifkan donasi otomatis"]')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Donasi otomatis untuk "Roti Tawar Gandum" berhasil diaktifkan')
+                    // Memastikan teks yang diharapkan muncul di layar
                     ->assertSee('Donasi otomatis untuk "Roti Tawar Gandum" berhasil diaktifkan');
         });
     }
@@ -85,16 +96,22 @@ class Pbi40ToggleDonasiTest extends DuskTestCase
             ]);
 
             $browser->loginAs($mitra)
+                    // Mengunjungi halaman '/mitra/inventory'
                     ->visit('/mitra/inventory')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Kue Sus Expired')
                     // Verify the button has the title 'Produk habis atau kedaluwarsa' and is disabled
                     ->assertPresent('button[title="Produk habis atau kedaluwarsa"]')
                     // Force remove disabled attribute via JS to simulate bypassing client side validation
+                    // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
                     ->script("document.querySelector('button[title=\"Produk habis atau kedaluwarsa\"]').removeAttribute('disabled')");
             
             // Click the button
+            // Mengeklik elemen 'elemen terkait' di halaman
             $browser->click('button[title="Produk habis atau kedaluwarsa"]')
+                    // Menunggu teks '' muncul di layar (batas waktu standar detik)
                     ->waitForText('Produk sudah habis atau kedaluwarsa')
+                    // Memastikan teks 'Produk sudah habis atau kedaluwarsa' terlihat pada halaman browser
                     ->assertSee('Produk sudah habis atau kedaluwarsa');
         });
     }

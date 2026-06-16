@@ -9,6 +9,11 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\UserProfile;
 
+/**
+ * PBI-43: Notifikasi Perubahan Status Pesanan
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi43NotifikasiPerubahanStatusPesananTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -41,7 +46,9 @@ class Pbi43NotifikasiPerubahanStatusPesananTest extends DuskTestCase
             // --- 3. KONSUMEN CEK NOTIFIKASI ---
             $browser->loginAs($consumer)
                     ->visitRoute('notifications.index')
+                    // Menunggu teks 'Update Status Pesanan' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Update Status Pesanan', 15)
+                    // Memastikan teks 'Pesanan Anda sudah siap diambil! Mohon tunjukkan kode klaim kepada pelayan kami jika sudah sampai.' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sudah siap diambil! Mohon tunjukkan kode klaim kepada pelayan kami jika sudah sampai.');
         });
     }
@@ -70,7 +77,9 @@ class Pbi43NotifikasiPerubahanStatusPesananTest extends DuskTestCase
 
             $browser->loginAs($consumer)
                     ->visitRoute('notifications.index')
+                    // Menunggu teks 'Update Status Pesanan' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Update Status Pesanan', 15)
+                    // Memastikan teks 'Pesanan Anda sedang dalam perjalanan oleh kurir mitra.' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sedang dalam perjalanan oleh kurir mitra.');
         });
     }
@@ -99,7 +108,9 @@ class Pbi43NotifikasiPerubahanStatusPesananTest extends DuskTestCase
 
             $browser->loginAs($consumer)
                     ->visitRoute('notifications.index')
+                    // Menunggu teks 'Update Status Pesanan' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Update Status Pesanan', 15)
+                    // Memastikan teks 'Pesanan Anda sedang diproses.' terlihat pada halaman browser
                     ->assertSee('Pesanan Anda sedang diproses.');
         });
     }
@@ -126,7 +137,9 @@ class Pbi43NotifikasiPerubahanStatusPesananTest extends DuskTestCase
 
             $browser->loginAs($consumerA)
                     ->visitRoute('notifications.index')
+                    // Memastikan teks 'Update Status Pesanan' TIDAK muncul pada halaman browser
                     ->assertDontSee('Update Status Pesanan')
+                    // Memastikan teks 'Pesanan Anda sudah siap diambil!' TIDAK muncul pada halaman browser
                     ->assertDontSee('Pesanan Anda sudah siap diambil!');
         });
     }

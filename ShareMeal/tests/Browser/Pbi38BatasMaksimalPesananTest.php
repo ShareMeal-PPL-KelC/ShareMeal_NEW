@@ -11,6 +11,11 @@ use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * PBI-38: Batas Maksimal Pesanan
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi38BatasMaksimalPesananTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -102,6 +107,7 @@ class Pbi38BatasMaksimalPesananTest extends DuskTestCase
 
     private function disableReveal(Browser $browser): void
     {
+        // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
         $browser->script("
             var style = document.createElement('style');
             style.innerHTML = '.reveal { opacity: 1 !important; transform: none !important; transition: none !important; transition-delay: 0s !important; }';
@@ -112,13 +118,21 @@ class Pbi38BatasMaksimalPesananTest extends DuskTestCase
     private function login(Browser $browser, string $email, string $password): void
     {
         $browser->driver->manage()->deleteAllCookies();
+        // Memaksimalkan ukuran jendela browser agar tampilan terlihat penuh
         $browser->maximize()
+            // Mengunjungi halaman '/login'
             ->visit('/login')
+            // Menunggu elemen 'elemen terkait' muncul di layar (batas waktu standar detik)
             ->waitFor('select[name="user_type"]')
+            // Memilih opsi 'consumer' pada dropdown 'user_type'
             ->select('user_type', 'consumer')
+            // Mengisi input field 'email'
             ->type('email', $email)
+            // Mengisi input field 'password'
             ->type('password', $password)
+            // Mengeklik elemen 'elemen terkait' di halaman
             ->click('button[type="submit"]')
+            // Menunggu halaman berpindah ke rute '/consumer' (batas waktu 15 detik)
             ->waitForLocation('/consumer', 15);
     }
 
@@ -133,13 +147,17 @@ class Pbi38BatasMaksimalPesananTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($consumerEmail, $password, $product) {
             $this->login($browser, $consumerEmail, $password);
 
+            // Mengunjungi halaman 'halaman terkait'
             $browser->visit('/consumer/checkout?product_id=' . $product->id);
             $this->disableReveal($browser);
 
+            // Menunggu teks '' muncul di layar (batas waktu standar detik)
             $browser->waitForText('Menyelesaikan Pemesanan')
+                    // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
                     ->pause(1000);
 
             // Select receiving method "Kirim ke Lokasi" (delivery)
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let radio = document.querySelector('input[name=\"receiving_method_radio\"][value=\"delivery\"]');
                 if (radio) {
@@ -149,9 +167,11 @@ class Pbi38BatasMaksimalPesananTest extends DuskTestCase
                     throw new Error('Delivery radio not found');
                 }
             ");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Check that the slot is available and clickable
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let slotBtn = document.querySelector('button[\\\\@click*=\"deliveryTimeSlot\"]:not([disabled])');
                 if (slotBtn) {
@@ -160,10 +180,13 @@ class Pbi38BatasMaksimalPesananTest extends DuskTestCase
                     throw new Error('Delivery slot button not found');
                 }
             ");
+            // Menjeda eksekusi selama 500 milidetik agar proses render/transisi halaman selesai
             $browser->pause(500);
 
             // Verify that the slot has 'TERSEDIA' label and is selected (not disabled)
+            // Memastikan teks 'TERSEDIA' terlihat pada halaman browser
             $browser->assertSee('TERSEDIA')
+                    // Memastikan teks '(PENUH)' TIDAK muncul pada halaman browser
                     ->assertDontSee('(PENUH)');
         });
     }
@@ -180,13 +203,17 @@ class Pbi38BatasMaksimalPesananTest extends DuskTestCase
         $this->browse(function (Browser $browser) use ($consumerEmail, $password, $product) {
             $this->login($browser, $consumerEmail, $password);
 
+            // Mengunjungi halaman 'halaman terkait'
             $browser->visit('/consumer/checkout?product_id=' . $product->id);
             $this->disableReveal($browser);
 
+            // Menunggu teks '' muncul di layar (batas waktu standar detik)
             $browser->waitForText('Menyelesaikan Pemesanan')
+                    // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
                     ->pause(1000);
 
             // Select receiving method "Kirim ke Lokasi" (delivery)
+            // Eksekusi skrip JavaScript kustom di browser untuk menyimulasikan interaksi kompleks
             $browser->script("
                 let radio = document.querySelector('input[name=\"receiving_method_radio\"][value=\"delivery\"]');
                 if (radio) {
@@ -196,9 +223,11 @@ class Pbi38BatasMaksimalPesananTest extends DuskTestCase
                     throw new Error('Delivery radio not found');
                 }
             ");
+            // Menjeda eksekusi selama 1000 milidetik agar proses render/transisi halaman selesai
             $browser->pause(1000);
 
             // Verify that the full slot displays "(PENUH)" and has a disabled attribute
+            // Memastikan teks '(PENUH)' terlihat pada halaman browser
             $browser->assertSee('(PENUH)')
                     ->assertPresent('button[disabled]');
         });

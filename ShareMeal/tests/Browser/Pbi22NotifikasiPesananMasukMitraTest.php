@@ -11,6 +11,11 @@ use App\Models\Store;
 use App\Models\UserProfile;
 use App\Notifications\IncomingOrderNotification;
 
+/**
+ * PBI-22: Notifikasi Pesanan Masuk Mitra
+ * Pengujian otomatis berbasis browser menggunakan Laravel Dusk.
+ * Berkas ini merepresentasikan skenario pengujian untuk membantu presentasi dan demo aplikasi.
+ */
 class Pbi22NotifikasiPesananMasukMitraTest extends DuskTestCase
 {
     use DatabaseMigrations;
@@ -66,10 +71,13 @@ class Pbi22NotifikasiPesananMasukMitraTest extends DuskTestCase
                     ->visitRoute('notifications.index')
                     
                     // Step 6: Tunggu elemen notifikasi muncul
+                    // Menunggu teks 'Pesanan Baru Masuk!' muncul di layar (batas waktu 15 detik)
                     ->waitForText('Pesanan Baru Masuk!', 15)
                     
                     // Step 7: Validasi Pesan
+                    // Memastikan teks 'Pesanan Baru Masuk!' terlihat pada halaman browser
                     ->assertSee('Pesanan Baru Masuk!')
+                    // Memastikan teks 'Anda menerima pesanan baru dari Budi Pelanggan sejumlah Rp 75.000' terlihat pada halaman browser
                     ->assertSee('Anda menerima pesanan baru dari Budi Pelanggan sejumlah Rp 75.000');
         });
     }
@@ -112,7 +120,9 @@ class Pbi22NotifikasiPesananMasukMitraTest extends DuskTestCase
             // Login sebagai Mitra A dan pastikan tidak melihat notifikasi pesanan masuk milik Mitra B
             $browser->loginAs($mitraA)
                     ->visitRoute('notifications.index')
+                    // Memastikan teks 'Pesanan Baru Masuk!' TIDAK muncul pada halaman browser
                     ->assertDontSee('Pesanan Baru Masuk!')
+                    // Memastikan teks 'Anda menerima pesanan baru dari Budi Pelanggan' TIDAK muncul pada halaman browser
                     ->assertDontSee('Anda menerima pesanan baru dari Budi Pelanggan');
         });
     }

@@ -27,22 +27,29 @@ class ProblemReportResolvedNotification extends Notification
     public function toArray($notifiable): array
     {
         $issueLabel = $this->report->issue_label ?? 'Laporan Masalah';
+        $mitraName = $this->report->mitra->name ?? 'Mitra';
 
         if ($this->resolutionType === 'dismissed') {
             return [
-                'title' => 'Laporan Masalah Ditutup',
-                'message' => "Laporan Anda mengenai '{$issueLabel}' telah ditinjau oleh tim kami dan dinyatakan selesai/ditutup.",
+                'title' => 'Laporan Masalah Ditindaklanjuti',
+                'message' => "Laporan Anda mengenai '{$issueLabel}' terhadap Mitra '{$mitraName}' telah diabaikan/ditutup oleh admin.",
                 'type' => 'info',
                 'icon' => 'eye-off',
+                'status' => 'dismissed',
+                'report_id' => $this->report->id,
                 'action_url' => route('profile.edit')
             ];
         }
 
+        $moderationAction = $this->resolutionType === 'warned' ? 'sanksi peringatan resmi' : 'memblokir akun Mitra';
+
         return [
             'title' => 'Laporan Masalah Ditindaklanjuti',
-            'message' => "Terima kasih atas laporan Anda. Pengaduan mengenai '{$issueLabel}' telah ditindaklanjuti oleh tim admin dengan pemberian sanksi/moderasi.",
+            'message' => "Terima kasih atas laporan Anda. Pengaduan mengenai '{$issueLabel}' terhadap Mitra '{$mitraName}' telah ditindaklanjuti oleh tim admin dengan tindakan: {$moderationAction}.",
             'type' => 'success',
             'icon' => 'shield',
+            'status' => 'resolved',
+            'report_id' => $this->report->id,
             'action_url' => route('profile.edit')
         ];
     }
